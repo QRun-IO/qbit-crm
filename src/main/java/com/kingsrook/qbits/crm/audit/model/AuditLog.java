@@ -11,6 +11,7 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreUpdateCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
+import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
@@ -119,6 +120,10 @@ public class AuditLog extends QRecordEntity
       @Override
       public List<QRecord> apply(List<QRecord> records) throws QException
       {
+         if("true".equals(QContext.getQSession().getValue("gdprBypass")))
+         {
+            return records;
+         }
          throw new QUserFacingException("Audit log records cannot be modified or deleted");
       }
    }
@@ -136,6 +141,10 @@ public class AuditLog extends QRecordEntity
       @Override
       public List<QRecord> apply(List<QRecord> records) throws QException
       {
+         if("true".equals(QContext.getQSession().getValue("gdprBypass")))
+         {
+            return records;
+         }
          throw new QUserFacingException("Audit log records cannot be modified or deleted");
       }
    }

@@ -171,17 +171,43 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
 
 
    /***************************************************************************
-    ** Scrub audit log entries for this contact. Since audit log has immutability
-    ** customizers, we insert new records with anonymized content instead.
-    ** Note: In a real system this would bypass the customizer; for now we
-    ** record the anonymization as separate audit entries.
+    ** Scrub audit log entries for this contact. Sets a GDPR bypass flag on
+    ** the session so the immutability customizers allow the update.
     ***************************************************************************/
    private void scrubAuditLogEntries(Integer contactId) throws QException
    {
-      // Note: the audit log has PRE_UPDATE/PRE_DELETE customizers that prevent
-      // modification. For GDPR compliance, the actual scrubbing would need a
-      // privileged bypass. Here we simply log that the scrub was requested.
-      // The ANONYMIZED audit entry serves as the tombstone marker.
+      ///////////////////////////////////////////
+      // set GDPR bypass flag on session       //
+      ///////////////////////////////////////////
+      QContext.getQSession().setValue("gdprBypass", "true");
+      try
+      {
+         /////////////////////////////////////////////
+         // query audit entries for this contact    //
+         /////////////////////////////////////////////
+         QueryOutput auditEntries = new QueryAction().execute(
+            new QueryInput(AuditLog.TABLE_NAME)
+               .withFilter(new QQueryFilter()
+                  .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getId()))
+                  .withCriteria(new QFilterCriteria("entityId", QCriteriaOperator.EQUALS, contactId))));
+
+         /////////////////////////////////////////////
+         // anonymize each entry                    //
+         /////////////////////////////////////////////
+         for(QRecord record : auditEntries.getRecords())
+         {
+            QRecord update = new QRecord();
+            update.setValue("id", record.getValueInteger("id"));
+            update.setValue("oldValue", ANONYMIZED);
+            update.setValue("newValue", ANONYMIZED);
+            update.setValue("message", ANONYMIZED);
+            new UpdateAction().execute(new UpdateInput(AuditLog.TABLE_NAME).withRecords(List.of(update)));
+         }
+      }
+      finally
+      {
+         QContext.getQSession().setValue("gdprBypass", "false");
+      }
    }
 
 
