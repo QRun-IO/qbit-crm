@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ QQQ - Low-code Application Framework for Engineers.
+  ~ Copyright (C) 2021-2026.  Kingsrook, LLC
+  ~ 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+  ~ contact@kingsrook.com
+  ~ https://github.com/Kingsrook/
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+   <properties>
+      <revision>0.1.0-SNAPSHOT</revision>
+   </properties>
+
+   <parent>
+      <groupId>com.kingsrook</groupId>
+      <artifactId>qbit-build-parent</artifactId>
+      <version>1.4.0</version>
+   </parent>
+
+   <groupId>com.kingsrook.qbits</groupId>
+   <artifactId>qbit-crm</artifactId>
+   <version>${revision}</version>
+   <packaging>jar</packaging>
+
+   <name>QBit CRM</name>
+   <description>Customer Relationship Management QBit for the QQQ framework</description>
+   <url>https://github.com/qrun-io/qbit-crm</url>
+
+   <modelVersion>4.0.0</modelVersion>
+
+   <licenses>
+      <license>
+         <name>GNU Affero General Public License v3.0</name>
+         <url>https://www.gnu.org/licenses/agpl-3.0.html</url>
+         <distribution>repo</distribution>
+      </license>
+   </licenses>
+
+   <developers>
+      <developer>
+         <id>kingsrook</id>
+         <name>Kingsrook Team</name>
+         <email>contact@kingsrook.com</email>
+         <organization>Kingsrook, LLC</organization>
+         <organizationUrl>https://kingsrook.com</organizationUrl>
+      </developer>
+   </developers>
+
+   <scm>
+      <connection>scm:git:git://github.com/qrun-io/qbit-crm.git</connection>
+      <developerConnection>scm:git:ssh://github.com:qrun-io/qbit-crm.git</developerConnection>
+      <url>https://github.com/qrun-io/qbit-crm</url>
+      <tag>HEAD</tag>
+   </scm>
+
+   <dependencies>
+      <dependency>
+         <groupId>com.kingsrook.qqq</groupId>
+         <artifactId>qqq-backend-core</artifactId>
+      </dependency>
+
+      <dependency>
+         <groupId>com.kingsrook.qqq</groupId>
+         <artifactId>qqq-backend-module-rdbms</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>com.h2database</groupId>
+         <artifactId>h2</artifactId>
+         <version>2.2.220</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.assertj</groupId>
+         <artifactId>assertj-core</artifactId>
+         <version>3.27.3</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+</project>
