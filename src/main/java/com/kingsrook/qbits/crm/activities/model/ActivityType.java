@@ -5,11 +5,15 @@ package com.kingsrook.qbits.crm.activities.model;
 
 
 import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
@@ -17,6 +21,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMeta
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+import com.kingsrook.qqq.backend.core.model.statusmessages.BadInputStatusMessage;
 
 
 /*******************************************************************************
@@ -34,7 +39,8 @@ public class ActivityType extends QRecordEntity
 
 
    /***************************************************************************
-    ** Customizer that sets icon, record label, unique key, and sections.
+    ** Customizer that sets icon, record label, unique key, sections, and
+    ** registers PRE_DELETE customizer to protect system activity types.
     ***************************************************************************/
    public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface<QTableMetaData>
    {
@@ -53,7 +59,36 @@ public class ActivityType extends QRecordEntity
             .withSection(SectionFactory.defaultT2("isSystem", "sortOrder", "isActive"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
+         ////////////////////////////////////////////////////////////
+         // register PRE_DELETE to protect system activity types   //
+         ////////////////////////////////////////////////////////////
+         table.withCustomizer(TableCustomizers.PRE_DELETE_RECORD, new QCodeReference(PreDeleteCustomizer.class));
+
          return (table);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** PRE_DELETE customizer that rejects deletion of system activity types.
+    ***************************************************************************/
+   public static class PreDeleteCustomizer extends AbstractPreDeleteCustomizer
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public List<QRecord> apply(List<QRecord> records) throws QException
+      {
+         for(QRecord record : records)
+         {
+            if(Boolean.TRUE.equals(record.getValueBoolean("isSystem")))
+            {
+               record.addError(new BadInputStatusMessage("System activity types cannot be deleted"));
+            }
+         }
+         return (records);
       }
    }
 

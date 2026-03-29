@@ -4,15 +4,21 @@
 package com.kingsrook.qbits.crm.scoring.processes;
 
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmScoreOperator;
 import com.kingsrook.qbits.crm.scoring.model.LeadScoreRule;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -53,6 +59,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
          .withName(NAME)
          .withLabel("Calculate Lead Scores")
          .withIcon(new QIcon().withName("score"))
+         // Scheduling is configured by the host application via ScheduledJob records
          .withStepList(List.of(
             new QBackendStepMetaData()
                .withName("execute")

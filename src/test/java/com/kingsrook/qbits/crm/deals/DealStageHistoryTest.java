@@ -87,9 +87,13 @@ class DealStageHistoryTest extends BaseTest
 
       QueryOutput queryOutput = new QueryAction().execute(
          new QueryInput(DealStageHistory.TABLE_NAME));
-      assertEquals(1, queryOutput.getRecords().size());
+      ///////////////////////////////////////////////////////////////////////////
+      // DealInitializationCustomizer auto-creates an initial history row on  //
+      // deal insert, so we expect 2: the customizer's row + our manual row. //
+      ///////////////////////////////////////////////////////////////////////////
+      assertEquals(2, queryOutput.getRecords().size());
 
-      DealStageHistory fetched = new DealStageHistory(queryOutput.getRecords().get(0));
+      DealStageHistory fetched = new DealStageHistory(queryOutput.getRecords().get(1));
       assertEquals(dealId, fetched.getDealId());
       assertNull(fetched.getFromStageId());
       assertEquals(stage1Id, fetched.getToStageId());
@@ -149,11 +153,13 @@ class DealStageHistoryTest extends BaseTest
             .withDurationInFromStageDays(5)));
 
       //////////////////////////////////////////////
-      // verify all three entries are persisted   //
+      // verify all four entries are persisted:  //
+      // 1 from DealInitializationCustomizer +   //
+      // 3 manually inserted above               //
       //////////////////////////////////////////////
       QueryOutput queryOutput = new QueryAction().execute(
          new QueryInput(DealStageHistory.TABLE_NAME));
-      assertEquals(3, queryOutput.getRecords().size());
+      assertEquals(4, queryOutput.getRecords().size());
 
       //////////////////////////////////////////////
       // verify the latest transition details     //

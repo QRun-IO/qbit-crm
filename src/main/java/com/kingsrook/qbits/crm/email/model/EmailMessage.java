@@ -6,6 +6,7 @@ package com.kingsrook.qbits.crm.email.model;
 
 import java.time.Instant;
 import java.util.List;
+import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.model.enums.CrmBounceType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEmailStatus;
@@ -76,7 +77,7 @@ public class EmailMessage extends QRecordEntity
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
 
-   @QField()
+   @QField(possibleValueSourceName = Activity.TABLE_NAME)
    private Integer activityId;
 
    @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)

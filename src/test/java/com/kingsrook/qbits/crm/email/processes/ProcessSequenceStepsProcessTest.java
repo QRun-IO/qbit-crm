@@ -45,7 +45,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
    {
       insertActivityType("Email");
       insertActivityType("Task");
-      Integer sequenceId = insertSequence("Email Seq", true, 2);
+      Integer sequenceId = insertSequence("Email Seq", true, 2, false);
       Integer contactId = insertContact("Alice", "Email", false);
       insertStep(sequenceId, 1, CrmSequenceStepType.EMAIL.getId(), 0, 0);
       insertStep(sequenceId, 2, CrmSequenceStepType.TASK.getId(), 1, 0);
@@ -90,7 +90,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
    @Test
    void testEnrollmentCompletion() throws QException
    {
-      Integer sequenceId = insertSequence("Complete Seq", true, 1);
+      Integer sequenceId = insertSequence("Complete Seq", true, 1, false);
       Integer contactId = insertContact("Bob", "Complete", false);
       insertStep(sequenceId, 1, CrmSequenceStepType.WAIT.getId(), 0, 0);
 
@@ -125,7 +125,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
    @Test
    void testFailureCounting() throws QException
    {
-      Integer sequenceId = insertSequence("Fail Seq", true, 2);
+      Integer sequenceId = insertSequence("Fail Seq", true, 2, false);
       Integer contactId = insertContact("Carol", "Fail", true); // doNotEmail = true
       insertStep(sequenceId, 1, CrmSequenceStepType.EMAIL.getId(), 0, 0);
       insertStep(sequenceId, 2, CrmSequenceStepType.EMAIL.getId(), 0, 0);
@@ -169,7 +169,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
    /***************************************************************************
     ** Helper: insert an EmailSequence.
     ***************************************************************************/
-   private Integer insertSequence(String name, boolean isActive, int totalSteps) throws QException
+   private Integer insertSequence(String name, boolean isActive, int totalSteps, boolean businessDaysOnly) throws QException
    {
       InsertOutput output = new InsertAction().execute(
          new InsertInput(EmailSequence.TABLE_NAME)
@@ -178,7 +178,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
                .withOwnerUserId("user-001")
                .withIsActive(isActive)
                .withTotalSteps(totalSteps)
-               .withBusinessDaysOnly(true)));
+               .withBusinessDaysOnly(businessDaysOnly)));
       return (output.getRecords().get(0).getValueInteger("id"));
    }
 

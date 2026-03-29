@@ -6,11 +6,14 @@ package com.kingsrook.qbits.crm.email.model;
 
 import java.time.Instant;
 import java.util.List;
+import com.kingsrook.qbits.crm.email.customizers.EmailTemplatePreDeleteCustomizer;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
@@ -38,7 +41,8 @@ public class EmailTemplate extends QRecordEntity
 
 
    /***************************************************************************
-    ** Customizer that sets icon, record label, and section layout.
+    ** Customizer that sets icon, record label, section layout, and registers
+    ** PRE_DELETE customizer to prevent deletion of actively-used templates.
     ***************************************************************************/
    public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface<QTableMetaData>
    {
@@ -58,6 +62,11 @@ public class EmailTemplate extends QRecordEntity
             .withSection(new QFieldSection("ownership", new QIcon("person"), Tier.T2,
                List.of("ownerUserId", "isShared")))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
+
+         ////////////////////////////////////////////////////////////////////
+         // register PRE_DELETE to block deletion of actively-used templates //
+         ////////////////////////////////////////////////////////////////////
+         table.withCustomizer(TableCustomizers.PRE_DELETE_RECORD, new QCodeReference(EmailTemplatePreDeleteCustomizer.class));
 
          return (table);
       }

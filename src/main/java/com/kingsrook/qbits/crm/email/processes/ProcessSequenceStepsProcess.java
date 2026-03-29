@@ -4,7 +4,10 @@
 package com.kingsrook.qbits.crm.email.processes;
 
 
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import com.kingsrook.qbits.crm.activities.model.Activity;
@@ -65,6 +68,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
          .withName(NAME)
          .withLabel("Process Sequence Steps")
          .withIcon(new QIcon().withName("play_circle"))
+         // Scheduling is configured by the host application via ScheduledJob records
          .withStepList(List.of(
             new QBackendStepMetaData()
                .withName("execute")
@@ -116,6 +120,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
    /***************************************************************************
     ** Process a single enrollment: load the next step and execute it.
+    ** Respects businessDaysOnly and sendWindow settings on the sequence.
     ***************************************************************************/
    private void processEnrollment(SequenceEnrollment enrollment) throws QException
    {
@@ -129,6 +134,48 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
       EmailSequence sequence = sequenceGet.getRecord() != null
          ? new EmailSequence(sequenceGet.getRecord()) : null;
+
+      /////////////////////////////////////////////
+      // load the contact for timezone           //
+      /////////////////////////////////////////////
+      GetOutput contactGet = new GetAction().execute(
+         new GetInput(Contact.TABLE_NAME).withPrimaryKey(enrollment.getContactId()));
+
+      String contactTimezone = null;
+      if(contactGet.getRecord() != null)
+      {
+         contactTimezone = contactGet.getRecord().getValueString("timezone");
+      }
+
+      ZoneId zoneId = resolveZoneId(contactTimezone);
+      ZonedDateTime nowInZone = Instant.now().atZone(zoneId);
+
+      ///////////////////////////////////////////////////////////////
+      // check businessDaysOnly -- skip weekends                   //
+      ///////////////////////////////////////////////////////////////
+      if(sequence != null && Boolean.TRUE.equals(sequence.getBusinessDaysOnly()))
+      {
+         DayOfWeek dayOfWeek = nowInZone.getDayOfWeek();
+         if(dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY)
+         {
+            return;
+         }
+      }
+
+      ///////////////////////////////////////////////////////////////
+      // check send window -- skip if outside window               //
+      ///////////////////////////////////////////////////////////////
+      if(sequence != null
+         && sequence.getSendWindowStartHour() != null
+         && sequence.getSendWindowEndHour() != null)
+      {
+         int currentHour = nowInZone.getHour();
+         if(currentHour < sequence.getSendWindowStartHour()
+            || currentHour >= sequence.getSendWindowEndHour())
+         {
+            return;
+         }
+      }
 
       /////////////////////////////////////////////
       // load the next step                      //
@@ -171,7 +218,8 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       /////////////////////////////////////////////
       // advance to next step                    //
       /////////////////////////////////////////////
-      advanceEnrollment(enrollment, nextStepNumber, sequence);
+      boolean businessDaysOnly = sequence != null && Boolean.TRUE.equals(sequence.getBusinessDaysOnly());
+      advanceEnrollment(enrollment, nextStepNumber, sequence, businessDaysOnly, contactTimezone);
    }
 
 
@@ -300,8 +348,11 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
    /***************************************************************************
     ** Advance the enrollment to the next step and calculate the next date.
+    ** Respects businessDaysOnly when computing the delay.
     ***************************************************************************/
-   private void advanceEnrollment(SequenceEnrollment enrollment, Integer newStepNumber, EmailSequence sequence) throws QException
+   private void advanceEnrollment(SequenceEnrollment enrollment, Integer newStepNumber,
+                                  EmailSequence sequence, boolean businessDaysOnly,
+                                  String contactTimezone) throws QException
    {
       ///////////////////////////////////////////////
       // check if we've completed all steps        //
@@ -339,9 +390,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
          SequenceStep nextStep = new SequenceStep(nextStepQuery.getRecords().get(0));
          Integer delayDays = nextStep.getDelayDays() != null ? nextStep.getDelayDays() : 0;
          Integer delayHours = nextStep.getDelayHours() != null ? nextStep.getDelayHours() : 0;
-         nextDate = Instant.now()
-            .plus(delayDays, ChronoUnit.DAYS)
-            .plus(delayHours, ChronoUnit.HOURS);
+         nextDate = calculateNextStepDate(Instant.now(), delayDays, delayHours, businessDaysOnly, contactTimezone);
       }
 
       QRecord updateRecord = new QRecord()
@@ -368,6 +417,60 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
       new UpdateAction().execute(
          new UpdateInput(SequenceEnrollment.TABLE_NAME).withRecord(updateRecord));
+   }
+
+
+
+   /***************************************************************************
+    ** Calculate the next step date, adding delay days/hours to now.
+    ** If businessDaysOnly is true, weekends are skipped when counting days.
+    ***************************************************************************/
+   static Instant calculateNextStepDate(Instant now, int delayDays, int delayHours,
+                                        boolean businessDaysOnly, String contactTimezone)
+   {
+      ZoneId zoneId = resolveZoneId(contactTimezone);
+      ZonedDateTime result = now.atZone(zoneId).plus(delayHours, ChronoUnit.HOURS);
+
+      if(businessDaysOnly && delayDays > 0)
+      {
+         int addedDays = 0;
+         while(addedDays < delayDays)
+         {
+            result = result.plusDays(1);
+            DayOfWeek dow = result.getDayOfWeek();
+            if(dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY)
+            {
+               addedDays++;
+            }
+         }
+      }
+      else
+      {
+         result = result.plusDays(delayDays);
+      }
+
+      return (result.toInstant());
+   }
+
+
+
+   /***************************************************************************
+    ** Resolve a timezone string to a ZoneId. Falls back to UTC.
+    ***************************************************************************/
+   private static ZoneId resolveZoneId(String timezone)
+   {
+      if(StringUtils.hasContent(timezone))
+      {
+         try
+         {
+            return (ZoneId.of(timezone));
+         }
+         catch(Exception e)
+         {
+            // fall through to UTC
+         }
+      }
+      return (ZoneId.of("UTC"));
    }
 
 

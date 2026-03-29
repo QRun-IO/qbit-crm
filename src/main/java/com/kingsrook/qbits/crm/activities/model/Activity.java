@@ -6,8 +6,12 @@ package com.kingsrook.qbits.crm.activities.model;
 
 import java.time.Instant;
 import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Company;
+import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmActivityPriority;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.email.model.EmailMessage;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -40,7 +44,12 @@ import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
          childTableEntityClass = ActivityParticipant.class,
          joinFieldName = "activityId",
          childJoin = @ChildJoin(enabled = true),
-         childRecordListWidget = @ChildRecordListWidget(label = "Participants", enabled = true, maxRows = 50))
+         childRecordListWidget = @ChildRecordListWidget(label = "Participants", enabled = true, maxRows = 50)),
+      @ChildTable(
+         childTableEntityClass = EmailMessage.class,
+         joinFieldName = "activityId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Email Details", enabled = true, maxRows = 5))
    }
 )
 public class Activity extends QRecordEntity
@@ -96,13 +105,13 @@ public class Activity extends QRecordEntity
    @QField()
    private String description;
 
-   @QField()
+   @QField(possibleValueSourceName = Contact.TABLE_NAME)
    private Integer contactId;
 
-   @QField()
+   @QField(possibleValueSourceName = Company.TABLE_NAME)
    private Integer companyId;
 
-   @QField()
+   @QField(possibleValueSourceName = Deal.TABLE_NAME)
    private Integer dealId;
 
    @QField(isRequired = true)
