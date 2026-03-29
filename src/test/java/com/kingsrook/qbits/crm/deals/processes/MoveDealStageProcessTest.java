@@ -90,14 +90,24 @@ class MoveDealStageProcessTest extends BaseTest
 
       ///////////////////////////////////////////
       // verify stage history was created      //
+      // 1 from DealInitializationCustomizer   //
+      //   on deal insert (null -> stage1)     //
+      // 1 from DealStageChangeCustomizer      //
+      //   on deal update (stage1 -> stage2)   //
+      // 1 from process explicit insert        //
+      //   (stage1 -> stage2)                  //
       ///////////////////////////////////////////
       QueryOutput historyOutput = new QueryAction().execute(
          new QueryInput(DealStageHistory.TABLE_NAME)
             .withFilter(new QQueryFilter()
                .withCriteria(new QFilterCriteria("dealId", QCriteriaOperator.EQUALS, dealId))));
 
-      assertEquals(1, historyOutput.getRecords().size());
-      DealStageHistory history = new DealStageHistory(historyOutput.getRecords().get(0));
+      assertEquals(3, historyOutput.getRecords().size());
+
+      ///////////////////////////////////////////
+      // verify the process's explicit entry   //
+      ///////////////////////////////////////////
+      DealStageHistory history = new DealStageHistory(historyOutput.getRecords().get(historyOutput.getRecords().size() - 1));
       assertEquals(stage1Id, history.getFromStageId());
       assertEquals(stage2Id, history.getToStageId());
       assertNotNull(history.getTransitionDate());

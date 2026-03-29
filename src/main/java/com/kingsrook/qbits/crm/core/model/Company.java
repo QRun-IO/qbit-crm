@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.core.model.enums.CrmCompanyType;
+import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -18,6 +19,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitProductionContext;
 import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
@@ -35,7 +39,18 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 @QMetaDataProducingEntity(
    producePossibleValueSource = true,
    produceTableMetaData = true,
-   tableMetaDataCustomizer = Company.TableMetaDataCustomizer.class
+   tableMetaDataCustomizer = Company.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(childTableEntityClass = Contact.class, joinFieldName = "companyId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Contacts", enabled = true, maxRows = 50)),
+      @ChildTable(childTableEntityClass = Deal.class, joinFieldName = "companyId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Deals", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = CompanyTag.class, joinFieldName = "companyId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Tags", enabled = true, maxRows = 50))
+   }
 )
 public class Company extends QRecordEntity
 {

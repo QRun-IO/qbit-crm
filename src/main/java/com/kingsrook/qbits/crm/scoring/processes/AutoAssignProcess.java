@@ -4,9 +4,11 @@
 package com.kingsrook.qbits.crm.scoring.processes;
 
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAssignStrategy;
@@ -19,6 +21,7 @@ import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
@@ -40,6 +43,8 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.CollectionUtils;
+import com.kingsrook.qqq.backend.core.utils.JsonUtils;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
 
 
@@ -50,6 +55,8 @@ import com.kingsrook.qqq.backend.core.utils.StringUtils;
  *******************************************************************************/
 public class AutoAssignProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
+   private static final QLogger LOG = QLogger.getLogger(AutoAssignProcess.class);
+
    public static final String NAME = "autoAssign";
 
 
@@ -131,7 +138,7 @@ public class AutoAssignProcess implements BackendStep, MetaDataProducerInterface
       QueryOutput rulesQuery = new QueryAction().execute(
          new QueryInput(AssignmentRule.TABLE_NAME)
             .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, entityType.getId()))
+               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, entityType.getPossibleValueId()))
                .withCriteria(new QFilterCriteria("isActive", QCriteriaOperator.EQUALS, true))
                .withOrderBy(new QFilterOrderBy("sortOrder"))));
 
@@ -186,36 +193,30 @@ public class AutoAssignProcess implements BackendStep, MetaDataProducerInterface
       }
 
       /////////////////////////////////////////////
-      // simple JSON criteria evaluation         //
+      // parse criteria JSON using JsonUtils     //
       // format: {"fieldName":"expectedValue"}   //
       /////////////////////////////////////////////
       try
       {
-         String json = rule.getCriteriaJson().trim();
-         if(json.startsWith("{") && json.endsWith("}"))
+         @SuppressWarnings("unchecked")
+         Map<String, Object> criteriaMap = JsonUtils.toObject(rule.getCriteriaJson(), Map.class);
+         for(Map.Entry<String, Object> entry : criteriaMap.entrySet())
          {
-            json = json.substring(1, json.length() - 1);
-            String[] pairs = json.split(",");
-            for(String pair : pairs)
-            {
-               String[] kv = pair.split(":", 2);
-               if(kv.length == 2)
-               {
-                  String fieldName = kv[0].trim().replace("\"", "");
-                  String expectedValue = kv[1].trim().replace("\"", "");
-                  String actualValue = record.getValueString(fieldName);
+            String fieldName     = entry.getKey();
+            String expectedValue = entry.getValue() == null ? null : String.valueOf(entry.getValue());
+            String actualValue   = record.getValueString(fieldName);
 
-                  if(!Objects.equals(actualValue, expectedValue))
-                  {
-                     return (false);
-                  }
-               }
+            if(!Objects.equals(actualValue, expectedValue))
+            {
+               return (false);
             }
          }
+
          return (true);
       }
       catch(Exception e)
       {
+         LOG.warn("Error parsing criteriaJson for assignment rule", e);
          return (false);
       }
    }

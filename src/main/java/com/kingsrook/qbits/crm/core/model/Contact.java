@@ -7,6 +7,8 @@ package com.kingsrook.qbits.crm.core.model;
 import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -16,6 +18,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitProductionContext;
 import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
@@ -33,7 +38,21 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 @QMetaDataProducingEntity(
    producePossibleValueSource = true,
    produceTableMetaData = true,
-   tableMetaDataCustomizer = Contact.TableMetaDataCustomizer.class
+   tableMetaDataCustomizer = Contact.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(childTableEntityClass = Activity.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Activities", enabled = true, maxRows = 50)),
+      @ChildTable(childTableEntityClass = DealContact.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Deals", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = ContactTag.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Tags", enabled = true, maxRows = 50)),
+      @ChildTable(childTableEntityClass = ConsentRecord.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Consent Records", enabled = true, maxRows = 25))
+   }
 )
 public class Contact extends QRecordEntity
 {

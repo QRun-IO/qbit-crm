@@ -98,14 +98,14 @@ public class SubscribeToListProcess implements BackendStep, MetaDataProducerInte
          QRecord existingRecord = existingMembers.getRecords().get(0);
          Integer currentStatus = existingRecord.getValueInteger("status");
 
-         if(CrmListMemberStatus.UNSUBSCRIBED.getId().equals(currentStatus))
+         if(CrmListMemberStatus.UNSUBSCRIBED.getPossibleValueId().equals(currentStatus))
          {
             ///////////////////////////////////////////////
             // resubscribe: update status and date       //
             ///////////////////////////////////////////////
             QRecord updateRecord = new QRecord()
                .withValue("id", existingRecord.getValueInteger("id"))
-               .withValue("status", CrmListMemberStatus.SUBSCRIBED.getId())
+               .withValue("status", CrmListMemberStatus.SUBSCRIBED.getPossibleValueId())
                .withValue("subscribedDate", Instant.now())
                .withValue("unsubscribedDate", null);
 
@@ -140,7 +140,7 @@ public class SubscribeToListProcess implements BackendStep, MetaDataProducerInte
          .withEmail(email)
          .withFirstName(firstName)
          .withContactId(contactId)
-         .withStatus(CrmListMemberStatus.SUBSCRIBED.getId())
+         .withStatus(CrmListMemberStatus.SUBSCRIBED.getPossibleValueId())
          .withSubscribedDate(Instant.now())
          .withSubscriptionSource(subscriptionSource);
 

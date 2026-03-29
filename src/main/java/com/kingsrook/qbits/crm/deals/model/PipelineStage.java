@@ -5,11 +5,21 @@ package com.kingsrook.qbits.crm.deals.model;
 
 
 import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
@@ -17,6 +27,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMeta
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+import com.kingsrook.qqq.backend.core.model.statusmessages.BadInputStatusMessage;
 
 
 /*******************************************************************************
@@ -35,7 +46,8 @@ public class PipelineStage extends QRecordEntity
 
 
    /***************************************************************************
-    **
+    ** Customizer that sets icon, record label, unique keys, sections, and
+    ** registers PRE_DELETE customizer to protect stages with active deals.
     ***************************************************************************/
    public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface<QTableMetaData>
    {
@@ -56,7 +68,43 @@ public class PipelineStage extends QRecordEntity
             .withSection(SectionFactory.defaultT2("rotDays", "requiredFieldsJson", "isClosedWon", "isClosedLost"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
+         ////////////////////////////////////////////////////////////
+         // register PRE_DELETE to protect stages with active deals //
+         ////////////////////////////////////////////////////////////
+         table.withCustomizer(TableCustomizers.PRE_DELETE_RECORD, new QCodeReference(PreDeleteCustomizer.class));
+
          return (table);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** PRE_DELETE customizer that rejects deletion of stages with active deals.
+    ***************************************************************************/
+   public static class PreDeleteCustomizer extends AbstractPreDeleteCustomizer
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public List<QRecord> apply(List<QRecord> records) throws QException
+      {
+         for(QRecord record : records)
+         {
+            Integer stageId = record.getValueInteger("id");
+
+            QueryOutput dealOutput = new QueryAction().execute(
+               new QueryInput(Deal.TABLE_NAME)
+                  .withFilter(new QQueryFilter()
+                     .withCriteria(new QFilterCriteria("pipelineStageId", QCriteriaOperator.EQUALS, stageId))));
+
+            if(!dealOutput.getRecords().isEmpty())
+            {
+               record.addError(new BadInputStatusMessage("Cannot delete stage with active deals"));
+            }
+         }
+         return (records);
       }
    }
 

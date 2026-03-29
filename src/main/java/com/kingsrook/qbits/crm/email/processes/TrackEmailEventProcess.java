@@ -129,7 +129,7 @@ public class TrackEmailEventProcess implements BackendStep, MetaDataProducerInte
             /////////////////////////////////////////////////////
             // if hard bounce, set contact doNotEmail to true   //
             /////////////////////////////////////////////////////
-            if(bounceTypeId != null && bounceTypeId.equals(CrmBounceType.HARD.getId()))
+            if(bounceTypeId != null && bounceTypeId.equals(CrmBounceType.HARD.getPossibleValueId()))
             {
                setContactDoNotEmail(email);
             }
@@ -152,7 +152,7 @@ public class TrackEmailEventProcess implements BackendStep, MetaDataProducerInte
             {
                QRecord enrollmentUpdate = new QRecord()
                   .withValue("id", email.getSequenceEnrollmentId())
-                  .withValue("status", CrmEnrollmentStatus.REPLIED.getId());
+                  .withValue("status", CrmEnrollmentStatus.REPLIED.getPossibleValueId());
 
                new UpdateAction().execute(
                   new UpdateInput("crmSequenceEnrollment").withRecord(enrollmentUpdate));

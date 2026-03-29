@@ -17,6 +17,7 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
@@ -25,6 +26,7 @@ import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
@@ -52,6 +54,8 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  *******************************************************************************/
 public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
+   private static final QLogger LOG = QLogger.getLogger(GdprAnonymizeContactProcess.class);
+
    public static final String NAME = "gdprAnonymizeContact";
 
    private static final String ANONYMIZED = "[ANONYMIZED]";
@@ -88,7 +92,7 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
    public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
    {
       Integer contactId     = input.getValueInteger("contactId");
-      String  sessionUserId = QContext.getQSession().getIdReference();
+      String  sessionUserId = CrmSessionUtils.getCurrentUserId();
 
       ///////////////////////////////////////////
       // Step 1: load and validate contact     //
@@ -147,8 +151,8 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
          new InsertInput(ConsentRecord.TABLE_NAME).withRecordEntity(
             new ConsentRecord()
                .withContactId(contactId)
-               .withConsentType(CrmConsentType.DATA_PROCESSING.getId())
-               .withStatus(CrmConsentStatus.WITHDRAWN.getId())
+               .withConsentType(CrmConsentType.DATA_PROCESSING.getPossibleValueId())
+               .withStatus(CrmConsentStatus.WITHDRAWN.getPossibleValueId())
                .withSource("GDPR Anonymization Process")
                .withConsentDate(Instant.now())));
 
@@ -158,9 +162,9 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
       new InsertAction().execute(
          new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
             new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getId())
+               .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
                .withEntityId(contactId)
-               .withAction(CrmAuditAction.ANONYMIZED.getId())
+               .withAction(CrmAuditAction.ANONYMIZED.getPossibleValueId())
                .withUserId(sessionUserId)
                .withMessage("Contact anonymized per GDPR right-to-erasure request")));
 
@@ -171,17 +175,43 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
 
 
    /***************************************************************************
-    ** Scrub audit log entries for this contact. Since audit log has immutability
-    ** customizers, we insert new records with anonymized content instead.
-    ** Note: In a real system this would bypass the customizer; for now we
-    ** record the anonymization as separate audit entries.
+    ** Scrub audit log entries for this contact. Sets a GDPR bypass flag on
+    ** the session so the immutability customizers allow the update.
     ***************************************************************************/
    private void scrubAuditLogEntries(Integer contactId) throws QException
    {
-      // Note: the audit log has PRE_UPDATE/PRE_DELETE customizers that prevent
-      // modification. For GDPR compliance, the actual scrubbing would need a
-      // privileged bypass. Here we simply log that the scrub was requested.
-      // The ANONYMIZED audit entry serves as the tombstone marker.
+      ///////////////////////////////////////////
+      // set GDPR bypass flag on session       //
+      ///////////////////////////////////////////
+      QContext.getQSession().setValue("gdprBypass", "true");
+      try
+      {
+         /////////////////////////////////////////////
+         // query audit entries for this contact    //
+         /////////////////////////////////////////////
+         QueryOutput auditEntries = new QueryAction().execute(
+            new QueryInput(AuditLog.TABLE_NAME)
+               .withFilter(new QQueryFilter()
+                  .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getPossibleValueId()))
+                  .withCriteria(new QFilterCriteria("entityId", QCriteriaOperator.EQUALS, contactId))));
+
+         /////////////////////////////////////////////
+         // anonymize each entry                    //
+         /////////////////////////////////////////////
+         for(QRecord record : auditEntries.getRecords())
+         {
+            QRecord update = new QRecord();
+            update.setValue("id", record.getValueInteger("id"));
+            update.setValue("oldValue", ANONYMIZED);
+            update.setValue("newValue", ANONYMIZED);
+            update.setValue("message", ANONYMIZED);
+            new UpdateAction().execute(new UpdateInput(AuditLog.TABLE_NAME).withRecords(List.of(update)));
+         }
+      }
+      finally
+      {
+         QContext.getQSession().setValue("gdprBypass", "false");
+      }
    }
 
 
@@ -194,7 +224,7 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
       QueryOutput attachments = new QueryAction().execute(
          new QueryInput(Attachment.TABLE_NAME)
             .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getId()))
+               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getPossibleValueId()))
                .withCriteria(new QFilterCriteria("entityId", QCriteriaOperator.EQUALS, contactId))));
 
       for(QRecord record : attachments.getRecords())
@@ -217,13 +247,13 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
             new QueryInput("crmSequenceEnrollment")
                .withFilter(new QQueryFilter()
                   .withCriteria(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId))
-                  .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getId()))));
+                  .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))));
 
          for(QRecord record : enrollments.getRecords())
          {
             QRecord updateRecord = new QRecord()
                .withValue("id", record.getValueInteger("id"))
-               .withValue("status", CrmEnrollmentStatus.UNENROLLED.getId());
+               .withValue("status", CrmEnrollmentStatus.UNENROLLED.getPossibleValueId());
 
             new UpdateAction().execute(
                new UpdateInput("crmSequenceEnrollment").withRecord(updateRecord));
@@ -231,9 +261,7 @@ public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProduce
       }
       catch(Exception e)
       {
-         //////////////////////////////////////////////////////////////////
-         // sequence enrollment table may not exist yet -- that is ok   //
-         //////////////////////////////////////////////////////////////////
+         LOG.warn("Error unenrolling contact from sequences during GDPR anonymization", e);
       }
    }
 

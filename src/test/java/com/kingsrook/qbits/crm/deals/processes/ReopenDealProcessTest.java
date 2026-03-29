@@ -88,14 +88,24 @@ class ReopenDealProcessTest extends BaseTest
 
       ///////////////////////////////////////////
       // verify stage history was created      //
+      // 1 from DealInitializationCustomizer   //
+      //   on deal insert (null -> wonStage)   //
+      // 1 from DealStageChangeCustomizer      //
+      //   on deal update (won -> active)      //
+      // 1 from process explicit insert        //
+      //   (won -> active)                     //
       ///////////////////////////////////////////
       QueryOutput historyOutput = new QueryAction().execute(
          new QueryInput(DealStageHistory.TABLE_NAME)
             .withFilter(new QQueryFilter()
                .withCriteria(new QFilterCriteria("dealId", QCriteriaOperator.EQUALS, dealId))));
 
-      assertEquals(1, historyOutput.getRecords().size());
-      DealStageHistory history = new DealStageHistory(historyOutput.getRecords().get(0));
+      assertEquals(3, historyOutput.getRecords().size());
+
+      ///////////////////////////////////////////
+      // verify the process's explicit entry   //
+      ///////////////////////////////////////////
+      DealStageHistory history = new DealStageHistory(historyOutput.getRecords().get(historyOutput.getRecords().size() - 1));
       assertEquals(wonStage, history.getFromStageId());
       assertEquals(activeStage, history.getToStageId());
    }

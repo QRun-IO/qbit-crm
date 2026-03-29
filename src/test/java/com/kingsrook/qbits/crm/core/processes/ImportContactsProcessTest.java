@@ -59,9 +59,13 @@ class ImportContactsProcessTest extends BaseTest
          new QueryInput(Contact.TABLE_NAME));
       assertEquals(2, contactQuery.getRecords().size());
 
+      ///////////////////////////////////////////////////////////////////////////
+      // 2 CREATED entries from CrmAuditLogCustomizer on contact insert + //
+      // 2 IMPORTED entries from the import process itself = 4 total      //
+      ///////////////////////////////////////////////////////////////////////////
       QueryOutput auditQuery = new QueryAction().execute(
          new QueryInput(AuditLog.TABLE_NAME));
-      assertEquals(2, auditQuery.getRecords().size());
+      assertEquals(4, auditQuery.getRecords().size());
    }
 
 

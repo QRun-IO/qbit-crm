@@ -18,9 +18,9 @@ import java.util.Optional;
 import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizerInterface;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
-import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
@@ -48,10 +48,10 @@ public class CrmAuditLogCustomizer implements TableCustomizerInterface
 
    static
    {
-      TABLE_TO_ENTITY_TYPE.put("crmContact", CrmEntityType.CONTACT.getId());
-      TABLE_TO_ENTITY_TYPE.put("crmCompany", CrmEntityType.COMPANY.getId());
-      TABLE_TO_ENTITY_TYPE.put("crmDeal", CrmEntityType.DEAL.getId());
-      TABLE_TO_ENTITY_TYPE.put("crmActivity", CrmEntityType.ACTIVITY.getId());
+      TABLE_TO_ENTITY_TYPE.put("crmContact", CrmEntityType.CONTACT.getPossibleValueId());
+      TABLE_TO_ENTITY_TYPE.put("crmCompany", CrmEntityType.COMPANY.getPossibleValueId());
+      TABLE_TO_ENTITY_TYPE.put("crmDeal", CrmEntityType.DEAL.getPossibleValueId());
+      TABLE_TO_ENTITY_TYPE.put("crmActivity", CrmEntityType.ACTIVITY.getPossibleValueId());
    }
 
 
@@ -205,7 +205,7 @@ public class CrmAuditLogCustomizer implements TableCustomizerInterface
       QRecord auditRecord = new QRecord();
       auditRecord.setValue("entityType", resolveEntityType(tableName));
       auditRecord.setValue("entityId", entityId);
-      auditRecord.setValue("action", action.getId());
+      auditRecord.setValue("action", action.getPossibleValueId());
       auditRecord.setValue("userId", userId);
 
       if(StringUtils.hasContent(fieldName))
@@ -284,28 +284,7 @@ public class CrmAuditLogCustomizer implements TableCustomizerInterface
     *******************************************************************************/
    private String getCurrentUserId()
    {
-      try
-      {
-         if(QContext.getQSession() != null)
-         {
-            if(QContext.getQSession().getUser() != null
-               && StringUtils.hasContent(QContext.getQSession().getUser().getIdReference()))
-            {
-               return (QContext.getQSession().getUser().getIdReference());
-            }
-
-            if(StringUtils.hasContent(QContext.getQSession().getIdReference()))
-            {
-               return (QContext.getQSession().getIdReference());
-            }
-         }
-      }
-      catch(Exception e)
-      {
-         LOG.debug("Could not resolve current user ID for audit log", e);
-      }
-
-      return ("system");
+      return (CrmSessionUtils.getCurrentUserId());
    }
 
 }

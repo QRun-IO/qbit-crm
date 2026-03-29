@@ -131,7 +131,7 @@ public class EnrollInSequenceProcess implements BackendStep, MetaDataProducerInt
             .withFilter(new QQueryFilter()
                .withCriteria(new QFilterCriteria("sequenceId", QCriteriaOperator.EQUALS, sequenceId))
                .withCriteria(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId))
-               .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getId()))));
+               .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))));
 
       if(!existingEnrollments.getRecords().isEmpty())
       {
@@ -166,7 +166,7 @@ public class EnrollInSequenceProcess implements BackendStep, MetaDataProducerInt
          .withContactId(contactId)
          .withDealId(dealId)
          .withCurrentStepNumber(0)
-         .withStatus(CrmEnrollmentStatus.ACTIVE.getId())
+         .withStatus(CrmEnrollmentStatus.ACTIVE.getPossibleValueId())
          .withEnrolledDate(Instant.now())
          .withEnrolledByUserId(input.getSession() != null ? input.getSession().getIdReference() : "system")
          .withNextStepDate(nextStepDate)

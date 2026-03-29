@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.LeadSource;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDealPriority;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -62,7 +64,12 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
          childTableEntityClass = DealStageHistory.class,
          joinFieldName = "dealId",
          childJoin = @ChildJoin(enabled = true),
-         childRecordListWidget = @ChildRecordListWidget(label = "Stage History", enabled = true, maxRows = 50))
+         childRecordListWidget = @ChildRecordListWidget(label = "Stage History", enabled = true, maxRows = 50)),
+      @ChildTable(
+         childTableEntityClass = Activity.class,
+         joinFieldName = "dealId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Activities", enabled = true, maxRows = 50))
    }
 )
 public class Deal extends QRecordEntity
@@ -155,7 +162,7 @@ public class Deal extends QRecordEntity
    @QField(isEditable = false)
    private BigDecimal weightedAmount;
 
-   @QField()
+   @QField(possibleValueSourceName = Company.TABLE_NAME)
    private Integer companyId;
 
    @QField(isRequired = true)

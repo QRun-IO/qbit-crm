@@ -86,7 +86,7 @@ public class UnenrollFromSequenceProcess implements BackendStep, MetaDataProduce
       /////////////////////////////////////////////
       QRecord updateRecord = new QRecord()
          .withValue("id", enrollmentId)
-         .withValue("status", CrmEnrollmentStatus.UNENROLLED.getId())
+         .withValue("status", CrmEnrollmentStatus.UNENROLLED.getPossibleValueId())
          .withValue("unenrolledDate", Instant.now())
          .withValue("nextStepDate", null);
 

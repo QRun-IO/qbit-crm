@@ -17,13 +17,13 @@ import com.kingsrook.qbits.crm.core.model.EmailListMember;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
-import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
@@ -88,7 +88,7 @@ public class MergeContactsProcess implements BackendStep, MetaDataProducerInterf
    {
       Integer primaryContactId   = input.getValueInteger("primaryContactId");
       Integer secondaryContactId = input.getValueInteger("secondaryContactId");
-      String  sessionUserId      = QContext.getQSession().getIdReference();
+      String  sessionUserId      = CrmSessionUtils.getCurrentUserId();
 
       /////////////////////////////////////////
       // validate both contacts exist        //
@@ -137,18 +137,18 @@ public class MergeContactsProcess implements BackendStep, MetaDataProducerInterf
       new InsertAction().execute(
          new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
             new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getId())
+               .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
                .withEntityId(primaryContactId)
-               .withAction(CrmAuditAction.MERGED.getId())
+               .withAction(CrmAuditAction.MERGED.getPossibleValueId())
                .withUserId(sessionUserId)
                .withMessage("Merged contact " + secondaryContactId + " into this contact")));
 
       new InsertAction().execute(
          new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
             new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getId())
+               .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
                .withEntityId(secondaryContactId)
-               .withAction(CrmAuditAction.DELETED.getId())
+               .withAction(CrmAuditAction.DELETED.getPossibleValueId())
                .withUserId(sessionUserId)
                .withMessage("Contact deleted during merge into contact " + primaryContactId)));
 

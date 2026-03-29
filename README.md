@@ -1,7 +1,7 @@
 # QBit: CRM
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/QRun-IO/qbit-crm)
-[![License](https://img.shields.io/badge/license-GNU%20Affero%20GPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0.en.html)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Java](https://img.shields.io/badge/java-17+-blue.svg)](https://adoptium.net/)
 
 > **Customer Relationship Management for QQQ Applications - Activity-Centric, Pipeline-Driven**
@@ -26,7 +26,7 @@ This QBit provides a complete CRM system for QQQ applications, covering contact 
 
 ## Open Source & Full Control
 
-QBit CRM is 100% open source under AGPL v3. All data stays in your systems. No external CRM services required.
+QBit CRM is 100% open source under Apache 2.0. All data stays in your systems. No external CRM services required.
 
 ## Architecture
 
@@ -68,11 +68,10 @@ qbit-crm/
 
 - **Java 17+**
 - **Maven 3.8+**
-- **QQQ Application** (this is a QBit, not a standalone application)
+- **A QQQ Application** with an RDBMS backend (PostgreSQL, MySQL, H2, etc.)
+- **QQQ Maven Registry** access (for resolving the dependency)
 
-### Usage
-
-#### Maven dependency
+### Step 1: Add the Maven dependency
 
 ```xml
 <dependency>
@@ -82,24 +81,103 @@ qbit-crm/
 </dependency>
 ```
 
-#### Minimal setup
-
-```java
-CrmQBitConfig config = new CrmQBitConfig()
-   .withDefaultBackendNameForTables("yourBackendName");
-
-CrmQBitProducer producer = new CrmQBitProducer()
-   .withQBitConfig(config);
-
-MetaDataProducerMultiOutput output = producer.produce(qInstance);
-output.addSelfToInstance(qInstance);
+If you are using the QQQ BOM POM, the version is managed for you:
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.kingsrook.qqq</groupId>
+            <artifactId>qqq-bom-pom</artifactId>
+            <version>${qqq.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 ```
 
-#### With multi-tenant security
+### Step 2: Configure and produce the QBit
+
+In your application's metadata setup class (where you build your `QInstance`), add the CRM QBit. The `defaultBackendNameForTables` must match a backend you have already registered with your QInstance (typically your RDBMS backend).
 
 ```java
-CrmQBitConfig config = new CrmQBitConfig()
-   .withDefaultBackendNameForTables("yourBackendName")
+import com.kingsrook.qbits.crm.CrmQBitConfig;
+import com.kingsrook.qbits.crm.CrmQBitProducer;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
+
+// In your QInstance setup method:
+public void defineQInstance(QInstance qInstance)
+{
+   // ... your existing backend, auth, and app setup ...
+
+   ///////////////////////////////
+   // configure and produce CRM //
+   ///////////////////////////////
+   CrmQBitConfig crmConfig = new CrmQBitConfig()
+      .withDefaultBackendNameForTables("rdbms");  // must match a registered backend name
+
+   CrmQBitProducer crmProducer = new CrmQBitProducer()
+      .withQBitConfig(crmConfig);
+
+   MetaDataProducerMultiOutput crmOutput = crmProducer.produce(qInstance);
+   crmOutput.addSelfToInstance(qInstance);
+}
+```
+
+### Step 3: Create the database tables
+
+The QBit defines 39 tables. On first run against a new database, you need to create the schema. QQQ can auto-create tables if your backend supports it, or you can generate DDL from the entity metadata.
+
+For **development/testing** with H2 or auto-DDL:
+```java
+// QQQ will auto-create tables in memory backends.
+// For RDBMS with auto-DDL enabled, tables are created on startup.
+```
+
+For **production** with PostgreSQL/MySQL, generate migration scripts from the entity field definitions. Each entity class documents its table name (e.g., `crmContact`, `crmCompany`, `crmDeal`) and all field types. Column names in the database are `snake_case` versions of the Java `camelCase` field names (e.g., `firstName` -> `first_name`).
+
+### Step 4: Add CRM to your app navigation
+
+```java
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
+
+QAppMetaData app = new QAppMetaData()
+   .withName("myApp")
+   .withLabel("My Application")
+   .withSections(List.of(
+      CrmQBitProducer.produceAppSection(),
+      // ... your other app sections ...
+   ));
+qInstance.addApp(app);
+```
+
+This adds a "CRM" navigation section to the QQQ Material Dashboard with links to all CRM tables.
+
+### Step 5 (optional): Seed reference data
+
+The CRM works without seed data, but you'll want to populate the configuration tables before users start working:
+
+- **`crmLifecycleStage`**: Lead, Marketing Qualified, Sales Qualified, Opportunity, Customer, Evangelist
+- **`crmLeadSource`**: Website, Referral, Cold Call, Trade Show, Social Media, Advertisement, Partner
+- **`crmIndustry`**: Technology, Healthcare, Finance, Manufacturing, Retail, etc.
+- **`crmActivityType`**: Call, Email, Meeting, Note, Task (with `isSystem=true`)
+- **`crmActivityOutcome`**: Connected, Left Voicemail, No Answer (for Call type); Completed, No Show, Rescheduled (for Meeting type)
+- **`crmPipeline`** + **`crmPipelineStage`**: At minimum one pipeline with stages (Prospecting, Qualification, Proposal, Negotiation, Closed Won, Closed Lost)
+- **`crmContactRole`**: Decision Maker, Influencer, Champion, Budget Holder, End User, Evaluator
+- **`crmWinLossReason`**: Better Fit (WIN), Price (WIN), Lost to Competitor (LOSS), No Budget (LOSS), etc.
+- **`crmCurrency`**: At minimum USD with `isBaseCurrency=true` and `exchangeRateToBase=1.0`
+
+You can insert these via QQQ's `InsertAction` in an application startup process, or directly via SQL.
+
+### Step 6 (optional): Multi-tenant security
+
+For SaaS or multi-tenant deployments where each client's CRM data must be isolated:
+
+```java
+import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
+
+CrmQBitConfig crmConfig = new CrmQBitConfig()
+   .withDefaultBackendNameForTables("rdbms")
    .withRecordSecurityLocks(List.of(
       new RecordSecurityLock()
          .withFieldName("clientId")
@@ -108,24 +186,66 @@ CrmQBitConfig config = new CrmQBitConfig()
    ));
 ```
 
-#### With companion QBits
+This injects a `clientId` security field onto all root CRM tables (Contact, Company, Deal, Pipeline) and propagates security locks through join chains to child tables. Users only see records matching their security key values.
+
+### Step 7 (optional): Companion QBits
+
+The CRM integrates with other QBits for enhanced functionality:
 
 ```java
-CrmQBitConfig config = new CrmQBitConfig()
-   .withDefaultBackendNameForTables("yourBackendName")
-   .withQuickSearchQBitNamespace("quickSearch")
-   .withWebhooksQBitNamespace("webhooks")
-   .withWorkflowsQBitNamespace("workflows");
+CrmQBitConfig crmConfig = new CrmQBitConfig()
+   .withDefaultBackendNameForTables("rdbms")
+   .withQuickSearchQBitNamespace("quickSearch")    // full-text search across contacts/companies/deals
+   .withWebhooksQBitNamespace("webhooks")          // fire events on CRM changes (deal won, contact created, etc.)
+   .withWorkflowsQBitNamespace("workflows");       // user-defined automation rules
 ```
 
-#### Add CRM navigation section to your app
+Each companion QBit must be separately added as a Maven dependency and produced into your QInstance. The namespace strings must match the namespaces you used when producing those QBits.
+
+### Complete example
 
 ```java
-QAppMetaData app = new QAppMetaData()
-   .withName("myApp")
-   .withSections(List.of(
-      CrmQBitProducer.produceAppSection()
-   ));
+public void defineQInstance(QInstance qInstance)
+{
+   ///////////////
+   // backend   //
+   ///////////////
+   qInstance.addBackend(new RDBMSBackendMetaData()
+      .withName("rdbms")
+      .withVendor("postgresql")
+      .withHostName("localhost")
+      .withDatabaseName("myapp")
+      .withUsername("myapp")
+      .withPassword("secret"));
+
+   ////////////////////
+   // authentication //
+   ////////////////////
+   qInstance.setAuthentication(new Auth0AuthenticationMetaData()
+      .withType(QAuthenticationType.AUTH_0)
+      // ... auth config ...
+   );
+
+   //////////
+   // CRM  //
+   //////////
+   CrmQBitConfig crmConfig = new CrmQBitConfig()
+      .withDefaultBackendNameForTables("rdbms");
+
+   new CrmQBitProducer()
+      .withQBitConfig(crmConfig)
+      .produce(qInstance)
+      .addSelfToInstance(qInstance);
+
+   //////////
+   // App  //
+   //////////
+   qInstance.addApp(new QAppMetaData()
+      .withName("myApp")
+      .withSections(List.of(
+         CrmQBitProducer.produceAppSection()
+      )));
+}
 ```
 
 ## Data Model
@@ -362,4 +482,4 @@ QBit CRM is built by **[Kingsrook](https://qrun.io)** - making engineers more pr
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0** - see the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the **Apache License, Version 2.0** - see the [LICENSE](LICENSE) file for details.

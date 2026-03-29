@@ -5,14 +5,20 @@ package com.kingsrook.qbits.crm.core.model;
 
 
 import java.time.Instant;
+import java.util.List;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmLegalBasis;
+import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
+import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreUpdateCustomizer;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
@@ -36,7 +42,8 @@ public class ConsentRecord extends QRecordEntity
 
 
    /***************************************************************************
-    **
+    ** TableMetaDataCustomizer -- sets icon, record label, sections, and
+    ** registers PRE_UPDATE and PRE_DELETE customizers to enforce immutability.
     ***************************************************************************/
    public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface<QTableMetaData>
    {
@@ -55,7 +62,47 @@ public class ConsentRecord extends QRecordEntity
             .withSection(SectionFactory.defaultT2("legalBasis", "source", "consentDate", "expiryDate", "ipAddress"))
             .withSection(SectionFactory.defaultT3("createDate"));
 
+         ///////////////////////////////////////////////////////////////////////////
+         // register PRE_UPDATE and PRE_DELETE customizers to enforce immutability //
+         ///////////////////////////////////////////////////////////////////////////
+         table.withCustomizer(TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(PreventUpdateCustomizer.class));
+         table.withCustomizer(TableCustomizers.PRE_DELETE_RECORD, new QCodeReference(PreventDeleteCustomizer.class));
+
          return (table);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** PRE_UPDATE customizer that rejects all update attempts on consent records.
+    ***************************************************************************/
+   public static class PreventUpdateCustomizer extends AbstractPreUpdateCustomizer
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public List<QRecord> apply(List<QRecord> records) throws QException
+      {
+         throw new QUserFacingException("Consent records cannot be modified or deleted");
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** PRE_DELETE customizer that rejects all delete attempts on consent records.
+    ***************************************************************************/
+   public static class PreventDeleteCustomizer extends AbstractPreDeleteCustomizer
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public List<QRecord> apply(List<QRecord> records) throws QException
+      {
+         throw new QUserFacingException("Consent records cannot be modified or deleted");
       }
    }
 
