@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmWinRateRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.widgets</a> &gt; <span class="el_source">CrmWinRateRenderer.java</span></div><h1>CrmWinRateRenderer.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Renderer for the Win Rate widget.
+ **
+ ** Queries DealStageHistory for transitions to closedWon and closedLost stages,
+ ** groups by month, and computes win rate percentage.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.widgets;
+
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
+import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetOutput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.utils.collections.MapBuilder;
+
+
+/*******************************************************************************
+ ** Renders win rate analytics as a table widget.
+ *******************************************************************************/
+<span class="fc" id="L42">public class CrmWinRateRenderer extends AbstractWidgetRenderer</span>
+{
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+   {
+      ///////////////////////////////////////////////////////////
+      // find closedWon and closedLost stage IDs               //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L54">      Set&lt;Integer&gt; closedWonStageIds  = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L55">      Set&lt;Integer&gt; closedLostStageIds = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L57">      QueryOutput stageOutput = new QueryAction().execute(</span>
+         new QueryInput(PipelineStage.TABLE_NAME));
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">      for(QRecord record : stageOutput.getRecords())</span>
+      {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">         if(Boolean.TRUE.equals(record.getValueBoolean(&quot;isClosedWon&quot;)))</span>
+         {
+<span class="fc" id="L64">            closedWonStageIds.add(record.getValueInteger(&quot;id&quot;));</span>
+         }
+<span class="fc bfc" id="L66" title="All 2 branches covered.">         if(Boolean.TRUE.equals(record.getValueBoolean(&quot;isClosedLost&quot;)))</span>
+         {
+<span class="fc" id="L68">            closedLostStageIds.add(record.getValueInteger(&quot;id&quot;));</span>
+         }
+<span class="fc" id="L70">      }</span>
+
+      ///////////////////////////////////////////////////////////
+      // query all deal stage history                          //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L75">      QueryOutput historyOutput = new QueryAction().execute(</span>
+         new QueryInput(DealStageHistory.TABLE_NAME));
+
+      ///////////////////////////////////////////////////////////
+      // group by month                                        //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L81">      Map&lt;YearMonth, int[]&gt; monthData = new TreeMap&lt;&gt;(); // [won, lost]</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">      for(QRecord record : historyOutput.getRecords())</span>
+      {
+<span class="fc" id="L85">         Integer toStageId      = record.getValueInteger(&quot;toStageId&quot;);</span>
+<span class="fc" id="L86">         Instant transitionDate = record.getValueInstant(&quot;transitionDate&quot;);</span>
+
+<span class="pc bpc" id="L88" title="2 of 4 branches missed.">         if(toStageId == null || transitionDate == null)</span>
+         {
+<span class="nc" id="L90">            continue;</span>
+         }
+
+<span class="fc" id="L93">         boolean isWon  = closedWonStageIds.contains(toStageId);</span>
+<span class="fc" id="L94">         boolean isLost = closedLostStageIds.contains(toStageId);</span>
+
+<span class="pc bpc" id="L96" title="1 of 4 branches missed.">         if(!isWon &amp;&amp; !isLost)</span>
+         {
+<span class="nc" id="L98">            continue;</span>
+         }
+
+<span class="fc" id="L101">         YearMonth month = YearMonth.from(transitionDate.atZone(ZoneId.systemDefault()));</span>
+<span class="fc" id="L102">         int[] counts = monthData.computeIfAbsent(month, k -&gt; new int[2]);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">         if(isWon)</span>
+         {
+<span class="fc" id="L105">            counts[0]++;</span>
+         }
+<span class="fc bfc" id="L107" title="All 2 branches covered.">         if(isLost)</span>
+         {
+<span class="fc" id="L109">            counts[1]++;</span>
+         }
+<span class="fc" id="L111">      }</span>
+
+      ///////////////////////////
+      // build table columns   //
+      ///////////////////////////
+<span class="fc" id="L116">      List&lt;TableData.Column&gt; columns = List.of(</span>
+         new TableData.Column(&quot;html&quot;, &quot;Month&quot;, &quot;month&quot;, &quot;1fr&quot;, null),
+         new TableData.Column(&quot;html&quot;, &quot;Won&quot;, &quot;won&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Lost&quot;, &quot;lost&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Win Rate %&quot;, &quot;winRate&quot;, &quot;1fr&quot;, &quot;right&quot;)
+      );
+
+      //////////////////////////
+      // build table rows     //
+      //////////////////////////
+<span class="fc" id="L126">      List&lt;Map&lt;String, Object&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">      for(Map.Entry&lt;YearMonth, int[]&gt; entry : monthData.entrySet())</span>
+      {
+<span class="fc" id="L129">         int won   = entry.getValue()[0];</span>
+<span class="fc" id="L130">         int lost  = entry.getValue()[1];</span>
+<span class="fc" id="L131">         int total = won + lost;</span>
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">         BigDecimal winRate = total &gt; 0</span>
+<span class="fc" id="L134">            ? BigDecimal.valueOf(won).multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(total), 1, RoundingMode.HALF_UP)</span>
+<span class="pc" id="L135">            : BigDecimal.ZERO;</span>
+
+<span class="fc" id="L137">         rows.add(MapBuilder.of(</span>
+<span class="fc" id="L138">            &quot;month&quot;, entry.getKey().toString(),</span>
+<span class="fc" id="L139">            &quot;won&quot;, won,</span>
+<span class="fc" id="L140">            &quot;lost&quot;, lost,</span>
+            &quot;winRate&quot;, winRate + &quot;%&quot;
+         ));
+<span class="fc" id="L143">      }</span>
+
+<span class="fc" id="L145">      TableData tableData = new TableData(null, columns, rows)</span>
+<span class="fc" id="L146">         .withRowsPerPage(25)</span>
+<span class="fc" id="L147">         .withHidePaginationDropdown(true);</span>
+
+<span class="fc" id="L149">      return (new RenderWidgetOutput(tableData));</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

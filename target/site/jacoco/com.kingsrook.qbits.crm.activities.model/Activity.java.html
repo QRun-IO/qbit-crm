@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Activity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.activities.model</a> &gt; <span class="el_source">Activity.java</span></div><h1>Activity.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for the crm_activity table.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.activities.model;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.enums.CrmActivityPriority;
+import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
+
+
+/*******************************************************************************
+ ** Central activity entity. Every CRM interaction (call, email, meeting, note,
+ ** task) is recorded as an activity linked to contacts, companies, and/or deals.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   producePossibleValueSource = true,
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = Activity.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(
+         childTableEntityClass = ActivityParticipant.class,
+         joinFieldName = &quot;activityId&quot;,
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = &quot;Participants&quot;, enabled = true, maxRows = 50))
+   }
+)
+public class Activity extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmActivity&quot;;
+
+
+
+   /***************************************************************************
+    ** Customizer that sets icon, record label, child joins, and section layout
+    ** per the spec: T1 identity, T2-details, T2-scheduling, T2-completion,
+    ** T2-participants (widget), T3 system.
+    ***************************************************************************/
+<span class="fc" id="L57">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L65">         String participantChildJoinName = QJoinMetaData.makeInferredJoinName(Activity.TABLE_NAME, ActivityParticipant.TABLE_NAME);</span>
+
+<span class="fc" id="L67">         table</span>
+<span class="fc" id="L68">            .withIcon(new QIcon().withName(&quot;event_note&quot;))</span>
+<span class="fc" id="L69">            .withRecordLabelFormat(&quot;%s&quot;)</span>
+<span class="fc" id="L70">            .withRecordLabelFields(&quot;subject&quot;)</span>
+<span class="fc" id="L71">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;subject&quot;, &quot;activityTypeId&quot;, &quot;direction&quot;, &quot;priority&quot;))</span>
+<span class="fc" id="L72">            .withSection(new QFieldSection(&quot;details&quot;, new QIcon(&quot;info&quot;), Tier.T2,</span>
+<span class="fc" id="L73">               List.of(&quot;description&quot;, &quot;contactId&quot;, &quot;companyId&quot;, &quot;dealId&quot;, &quot;ownerUserId&quot;, &quot;assignedToUserId&quot;, &quot;outcomeId&quot;)))</span>
+<span class="fc" id="L74">            .withSection(new QFieldSection(&quot;scheduling&quot;, new QIcon(&quot;schedule&quot;), Tier.T2,</span>
+<span class="fc" id="L75">               List.of(&quot;startDate&quot;, &quot;endDate&quot;, &quot;dueDate&quot;, &quot;location&quot;, &quot;conferenceLink&quot;, &quot;durationMinutes&quot;)))</span>
+<span class="fc" id="L76">            .withSection(new QFieldSection(&quot;completion&quot;, new QIcon(&quot;task_alt&quot;), Tier.T2,</span>
+<span class="fc" id="L77">               List.of(&quot;isCompleted&quot;, &quot;completedDate&quot;, &quot;isReminderSet&quot;, &quot;reminderDate&quot;)))</span>
+<span class="fc" id="L78">            .withSection(SectionFactory.customT2(&quot;participants&quot;, new QIcon(&quot;group&quot;)).withWidgetName(participantChildJoinName))</span>
+<span class="fc" id="L79">            .withSection(SectionFactory.defaultT3(&quot;externalCalendarId&quot;, &quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L81">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, possibleValueSourceName = ActivityType.TABLE_NAME)
+   private Integer activityTypeId;
+
+   @QField(isRequired = true, maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String subject;
+
+   @QField()
+   private String description;
+
+   @QField()
+   private Integer contactId;
+
+   @QField()
+   private Integer companyId;
+
+   @QField()
+   private Integer dealId;
+
+   @QField(isRequired = true)
+   private String ownerUserId;
+
+   @QField()
+   private String assignedToUserId;
+
+   @QField()
+   private Instant startDate;
+
+   @QField()
+   private Instant endDate;
+
+   @QField()
+   private Instant dueDate;
+
+   @QField()
+   private Instant completedDate;
+
+   @QField(isRequired = true, defaultValue = &quot;false&quot;)
+   private Boolean isCompleted;
+
+   @QField(possibleValueSourceName = CrmActivityPriority.NAME)
+   private Integer priority;
+
+   @QField()
+   private Integer durationMinutes;
+
+   @QField(possibleValueSourceName = ActivityOutcome.TABLE_NAME)
+   private Integer outcomeId;
+
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String location;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String conferenceLink;
+
+   @QField(possibleValueSourceName = CrmDirection.NAME)
+   private Integer direction;
+
+   @QField(defaultValue = &quot;false&quot;)
+   private Boolean isReminderSet;
+
+   @QField()
+   private Instant reminderDate;
+
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String externalCalendarId;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public Activity()
+<span class="fc" id="L168">   {</span>
+<span class="fc" id="L169">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public Activity(QRecord record)
+<span class="fc" id="L177">   {</span>
+<span class="fc" id="L178">      populateFromQRecord(record);</span>
+<span class="fc" id="L179">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L188">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L198">      this.id = id;</span>
+<span class="fc" id="L199">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public Activity withId(Integer id)
+   {
+<span class="nc" id="L208">      this.id = id;</span>
+<span class="nc" id="L209">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for activityTypeId
+    *******************************************************************************/
+   public Integer getActivityTypeId()
+   {
+<span class="fc" id="L219">      return (this.activityTypeId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for activityTypeId
+    *******************************************************************************/
+   public void setActivityTypeId(Integer activityTypeId)
+   {
+<span class="fc" id="L229">      this.activityTypeId = activityTypeId;</span>
+<span class="fc" id="L230">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for activityTypeId
+    *******************************************************************************/
+   public Activity withActivityTypeId(Integer activityTypeId)
+   {
+<span class="fc" id="L239">      this.activityTypeId = activityTypeId;</span>
+<span class="fc" id="L240">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for subject
+    *******************************************************************************/
+   public String getSubject()
+   {
+<span class="fc" id="L250">      return (this.subject);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for subject
+    *******************************************************************************/
+   public void setSubject(String subject)
+   {
+<span class="fc" id="L260">      this.subject = subject;</span>
+<span class="fc" id="L261">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for subject
+    *******************************************************************************/
+   public Activity withSubject(String subject)
+   {
+<span class="fc" id="L270">      this.subject = subject;</span>
+<span class="fc" id="L271">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for description
+    *******************************************************************************/
+   public String getDescription()
+   {
+<span class="fc" id="L281">      return (this.description);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for description
+    *******************************************************************************/
+   public void setDescription(String description)
+   {
+<span class="fc" id="L291">      this.description = description;</span>
+<span class="fc" id="L292">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for description
+    *******************************************************************************/
+   public Activity withDescription(String description)
+   {
+<span class="fc" id="L301">      this.description = description;</span>
+<span class="fc" id="L302">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for contactId
+    *******************************************************************************/
+   public Integer getContactId()
+   {
+<span class="fc" id="L312">      return (this.contactId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for contactId
+    *******************************************************************************/
+   public void setContactId(Integer contactId)
+   {
+<span class="fc" id="L322">      this.contactId = contactId;</span>
+<span class="fc" id="L323">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for contactId
+    *******************************************************************************/
+   public Activity withContactId(Integer contactId)
+   {
+<span class="fc" id="L332">      this.contactId = contactId;</span>
+<span class="fc" id="L333">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for companyId
+    *******************************************************************************/
+   public Integer getCompanyId()
+   {
+<span class="fc" id="L343">      return (this.companyId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for companyId
+    *******************************************************************************/
+   public void setCompanyId(Integer companyId)
+   {
+<span class="fc" id="L353">      this.companyId = companyId;</span>
+<span class="fc" id="L354">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for companyId
+    *******************************************************************************/
+   public Activity withCompanyId(Integer companyId)
+   {
+<span class="fc" id="L363">      this.companyId = companyId;</span>
+<span class="fc" id="L364">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for dealId
+    *******************************************************************************/
+   public Integer getDealId()
+   {
+<span class="fc" id="L374">      return (this.dealId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for dealId
+    *******************************************************************************/
+   public void setDealId(Integer dealId)
+   {
+<span class="fc" id="L384">      this.dealId = dealId;</span>
+<span class="fc" id="L385">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for dealId
+    *******************************************************************************/
+   public Activity withDealId(Integer dealId)
+   {
+<span class="fc" id="L394">      this.dealId = dealId;</span>
+<span class="fc" id="L395">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for ownerUserId
+    *******************************************************************************/
+   public String getOwnerUserId()
+   {
+<span class="fc" id="L405">      return (this.ownerUserId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for ownerUserId
+    *******************************************************************************/
+   public void setOwnerUserId(String ownerUserId)
+   {
+<span class="fc" id="L415">      this.ownerUserId = ownerUserId;</span>
+<span class="fc" id="L416">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for ownerUserId
+    *******************************************************************************/
+   public Activity withOwnerUserId(String ownerUserId)
+   {
+<span class="fc" id="L425">      this.ownerUserId = ownerUserId;</span>
+<span class="fc" id="L426">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for assignedToUserId
+    *******************************************************************************/
+   public String getAssignedToUserId()
+   {
+<span class="fc" id="L436">      return (this.assignedToUserId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for assignedToUserId
+    *******************************************************************************/
+   public void setAssignedToUserId(String assignedToUserId)
+   {
+<span class="fc" id="L446">      this.assignedToUserId = assignedToUserId;</span>
+<span class="fc" id="L447">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for assignedToUserId
+    *******************************************************************************/
+   public Activity withAssignedToUserId(String assignedToUserId)
+   {
+<span class="fc" id="L456">      this.assignedToUserId = assignedToUserId;</span>
+<span class="fc" id="L457">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for startDate
+    *******************************************************************************/
+   public Instant getStartDate()
+   {
+<span class="fc" id="L467">      return (this.startDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for startDate
+    *******************************************************************************/
+   public void setStartDate(Instant startDate)
+   {
+<span class="fc" id="L477">      this.startDate = startDate;</span>
+<span class="fc" id="L478">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for startDate
+    *******************************************************************************/
+   public Activity withStartDate(Instant startDate)
+   {
+<span class="fc" id="L487">      this.startDate = startDate;</span>
+<span class="fc" id="L488">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for endDate
+    *******************************************************************************/
+   public Instant getEndDate()
+   {
+<span class="fc" id="L498">      return (this.endDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for endDate
+    *******************************************************************************/
+   public void setEndDate(Instant endDate)
+   {
+<span class="fc" id="L508">      this.endDate = endDate;</span>
+<span class="fc" id="L509">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for endDate
+    *******************************************************************************/
+   public Activity withEndDate(Instant endDate)
+   {
+<span class="fc" id="L518">      this.endDate = endDate;</span>
+<span class="fc" id="L519">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for dueDate
+    *******************************************************************************/
+   public Instant getDueDate()
+   {
+<span class="fc" id="L529">      return (this.dueDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for dueDate
+    *******************************************************************************/
+   public void setDueDate(Instant dueDate)
+   {
+<span class="fc" id="L539">      this.dueDate = dueDate;</span>
+<span class="fc" id="L540">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for dueDate
+    *******************************************************************************/
+   public Activity withDueDate(Instant dueDate)
+   {
+<span class="fc" id="L549">      this.dueDate = dueDate;</span>
+<span class="fc" id="L550">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for completedDate
+    *******************************************************************************/
+   public Instant getCompletedDate()
+   {
+<span class="fc" id="L560">      return (this.completedDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for completedDate
+    *******************************************************************************/
+   public void setCompletedDate(Instant completedDate)
+   {
+<span class="fc" id="L570">      this.completedDate = completedDate;</span>
+<span class="fc" id="L571">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for completedDate
+    *******************************************************************************/
+   public Activity withCompletedDate(Instant completedDate)
+   {
+<span class="fc" id="L580">      this.completedDate = completedDate;</span>
+<span class="fc" id="L581">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isCompleted
+    *******************************************************************************/
+   public Boolean getIsCompleted()
+   {
+<span class="fc" id="L591">      return (this.isCompleted);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isCompleted
+    *******************************************************************************/
+   public void setIsCompleted(Boolean isCompleted)
+   {
+<span class="fc" id="L601">      this.isCompleted = isCompleted;</span>
+<span class="fc" id="L602">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isCompleted
+    *******************************************************************************/
+   public Activity withIsCompleted(Boolean isCompleted)
+   {
+<span class="fc" id="L611">      this.isCompleted = isCompleted;</span>
+<span class="fc" id="L612">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for priority
+    *******************************************************************************/
+   public Integer getPriority()
+   {
+<span class="fc" id="L622">      return (this.priority);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for priority
+    *******************************************************************************/
+   public void setPriority(Integer priority)
+   {
+<span class="fc" id="L632">      this.priority = priority;</span>
+<span class="fc" id="L633">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for priority
+    *******************************************************************************/
+   public Activity withPriority(Integer priority)
+   {
+<span class="fc" id="L642">      this.priority = priority;</span>
+<span class="fc" id="L643">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for durationMinutes
+    *******************************************************************************/
+   public Integer getDurationMinutes()
+   {
+<span class="fc" id="L653">      return (this.durationMinutes);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for durationMinutes
+    *******************************************************************************/
+   public void setDurationMinutes(Integer durationMinutes)
+   {
+<span class="fc" id="L663">      this.durationMinutes = durationMinutes;</span>
+<span class="fc" id="L664">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for durationMinutes
+    *******************************************************************************/
+   public Activity withDurationMinutes(Integer durationMinutes)
+   {
+<span class="fc" id="L673">      this.durationMinutes = durationMinutes;</span>
+<span class="fc" id="L674">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for outcomeId
+    *******************************************************************************/
+   public Integer getOutcomeId()
+   {
+<span class="fc" id="L684">      return (this.outcomeId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for outcomeId
+    *******************************************************************************/
+   public void setOutcomeId(Integer outcomeId)
+   {
+<span class="fc" id="L694">      this.outcomeId = outcomeId;</span>
+<span class="fc" id="L695">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for outcomeId
+    *******************************************************************************/
+   public Activity withOutcomeId(Integer outcomeId)
+   {
+<span class="fc" id="L704">      this.outcomeId = outcomeId;</span>
+<span class="fc" id="L705">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for location
+    *******************************************************************************/
+   public String getLocation()
+   {
+<span class="fc" id="L715">      return (this.location);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for location
+    *******************************************************************************/
+   public void setLocation(String location)
+   {
+<span class="fc" id="L725">      this.location = location;</span>
+<span class="fc" id="L726">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for location
+    *******************************************************************************/
+   public Activity withLocation(String location)
+   {
+<span class="fc" id="L735">      this.location = location;</span>
+<span class="fc" id="L736">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for conferenceLink
+    *******************************************************************************/
+   public String getConferenceLink()
+   {
+<span class="fc" id="L746">      return (this.conferenceLink);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for conferenceLink
+    *******************************************************************************/
+   public void setConferenceLink(String conferenceLink)
+   {
+<span class="fc" id="L756">      this.conferenceLink = conferenceLink;</span>
+<span class="fc" id="L757">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for conferenceLink
+    *******************************************************************************/
+   public Activity withConferenceLink(String conferenceLink)
+   {
+<span class="fc" id="L766">      this.conferenceLink = conferenceLink;</span>
+<span class="fc" id="L767">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for direction
+    *******************************************************************************/
+   public Integer getDirection()
+   {
+<span class="fc" id="L777">      return (this.direction);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for direction
+    *******************************************************************************/
+   public void setDirection(Integer direction)
+   {
+<span class="fc" id="L787">      this.direction = direction;</span>
+<span class="fc" id="L788">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for direction
+    *******************************************************************************/
+   public Activity withDirection(Integer direction)
+   {
+<span class="fc" id="L797">      this.direction = direction;</span>
+<span class="fc" id="L798">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isReminderSet
+    *******************************************************************************/
+   public Boolean getIsReminderSet()
+   {
+<span class="fc" id="L808">      return (this.isReminderSet);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isReminderSet
+    *******************************************************************************/
+   public void setIsReminderSet(Boolean isReminderSet)
+   {
+<span class="fc" id="L818">      this.isReminderSet = isReminderSet;</span>
+<span class="fc" id="L819">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isReminderSet
+    *******************************************************************************/
+   public Activity withIsReminderSet(Boolean isReminderSet)
+   {
+<span class="fc" id="L828">      this.isReminderSet = isReminderSet;</span>
+<span class="fc" id="L829">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for reminderDate
+    *******************************************************************************/
+   public Instant getReminderDate()
+   {
+<span class="fc" id="L839">      return (this.reminderDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for reminderDate
+    *******************************************************************************/
+   public void setReminderDate(Instant reminderDate)
+   {
+<span class="fc" id="L849">      this.reminderDate = reminderDate;</span>
+<span class="fc" id="L850">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for reminderDate
+    *******************************************************************************/
+   public Activity withReminderDate(Instant reminderDate)
+   {
+<span class="fc" id="L859">      this.reminderDate = reminderDate;</span>
+<span class="fc" id="L860">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for externalCalendarId
+    *******************************************************************************/
+   public String getExternalCalendarId()
+   {
+<span class="fc" id="L870">      return (this.externalCalendarId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for externalCalendarId
+    *******************************************************************************/
+   public void setExternalCalendarId(String externalCalendarId)
+   {
+<span class="fc" id="L880">      this.externalCalendarId = externalCalendarId;</span>
+<span class="fc" id="L881">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for externalCalendarId
+    *******************************************************************************/
+   public Activity withExternalCalendarId(String externalCalendarId)
+   {
+<span class="fc" id="L890">      this.externalCalendarId = externalCalendarId;</span>
+<span class="fc" id="L891">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L901">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L911">      this.createDate = createDate;</span>
+<span class="fc" id="L912">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public Activity withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L921">      this.createDate = createDate;</span>
+<span class="nc" id="L922">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L932">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L942">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L943">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public Activity withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L952">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L953">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

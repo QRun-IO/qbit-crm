@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConvertFormToContactProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">ConvertFormToContactProcess.java</span></div><h1>ConvertFormToContactProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to convert a form submission into a CRM contact. Handles duplicate
+ ** detection by email, creates the contact if needed, updates the form
+ ** submission record, and logs a Note activity on the contact.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.activities.model.ActivityType;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.FormSubmission;
+import com.kingsrook.qbits.crm.core.model.LeadSource;
+import com.kingsrook.qbits.crm.core.model.enums.CrmFormConversionStatus;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.StringUtils;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for converting a form submission into a
+ ** contact record. Deduplicates on email, updates the form with conversion
+ ** data, and creates a Note activity on the contact.
+ *******************************************************************************/
+<span class="fc" id="L52">public class ConvertFormToContactProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;convertFormToContact&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L64">      return new QProcessMetaData()</span>
+<span class="fc" id="L65">         .withName(NAME)</span>
+<span class="fc" id="L66">         .withLabel(&quot;Convert Form to Contact&quot;)</span>
+<span class="fc" id="L67">         .withTableName(FormSubmission.TABLE_NAME)</span>
+<span class="fc" id="L68">         .withIcon(new QIcon().withName(&quot;swap_horiz&quot;))</span>
+<span class="fc" id="L69">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L71">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L72">               .withCode(new QCodeReference(ConvertFormToContactProcess.class))</span>
+<span class="fc" id="L73">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L74">                  new QFieldMetaData(&quot;formSubmissionId&quot;, QFieldType.INTEGER).withIsRequired(true)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the conversion process.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L87">      Integer formSubmissionId = input.getValueInteger(&quot;formSubmissionId&quot;);</span>
+<span class="fc" id="L88">      String  sessionUserId    = QContext.getQSession().getIdReference();</span>
+
+      ///////////////////////////////////////
+      // Step 1: load the form submission  //
+      ///////////////////////////////////////
+<span class="fc" id="L93">      QRecord formRecord = GetAction.execute(FormSubmission.TABLE_NAME, formSubmissionId);</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">      if(formRecord == null)</span>
+      {
+<span class="nc" id="L96">         throw new QException(&quot;Form submission not found: &quot; + formSubmissionId);</span>
+      }
+
+<span class="fc" id="L99">      FormSubmission form = new FormSubmission(formRecord);</span>
+
+      //////////////////////////////////////////////////////////////
+      // Step 2: check if a contact exists with the same email    //
+      //////////////////////////////////////////////////////////////
+<span class="fc" id="L104">      Integer contactId = null;</span>
+<span class="fc" id="L105">      boolean isNewContact = false;</span>
+
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">      if(StringUtils.hasContent(form.getEmail()))</span>
+      {
+<span class="fc" id="L109">         QueryOutput existingContacts = new QueryAction().execute(</span>
+            new QueryInput(Contact.TABLE_NAME)
+<span class="fc" id="L111">               .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L112">                  .withCriteria(new QFilterCriteria(&quot;email&quot;, QCriteriaOperator.EQUALS, form.getEmail()))));</span>
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">         if(!existingContacts.getRecords().isEmpty())</span>
+         {
+            /////////////////////////////////////////////
+            // Step 4: existing contact found, use it  //
+            /////////////////////////////////////////////
+<span class="fc" id="L119">            contactId = existingContacts.getRecords().get(0).getValueInteger(&quot;id&quot;);</span>
+         }
+      }
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">      if(contactId == null)</span>
+      {
+         //////////////////////////////////////////////////////////
+         // Step 3: no existing contact, create one               //
+         //////////////////////////////////////////////////////////
+<span class="fc" id="L128">         Integer leadSourceId = lookupWebsiteLeadSourceId();</span>
+
+<span class="fc" id="L130">         Contact contact = new Contact()</span>
+<span class="fc" id="L131">            .withEmail(form.getEmail())</span>
+<span class="fc" id="L132">            .withFirstName(form.getFirstName())</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            .withLastName(StringUtils.hasContent(form.getLastName()) ? form.getLastName() : &quot;Unknown&quot;)</span>
+<span class="fc" id="L134">            .withPhone(form.getPhone())</span>
+<span class="fc" id="L135">            .withLeadSourceId(leadSourceId)</span>
+<span class="fc" id="L136">            .withOwnerUserId(sessionUserId);</span>
+
+<span class="fc" id="L138">         InsertOutput insertOutput = new InsertAction().execute(</span>
+<span class="fc" id="L139">            new InsertInput(Contact.TABLE_NAME).withRecordEntity(contact));</span>
+
+<span class="fc" id="L141">         contactId = insertOutput.getRecords().get(0).getValueInteger(&quot;id&quot;);</span>
+<span class="fc" id="L142">         isNewContact = true;</span>
+      }
+
+      ///////////////////////////////////////////////////////////
+      // Step 5: update the form submission with conversion    //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L148">      QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L149">         .withValue(&quot;id&quot;, formSubmissionId)</span>
+<span class="fc" id="L150">         .withValue(&quot;contactId&quot;, contactId)</span>
+<span class="fc" id="L151">         .withValue(&quot;conversionStatus&quot;, CrmFormConversionStatus.CONVERTED_TO_CONTACT.getId())</span>
+<span class="fc" id="L152">         .withValue(&quot;convertedDate&quot;, Instant.now())</span>
+<span class="fc" id="L153">         .withValue(&quot;convertedByUserId&quot;, sessionUserId);</span>
+
+<span class="fc" id="L155">      new UpdateAction().execute(</span>
+<span class="fc" id="L156">         new UpdateInput(FormSubmission.TABLE_NAME).withRecord(updateRecord));</span>
+
+      /////////////////////////////////////////////////////////////
+      // Step 6: create a Note activity on the contact           //
+      /////////////////////////////////////////////////////////////
+<span class="fc" id="L161">      Integer noteTypeId = lookupNoteActivityTypeId();</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">      if(noteTypeId != null)</span>
+      {
+<span class="fc" id="L164">         String noteDescription = &quot;Form submission converted to contact.&quot;;</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">         if(StringUtils.hasContent(form.getMessage()))</span>
+         {
+<span class="fc" id="L167">            noteDescription = form.getMessage();</span>
+         }
+
+<span class="fc" id="L170">         Activity noteActivity = new Activity()</span>
+<span class="fc" id="L171">            .withActivityTypeId(noteTypeId)</span>
+<span class="fc" id="L172">            .withSubject(&quot;Form Submission Converted&quot;)</span>
+<span class="fc" id="L173">            .withDescription(noteDescription)</span>
+<span class="fc" id="L174">            .withContactId(contactId)</span>
+<span class="fc" id="L175">            .withOwnerUserId(sessionUserId)</span>
+<span class="fc" id="L176">            .withIsCompleted(true);</span>
+
+<span class="fc" id="L178">         new InsertAction().execute(</span>
+<span class="fc" id="L179">            new InsertInput(Activity.TABLE_NAME).withRecordEntity(noteActivity));</span>
+      }
+
+<span class="fc" id="L182">      output.addValue(&quot;contactId&quot;, contactId);</span>
+<span class="fc" id="L183">      output.addValue(&quot;isNewContact&quot;, isNewContact);</span>
+<span class="fc" id="L184">   }</span>
+
+
+
+   /***************************************************************************
+    ** Look up the &quot;Website&quot; lead source id. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupWebsiteLeadSourceId() throws QException
+   {
+<span class="fc" id="L193">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(LeadSource.TABLE_NAME)
+<span class="fc" id="L195">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L196">               .withCriteria(new QFilterCriteria(&quot;name&quot;, QCriteriaOperator.EQUALS, &quot;Website&quot;))));</span>
+
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L200">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L203">      return (null);</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Look up the &quot;Note&quot; activity type id. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupNoteActivityTypeId() throws QException
+   {
+<span class="fc" id="L213">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(ActivityType.TABLE_NAME)
+<span class="fc" id="L215">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L216">               .withCriteria(new QFilterCriteria(&quot;name&quot;, QCriteriaOperator.EQUALS, &quot;Note&quot;))));</span>
+
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L220">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L223">      return (null);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

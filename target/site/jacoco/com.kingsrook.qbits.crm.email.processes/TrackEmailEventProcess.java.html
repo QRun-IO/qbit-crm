@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrackEmailEventProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.email.processes</a> &gt; <span class="el_source">TrackEmailEventProcess.java</span></div><h1>TrackEmailEventProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to track email engagement events (open, click, bounce, spam, reply).
+ ** Updates the EmailMessage record counters and flags, and may set doNotEmail
+ ** on the linked contact for hard bounces and spam complaints.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.email.processes;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.enums.CrmBounceType;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
+import com.kingsrook.qbits.crm.email.model.EmailMessage;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for tracking email engagement events.
+ ** Handles OPEN, CLICK, BOUNCE, SPAM, and REPLY event types.
+ *******************************************************************************/
+<span class="fc" id="L44">public class TrackEmailEventProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;trackEmailEvent&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L56">      return new QProcessMetaData()</span>
+<span class="fc" id="L57">         .withName(NAME)</span>
+<span class="fc" id="L58">         .withLabel(&quot;Track Email Event&quot;)</span>
+<span class="fc" id="L59">         .withTableName(EmailMessage.TABLE_NAME)</span>
+<span class="fc" id="L60">         .withIcon(new QIcon().withName(&quot;track_changes&quot;))</span>
+<span class="fc" id="L61">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L63">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L64">               .withCode(new QCodeReference(TrackEmailEventProcess.class))</span>
+<span class="fc" id="L65">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L66">                  new QFieldMetaData(&quot;emailMessageId&quot;, QFieldType.INTEGER).withIsRequired(true),</span>
+<span class="fc" id="L67">                  new QFieldMetaData(&quot;eventType&quot;, QFieldType.STRING).withIsRequired(true),</span>
+                  new QFieldMetaData(&quot;bounceTypeId&quot;, QFieldType.INTEGER)
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the tracking event process.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L81">      Integer emailMessageId = input.getValueInteger(&quot;emailMessageId&quot;);</span>
+<span class="fc" id="L82">      String  eventType      = input.getValueString(&quot;eventType&quot;);</span>
+<span class="fc" id="L83">      Integer bounceTypeId   = input.getValueInteger(&quot;bounceTypeId&quot;);</span>
+
+      //////////////////////////////////////////
+      // Step 1: load the email message       //
+      //////////////////////////////////////////
+<span class="fc" id="L88">      QRecord emailRecord = GetAction.execute(EmailMessage.TABLE_NAME, emailMessageId);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">      if(emailRecord == null)</span>
+      {
+<span class="nc" id="L91">         throw new QException(&quot;Email message not found: &quot; + emailMessageId);</span>
+      }
+
+<span class="fc" id="L94">      EmailMessage email = new EmailMessage(emailRecord);</span>
+
+      //////////////////////////////////////////
+      // Step 2: handle event type            //
+      //////////////////////////////////////////
+<span class="fc" id="L99">      QRecord updateRecord = new QRecord().withValue(&quot;id&quot;, emailMessageId);</span>
+
+<span class="pc bpc" id="L101" title="2 of 6 branches missed.">      switch(eventType.toUpperCase())</span>
+      {
+         case &quot;OPEN&quot;:
+         {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            int currentOpenCount = email.getOpenCount() != null ? email.getOpenCount() : 0;</span>
+<span class="fc" id="L106">            updateRecord.setValue(&quot;openCount&quot;, currentOpenCount + 1);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if(email.getFirstOpenedDate() == null)</span>
+            {
+<span class="fc" id="L109">               updateRecord.setValue(&quot;firstOpenedDate&quot;, Instant.now());</span>
+            }
+            break;
+         }
+
+         case &quot;CLICK&quot;:
+         {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">            int currentClickCount = email.getClickCount() != null ? email.getClickCount() : 0;</span>
+<span class="fc" id="L117">            updateRecord.setValue(&quot;clickCount&quot;, currentClickCount + 1);</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if(email.getFirstClickedDate() == null)</span>
+            {
+<span class="fc" id="L120">               updateRecord.setValue(&quot;firstClickedDate&quot;, Instant.now());</span>
+            }
+            break;
+         }
+
+         case &quot;BOUNCE&quot;:
+         {
+<span class="fc" id="L127">            updateRecord.setValue(&quot;bounceType&quot;, bounceTypeId);</span>
+
+            /////////////////////////////////////////////////////
+            // if hard bounce, set contact doNotEmail to true   //
+            /////////////////////////////////////////////////////
+<span class="pc bpc" id="L132" title="2 of 4 branches missed.">            if(bounceTypeId != null &amp;&amp; bounceTypeId.equals(CrmBounceType.HARD.getId()))</span>
+            {
+<span class="fc" id="L134">               setContactDoNotEmail(email);</span>
+            }
+            break;
+         }
+
+         case &quot;SPAM&quot;:
+         {
+<span class="fc" id="L141">            updateRecord.setValue(&quot;isSpamComplaint&quot;, true);</span>
+<span class="fc" id="L142">            setContactDoNotEmail(email);</span>
+<span class="fc" id="L143">            break;</span>
+         }
+
+         case &quot;REPLY&quot;:
+         {
+            //////////////////////////////////////////////////////////////
+            // if email is linked to a sequence enrollment, mark REPLIED //
+            //////////////////////////////////////////////////////////////
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            if(email.getSequenceEnrollmentId() != null)</span>
+            {
+<span class="nc" id="L153">               QRecord enrollmentUpdate = new QRecord()</span>
+<span class="nc" id="L154">                  .withValue(&quot;id&quot;, email.getSequenceEnrollmentId())</span>
+<span class="nc" id="L155">                  .withValue(&quot;status&quot;, CrmEnrollmentStatus.REPLIED.getId());</span>
+
+<span class="nc" id="L157">               new UpdateAction().execute(</span>
+<span class="nc" id="L158">                  new UpdateInput(&quot;crmSequenceEnrollment&quot;).withRecord(enrollmentUpdate));</span>
+<span class="nc" id="L159">            }</span>
+            break;
+         }
+
+         default:
+<span class="nc" id="L164">            throw new QException(&quot;Unknown event type: &quot; + eventType);</span>
+      }
+
+<span class="fc" id="L167">      new UpdateAction().execute(</span>
+<span class="fc" id="L168">         new UpdateInput(EmailMessage.TABLE_NAME).withRecord(updateRecord));</span>
+<span class="fc" id="L169">   }</span>
+
+
+
+   /***************************************************************************
+    ** Finds the contact linked to an email message (via activity) and sets
+    ** doNotEmail = true. Looks up by the toAddresses field.
+    ***************************************************************************/
+   private void setContactDoNotEmail(EmailMessage email) throws QException
+   {
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">      if(email.getToAddresses() == null)</span>
+      {
+<span class="nc" id="L181">         return;</span>
+      }
+
+<span class="fc" id="L184">      QueryOutput contactQuery = new QueryAction().execute(</span>
+         new QueryInput(Contact.TABLE_NAME)
+<span class="fc" id="L186">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L187">               .withCriteria(new QFilterCriteria(&quot;email&quot;, QCriteriaOperator.EQUALS, email.getToAddresses()))));</span>
+
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">      if(!contactQuery.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L191">         QRecord contactUpdate = new QRecord()</span>
+<span class="fc" id="L192">            .withValue(&quot;id&quot;, contactQuery.getRecords().get(0).getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L193">            .withValue(&quot;doNotEmail&quot;, true);</span>
+
+<span class="fc" id="L195">         new UpdateAction().execute(</span>
+<span class="fc" id="L196">            new UpdateInput(Contact.TABLE_NAME).withRecord(contactUpdate));</span>
+      }
+<span class="fc" id="L198">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BulkAssignOwnerProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">BulkAssignOwnerProcess.java</span></div><h1>BulkAssignOwnerProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Bulk action process to assign a new owner to selected records. Works on
+ ** any table that has an ownerUserId field.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.ProcessSummaryLine;
+import com.kingsrook.qqq.backend.core.model.actions.processes.ProcessSummaryLineInterface;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.Status;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwithfrontend.AbstractTransformStep;
+import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwithfrontend.StreamedETLWithFrontendProcess;
+
+
+/*******************************************************************************
+ ** MetaDataProducer for the BulkAssignOwner table-level process. Uses the
+ ** StreamedETL pattern with a transform step that sets ownerUserId on each
+ ** record to the newOwnerUserId input value.
+ *******************************************************************************/
+<span class="fc" id="L33">public class BulkAssignOwnerProcess implements MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;bulkAssignOwner&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L45">      QProcessMetaData process = StreamedETLWithFrontendProcess.processMetaDataBuilder()</span>
+<span class="fc" id="L46">         .withName(NAME)</span>
+<span class="fc" id="L47">         .withLabel(&quot;Bulk Assign Owner&quot;)</span>
+<span class="fc" id="L48">         .withTableName(Contact.TABLE_NAME)</span>
+<span class="fc" id="L49">         .withIcon(new QIcon().withName(&quot;person_pin&quot;))</span>
+<span class="fc" id="L50">         .withTransformStepClass(BulkAssignOwnerTransformStep.class)</span>
+<span class="fc" id="L51">         .withPreviewMessage(&quot;Records to be assigned a new owner&quot;)</span>
+<span class="fc" id="L52">         .withReviewStepRecordFields(List.of(</span>
+            new QFieldMetaData(&quot;id&quot;, QFieldType.INTEGER),
+<span class="fc" id="L54">            new QFieldMetaData(&quot;ownerUserId&quot;, QFieldType.STRING).withLabel(&quot;Current Owner&quot;)</span>
+         ))
+<span class="fc" id="L56">         .withInputFieldDefaultValue(&quot;newOwnerUserId&quot;, &quot;&quot;)</span>
+<span class="fc" id="L57">         .getProcessMetaData();</span>
+
+<span class="fc" id="L59">      return (process);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Transform step that sets ownerUserId on each record.
+    *******************************************************************************/
+<span class="fc" id="L67">   public static class BulkAssignOwnerTransformStep extends AbstractTransformStep</span>
+   {
+<span class="fc" id="L69">      private ProcessSummaryLine okLine = new ProcessSummaryLine(Status.OK)</span>
+<span class="fc" id="L70">         .withSingularFutureMessage(&quot;will be assigned a new owner&quot;)</span>
+<span class="fc" id="L71">         .withPluralFutureMessage(&quot;will be assigned a new owner&quot;)</span>
+<span class="fc" id="L72">         .withSingularPastMessage(&quot;was assigned a new owner&quot;)</span>
+<span class="fc" id="L73">         .withPluralPastMessage(&quot;were assigned a new owner&quot;);</span>
+
+
+
+      /*******************************************************************************
+       ** Set ownerUserId on each record from the newOwnerUserId input.
+       *******************************************************************************/
+      @Override
+      public void runOnePage(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+      {
+<span class="fc" id="L83">         String newOwnerUserId = input.getValueString(&quot;newOwnerUserId&quot;);</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">         for(QRecord record : input.getRecords())</span>
+         {
+<span class="fc" id="L87">            record.setValue(&quot;ownerUserId&quot;, newOwnerUserId);</span>
+<span class="fc" id="L88">            output.addRecord(record);</span>
+<span class="fc" id="L89">            okLine.incrementCountAndAddPrimaryKey(record.getValueInteger(&quot;id&quot;));</span>
+<span class="fc" id="L90">         }</span>
+<span class="fc" id="L91">      }</span>
+
+
+
+      /*******************************************************************************
+       ** Provide process summary.
+       *******************************************************************************/
+      @Override
+      public ArrayList&lt;ProcessSummaryLineInterface&gt; getProcessSummary(RunBackendStepOutput runBackendStepOutput, boolean isForResultScreen)
+      {
+<span class="nc" id="L101">         ArrayList&lt;ProcessSummaryLineInterface&gt; rs = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L102">         okLine.addSelfToListIfAnyCount(rs);</span>
+<span class="nc" id="L103">         return (rs);</span>
+      }
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

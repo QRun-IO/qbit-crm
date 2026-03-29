@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransferOwnershipProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.deals.processes</a> &gt; <span class="el_source">TransferOwnershipProcess.java</span></div><h1>TransferOwnershipProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to transfer ownership of all contacts, companies, and deals from
+ ** one user to another, logging audit entries for each change.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.deals.processes;
+
+
+import java.util.List;
+import com.kingsrook.qbits.crm.audit.model.AuditLog;
+import com.kingsrook.qbits.crm.core.model.Company;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for transferring ownership of contacts,
+ ** companies, and deals from one user to another.
+ *******************************************************************************/
+<span class="fc" id="L46">public class TransferOwnershipProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;transferOwnership&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L58">      return new QProcessMetaData()</span>
+<span class="fc" id="L59">         .withName(NAME)</span>
+<span class="fc" id="L60">         .withLabel(&quot;Transfer Ownership&quot;)</span>
+<span class="fc" id="L61">         .withIcon(new QIcon().withName(&quot;swap_horiz&quot;))</span>
+<span class="fc" id="L62">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L64">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L65">               .withCode(new QCodeReference(TransferOwnershipProcess.class))</span>
+<span class="fc" id="L66">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L67">                  new QFieldMetaData(&quot;fromUserId&quot;, QFieldType.STRING).withIsRequired(true),</span>
+<span class="fc" id="L68">                  new QFieldMetaData(&quot;toUserId&quot;, QFieldType.STRING).withIsRequired(true)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the transfer ownership process.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L81">      String fromUserId    = input.getValueString(&quot;fromUserId&quot;);</span>
+<span class="fc" id="L82">      String toUserId      = input.getValueString(&quot;toUserId&quot;);</span>
+<span class="fc" id="L83">      String sessionUserId = QContext.getQSession().getIdReference();</span>
+
+      ///////////////////////////////////
+      // Transfer contacts             //
+      ///////////////////////////////////
+<span class="fc" id="L88">      transferRecords(Contact.TABLE_NAME, CrmEntityType.CONTACT, fromUserId, toUserId, sessionUserId);</span>
+
+      ///////////////////////////////////
+      // Transfer companies            //
+      ///////////////////////////////////
+<span class="fc" id="L93">      transferRecords(Company.TABLE_NAME, CrmEntityType.COMPANY, fromUserId, toUserId, sessionUserId);</span>
+
+      ///////////////////////////////////
+      // Transfer deals                //
+      ///////////////////////////////////
+<span class="fc" id="L98">      transferRecords(Deal.TABLE_NAME, CrmEntityType.DEAL, fromUserId, toUserId, sessionUserId);</span>
+<span class="fc" id="L99">   }</span>
+
+
+
+   /***************************************************************************
+    ** Query records owned by fromUserId, update to toUserId, and log audit.
+    ***************************************************************************/
+   private void transferRecords(String tableName, CrmEntityType entityType, String fromUserId, String toUserId, String sessionUserId) throws QException
+   {
+<span class="fc" id="L108">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(tableName)
+<span class="fc" id="L110">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L111">               .withCriteria(new QFilterCriteria(&quot;ownerUserId&quot;, QCriteriaOperator.EQUALS, fromUserId))));</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">      for(QRecord record : queryOutput.getRecords())</span>
+      {
+<span class="fc" id="L115">         Integer recordId = record.getValueInteger(&quot;id&quot;);</span>
+
+         //////////////////////////////////
+         // update the owner             //
+         //////////////////////////////////
+<span class="fc" id="L120">         QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L121">            .withValue(&quot;id&quot;, recordId)</span>
+<span class="fc" id="L122">            .withValue(&quot;ownerUserId&quot;, toUserId);</span>
+
+<span class="fc" id="L124">         new UpdateAction().execute(</span>
+<span class="fc" id="L125">            new UpdateInput(tableName).withRecord(updateRecord));</span>
+
+         //////////////////////////////////
+         // log audit entry              //
+         //////////////////////////////////
+<span class="fc" id="L130">         new InsertAction().execute(</span>
+<span class="fc" id="L131">            new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(</span>
+               new AuditLog()
+<span class="fc" id="L133">                  .withEntityType(entityType.getId())</span>
+<span class="fc" id="L134">                  .withEntityId(recordId)</span>
+<span class="fc" id="L135">                  .withAction(CrmAuditAction.OWNER_CHANGED.getId())</span>
+<span class="fc" id="L136">                  .withUserId(sessionUserId)</span>
+<span class="fc" id="L137">                  .withFieldName(&quot;ownerUserId&quot;)</span>
+<span class="fc" id="L138">                  .withOldValue(fromUserId)</span>
+<span class="fc" id="L139">                  .withNewValue(toUserId)</span>
+<span class="fc" id="L140">                  .withMessage(&quot;Ownership transferred from &quot; + fromUserId + &quot; to &quot; + toUserId)));</span>
+<span class="fc" id="L141">      }</span>
+<span class="fc" id="L142">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

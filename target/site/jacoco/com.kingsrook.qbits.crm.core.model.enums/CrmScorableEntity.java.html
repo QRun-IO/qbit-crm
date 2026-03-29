@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmScorableEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.model.enums</a> &gt; <span class="el_source">CrmScorableEntity.java</span></div><h1>CrmScorableEntity.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Possible value source enum for CRM scorable entity types.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.model.enums;
+
+
+import java.util.Objects;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.PossibleValueEnum;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingPossibleValueEnum;
+
+
+/*******************************************************************************
+ ** Enum of CRM entities that can be scored (Contact).
+ *******************************************************************************/
+<span class="fc" id="L15">@QMetaDataProducingPossibleValueEnum()</span>
+public enum CrmScorableEntity implements PossibleValueEnum&lt;Integer&gt;
+{
+<span class="fc" id="L18">   CONTACT(1, &quot;Contact&quot;);</span>
+
+   private final Integer id;
+   private final String  label;
+
+   public static final String NAME = &quot;CrmScorableEntity&quot;;
+
+
+
+   /*******************************************************************************
+    ** Constructor
+    *******************************************************************************/
+   CrmScorableEntity(Integer id, String label)
+<span class="fc" id="L31">   {</span>
+<span class="fc" id="L32">      this.id = id;</span>
+<span class="fc" id="L33">      this.label = label;</span>
+<span class="fc" id="L34">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Get instance by id
+    *******************************************************************************/
+   public static CrmScorableEntity getById(Integer id)
+   {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">      if(id == null)</span>
+      {
+<span class="fc" id="L45">         return (null);</span>
+      }
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">      for(CrmScorableEntity value : CrmScorableEntity.values())</span>
+      {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">         if(Objects.equals(value.id, id))</span>
+         {
+<span class="fc" id="L52">            return (value);</span>
+         }
+      }
+
+<span class="fc" id="L56">      return (null);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L66">      return id;</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for label
+    *******************************************************************************/
+   public String getLabel()
+   {
+<span class="fc" id="L76">      return label;</span>
+   }
+
+
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public Integer getPossibleValueId()
+   {
+<span class="fc" id="L87">      return (getId());</span>
+   }
+
+
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public String getPossibleValueLabel()
+   {
+<span class="fc" id="L98">      return (getLabel());</span>
+   }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsubscribeFromListProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">UnsubscribeFromListProcess.java</span></div><h1>UnsubscribeFromListProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to unsubscribe an email address from an email list. Sets the member
+ ** status to UNSUBSCRIBED and records the unsubscribedDate.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.EmailListMember;
+import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep to unsubscribe an email from a list.
+ ** Queries by emailListId + email, sets status to UNSUBSCRIBED and
+ ** unsubscribedDate to now.
+ *******************************************************************************/
+<span class="fc" id="L41">public class UnsubscribeFromListProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;unsubscribeFromList&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L53">      return new QProcessMetaData()</span>
+<span class="fc" id="L54">         .withName(NAME)</span>
+<span class="fc" id="L55">         .withLabel(&quot;Unsubscribe from List&quot;)</span>
+<span class="fc" id="L56">         .withIcon(new QIcon().withName(&quot;unsubscribe&quot;))</span>
+<span class="fc" id="L57">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L59">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L60">               .withCode(new QCodeReference(UnsubscribeFromListProcess.class))</span>
+<span class="fc" id="L61">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L62">                  new QFieldMetaData(&quot;email&quot;, QFieldType.STRING).withIsRequired(true),</span>
+<span class="fc" id="L63">                  new QFieldMetaData(&quot;emailListId&quot;, QFieldType.INTEGER).withIsRequired(true)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the unsubscription.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="nc" id="L76">      String  email       = input.getValueString(&quot;email&quot;);</span>
+<span class="nc" id="L77">      Integer emailListId = input.getValueInteger(&quot;emailListId&quot;);</span>
+
+      ////////////////////////////////////////////////////
+      // query the member by emailListId + email        //
+      ////////////////////////////////////////////////////
+<span class="nc" id="L82">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(EmailListMember.TABLE_NAME)
+<span class="nc" id="L84">            .withFilter(new QQueryFilter()</span>
+<span class="nc" id="L85">               .withCriteria(new QFilterCriteria(&quot;emailListId&quot;, QCriteriaOperator.EQUALS, emailListId))</span>
+<span class="nc" id="L86">               .withCriteria(new QFilterCriteria(&quot;email&quot;, QCriteriaOperator.EQUALS, email))));</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">      if(queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="nc" id="L90">         output.addValue(&quot;action&quot;, &quot;NOT_FOUND&quot;);</span>
+<span class="nc" id="L91">         return;</span>
+      }
+
+<span class="nc" id="L94">      QRecord memberRecord = queryOutput.getRecords().get(0);</span>
+
+      ////////////////////////////////////////////////////
+      // update status to UNSUBSCRIBED                  //
+      ////////////////////////////////////////////////////
+<span class="nc" id="L99">      QRecord updateRecord = new QRecord()</span>
+<span class="nc" id="L100">         .withValue(&quot;id&quot;, memberRecord.getValueInteger(&quot;id&quot;))</span>
+<span class="nc" id="L101">         .withValue(&quot;status&quot;, CrmListMemberStatus.UNSUBSCRIBED.getId())</span>
+<span class="nc" id="L102">         .withValue(&quot;unsubscribedDate&quot;, Instant.now());</span>
+
+<span class="nc" id="L104">      new UpdateAction().execute(</span>
+<span class="nc" id="L105">         new UpdateInput(EmailListMember.TABLE_NAME).withRecord(updateRecord));</span>
+
+<span class="nc" id="L107">      output.addValue(&quot;action&quot;, &quot;UNSUBSCRIBED&quot;);</span>
+<span class="nc" id="L108">      output.addValue(&quot;emailListMemberId&quot;, memberRecord.getValueInteger(&quot;id&quot;));</span>
+<span class="nc" id="L109">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConsentRecord.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.model</a> &gt; <span class="el_source">ConsentRecord.java</span></div><h1>ConsentRecord.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for ConsentRecord table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.model;
+
+
+import java.time.Instant;
+import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
+import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
+import com.kingsrook.qbits.crm.core.model.enums.CrmLegalBasis;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+
+
+/*******************************************************************************
+ ** QRecord Entity for ConsentRecord table -- GDPR/CAN-SPAM consent tracking.
+ ** Append-only: new consent states are recorded as new rows.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = ConsentRecord.TableMetaDataCustomizer.class
+)
+public class ConsentRecord extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmConsentRecord&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L41">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L50">         table</span>
+<span class="fc" id="L51">            .withIcon(new QIcon().withName(&quot;verified_user&quot;))</span>
+<span class="fc" id="L52">            .withRecordLabelFormat(&quot;Consent %s - %s&quot;)</span>
+<span class="fc" id="L53">            .withRecordLabelFields(&quot;contactId&quot;, &quot;consentType&quot;)</span>
+<span class="fc" id="L54">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;contactId&quot;, &quot;consentType&quot;, &quot;status&quot;))</span>
+<span class="fc" id="L55">            .withSection(SectionFactory.defaultT2(&quot;legalBasis&quot;, &quot;source&quot;, &quot;consentDate&quot;, &quot;expiryDate&quot;, &quot;ipAddress&quot;))</span>
+<span class="fc" id="L56">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;));</span>
+
+<span class="fc" id="L58">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, possibleValueSourceName = Contact.TABLE_NAME)
+   private Integer contactId;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmConsentType.NAME)
+   private Integer consentType;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmConsentStatus.NAME)
+   private Integer status;
+
+   @QField(possibleValueSourceName = CrmLegalBasis.NAME)
+   private Integer legalBasis;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String source;
+
+   @QField(isRequired = true)
+   private Instant consentDate;
+
+   @QField()
+   private Instant expiryDate;
+
+   @QField(maxLength = 45, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String ipAddress;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public ConsentRecord()
+<span class="fc" id="L100">   {</span>
+<span class="fc" id="L101">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public ConsentRecord(QRecord record)
+<span class="fc" id="L109">   {</span>
+<span class="fc" id="L110">      populateFromQRecord(record);</span>
+<span class="fc" id="L111">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L120">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L130">      this.id = id;</span>
+<span class="fc" id="L131">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public ConsentRecord withId(Integer id)
+   {
+<span class="nc" id="L140">      this.id = id;</span>
+<span class="nc" id="L141">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for contactId
+    *******************************************************************************/
+   public Integer getContactId()
+   {
+<span class="fc" id="L151">      return (this.contactId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for contactId
+    *******************************************************************************/
+   public void setContactId(Integer contactId)
+   {
+<span class="fc" id="L161">      this.contactId = contactId;</span>
+<span class="fc" id="L162">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for contactId
+    *******************************************************************************/
+   public ConsentRecord withContactId(Integer contactId)
+   {
+<span class="fc" id="L171">      this.contactId = contactId;</span>
+<span class="fc" id="L172">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for consentType
+    *******************************************************************************/
+   public Integer getConsentType()
+   {
+<span class="fc" id="L182">      return (this.consentType);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for consentType
+    *******************************************************************************/
+   public void setConsentType(Integer consentType)
+   {
+<span class="fc" id="L192">      this.consentType = consentType;</span>
+<span class="fc" id="L193">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentType
+    *******************************************************************************/
+   public ConsentRecord withConsentType(Integer consentType)
+   {
+<span class="fc" id="L202">      this.consentType = consentType;</span>
+<span class="fc" id="L203">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for status
+    *******************************************************************************/
+   public Integer getStatus()
+   {
+<span class="fc" id="L213">      return (this.status);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for status
+    *******************************************************************************/
+   public void setStatus(Integer status)
+   {
+<span class="fc" id="L223">      this.status = status;</span>
+<span class="fc" id="L224">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for status
+    *******************************************************************************/
+   public ConsentRecord withStatus(Integer status)
+   {
+<span class="fc" id="L233">      this.status = status;</span>
+<span class="fc" id="L234">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for legalBasis
+    *******************************************************************************/
+   public Integer getLegalBasis()
+   {
+<span class="fc" id="L244">      return (this.legalBasis);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for legalBasis
+    *******************************************************************************/
+   public void setLegalBasis(Integer legalBasis)
+   {
+<span class="fc" id="L254">      this.legalBasis = legalBasis;</span>
+<span class="fc" id="L255">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for legalBasis
+    *******************************************************************************/
+   public ConsentRecord withLegalBasis(Integer legalBasis)
+   {
+<span class="nc" id="L264">      this.legalBasis = legalBasis;</span>
+<span class="nc" id="L265">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for source
+    *******************************************************************************/
+   public String getSource()
+   {
+<span class="fc" id="L275">      return (this.source);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for source
+    *******************************************************************************/
+   public void setSource(String source)
+   {
+<span class="fc" id="L285">      this.source = source;</span>
+<span class="fc" id="L286">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for source
+    *******************************************************************************/
+   public ConsentRecord withSource(String source)
+   {
+<span class="fc" id="L295">      this.source = source;</span>
+<span class="fc" id="L296">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for consentDate
+    *******************************************************************************/
+   public Instant getConsentDate()
+   {
+<span class="fc" id="L306">      return (this.consentDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for consentDate
+    *******************************************************************************/
+   public void setConsentDate(Instant consentDate)
+   {
+<span class="fc" id="L316">      this.consentDate = consentDate;</span>
+<span class="fc" id="L317">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentDate
+    *******************************************************************************/
+   public ConsentRecord withConsentDate(Instant consentDate)
+   {
+<span class="fc" id="L326">      this.consentDate = consentDate;</span>
+<span class="fc" id="L327">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for expiryDate
+    *******************************************************************************/
+   public Instant getExpiryDate()
+   {
+<span class="fc" id="L337">      return (this.expiryDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for expiryDate
+    *******************************************************************************/
+   public void setExpiryDate(Instant expiryDate)
+   {
+<span class="fc" id="L347">      this.expiryDate = expiryDate;</span>
+<span class="fc" id="L348">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for expiryDate
+    *******************************************************************************/
+   public ConsentRecord withExpiryDate(Instant expiryDate)
+   {
+<span class="nc" id="L357">      this.expiryDate = expiryDate;</span>
+<span class="nc" id="L358">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for ipAddress
+    *******************************************************************************/
+   public String getIpAddress()
+   {
+<span class="fc" id="L368">      return (this.ipAddress);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for ipAddress
+    *******************************************************************************/
+   public void setIpAddress(String ipAddress)
+   {
+<span class="fc" id="L378">      this.ipAddress = ipAddress;</span>
+<span class="fc" id="L379">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for ipAddress
+    *******************************************************************************/
+   public ConsentRecord withIpAddress(String ipAddress)
+   {
+<span class="nc" id="L388">      this.ipAddress = ipAddress;</span>
+<span class="nc" id="L389">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L399">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L409">      this.createDate = createDate;</span>
+<span class="fc" id="L410">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public ConsentRecord withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L419">      this.createDate = createDate;</span>
+<span class="nc" id="L420">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

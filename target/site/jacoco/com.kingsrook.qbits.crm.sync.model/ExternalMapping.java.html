@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalMapping.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.sync.model</a> &gt; <span class="el_source">ExternalMapping.java</span></div><h1>ExternalMapping.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for the crm_external_mapping table.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.sync.model;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.core.model.enums.CrmSyncStatus;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+
+
+/*******************************************************************************
+ ** External system ID mapping for bidirectional sync (calendar, email provider,
+ ** marketing automation). Maps a CRM entity to its counterpart in an external
+ ** system via (entityType, entityId, externalSystem) unique key.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = ExternalMapping.TableMetaDataCustomizer.class
+)
+public class ExternalMapping extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmExternalMapping&quot;;
+
+
+
+   /***************************************************************************
+    ** Customizer that sets icon, unique key, and section layout.
+    ***************************************************************************/
+<span class="fc" id="L45">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L53">         table</span>
+<span class="fc" id="L54">            .withIcon(new QIcon().withName(&quot;sync&quot;))</span>
+<span class="fc" id="L55">            .withUniqueKey(new UniqueKey(&quot;entityType&quot;, &quot;entityId&quot;, &quot;externalSystem&quot;))</span>
+<span class="fc" id="L56">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;entityType&quot;, &quot;entityId&quot;, &quot;externalSystem&quot;, &quot;externalId&quot;))</span>
+<span class="fc" id="L57">            .withSection(new QFieldSection(&quot;sync&quot;, new QIcon(&quot;sync&quot;), Tier.T2,</span>
+<span class="fc" id="L58">               List.of(&quot;lastSyncDate&quot;, &quot;syncStatus&quot;)))</span>
+<span class="fc" id="L59">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L61">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmEntityType.NAME)
+   private Integer entityType;
+
+   @QField(isRequired = true)
+   private Integer entityId;
+
+   @QField(isRequired = true, maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String externalSystem;
+
+   @QField(isRequired = true, maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String externalId;
+
+   @QField()
+   private Instant lastSyncDate;
+
+   @QField(possibleValueSourceName = CrmSyncStatus.NAME)
+   private Integer syncStatus;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public ExternalMapping()
+<span class="fc" id="L100">   {</span>
+<span class="fc" id="L101">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public ExternalMapping(QRecord record)
+<span class="fc" id="L109">   {</span>
+<span class="fc" id="L110">      populateFromQRecord(record);</span>
+<span class="fc" id="L111">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L120">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L130">      this.id = id;</span>
+<span class="fc" id="L131">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public ExternalMapping withId(Integer id)
+   {
+<span class="nc" id="L140">      this.id = id;</span>
+<span class="nc" id="L141">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for entityType
+    *******************************************************************************/
+   public Integer getEntityType()
+   {
+<span class="fc" id="L151">      return (this.entityType);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for entityType
+    *******************************************************************************/
+   public void setEntityType(Integer entityType)
+   {
+<span class="fc" id="L161">      this.entityType = entityType;</span>
+<span class="fc" id="L162">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for entityType
+    *******************************************************************************/
+   public ExternalMapping withEntityType(Integer entityType)
+   {
+<span class="fc" id="L171">      this.entityType = entityType;</span>
+<span class="fc" id="L172">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for entityId
+    *******************************************************************************/
+   public Integer getEntityId()
+   {
+<span class="fc" id="L182">      return (this.entityId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for entityId
+    *******************************************************************************/
+   public void setEntityId(Integer entityId)
+   {
+<span class="fc" id="L192">      this.entityId = entityId;</span>
+<span class="fc" id="L193">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for entityId
+    *******************************************************************************/
+   public ExternalMapping withEntityId(Integer entityId)
+   {
+<span class="fc" id="L202">      this.entityId = entityId;</span>
+<span class="fc" id="L203">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for externalSystem
+    *******************************************************************************/
+   public String getExternalSystem()
+   {
+<span class="fc" id="L213">      return (this.externalSystem);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for externalSystem
+    *******************************************************************************/
+   public void setExternalSystem(String externalSystem)
+   {
+<span class="fc" id="L223">      this.externalSystem = externalSystem;</span>
+<span class="fc" id="L224">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for externalSystem
+    *******************************************************************************/
+   public ExternalMapping withExternalSystem(String externalSystem)
+   {
+<span class="fc" id="L233">      this.externalSystem = externalSystem;</span>
+<span class="fc" id="L234">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for externalId
+    *******************************************************************************/
+   public String getExternalId()
+   {
+<span class="fc" id="L244">      return (this.externalId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for externalId
+    *******************************************************************************/
+   public void setExternalId(String externalId)
+   {
+<span class="fc" id="L254">      this.externalId = externalId;</span>
+<span class="fc" id="L255">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for externalId
+    *******************************************************************************/
+   public ExternalMapping withExternalId(String externalId)
+   {
+<span class="fc" id="L264">      this.externalId = externalId;</span>
+<span class="fc" id="L265">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for lastSyncDate
+    *******************************************************************************/
+   public Instant getLastSyncDate()
+   {
+<span class="fc" id="L275">      return (this.lastSyncDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for lastSyncDate
+    *******************************************************************************/
+   public void setLastSyncDate(Instant lastSyncDate)
+   {
+<span class="fc" id="L285">      this.lastSyncDate = lastSyncDate;</span>
+<span class="fc" id="L286">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastSyncDate
+    *******************************************************************************/
+   public ExternalMapping withLastSyncDate(Instant lastSyncDate)
+   {
+<span class="fc" id="L295">      this.lastSyncDate = lastSyncDate;</span>
+<span class="fc" id="L296">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for syncStatus
+    *******************************************************************************/
+   public Integer getSyncStatus()
+   {
+<span class="fc" id="L306">      return (this.syncStatus);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for syncStatus
+    *******************************************************************************/
+   public void setSyncStatus(Integer syncStatus)
+   {
+<span class="fc" id="L316">      this.syncStatus = syncStatus;</span>
+<span class="fc" id="L317">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for syncStatus
+    *******************************************************************************/
+   public ExternalMapping withSyncStatus(Integer syncStatus)
+   {
+<span class="fc" id="L326">      this.syncStatus = syncStatus;</span>
+<span class="fc" id="L327">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L337">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L347">      this.createDate = createDate;</span>
+<span class="fc" id="L348">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public ExternalMapping withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L357">      this.createDate = createDate;</span>
+<span class="nc" id="L358">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L368">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L378">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L379">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public ExternalMapping withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L388">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L389">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmActivityCountRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.widgets</a> &gt; <span class="el_source">CrmActivityCountRenderer.java</span></div><h1>CrmActivityCountRenderer.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Renderer for the CRM Activity Count widget.
+ **
+ ** Queries activities created today and groups them by activityTypeId to
+ ** produce counts. Returns a MultiStatisticsData with one entry per known
+ ** type: Call, Email, Meeting.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.widgets;
+
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.activities.model.ActivityType;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetOutput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.MultiStatisticsData;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+
+
+/*******************************************************************************
+ ** Renders activity counts by type for today as a multi-statistics widget.
+ *******************************************************************************/
+<span class="fc" id="L38">public class CrmActivityCountRenderer extends AbstractWidgetRenderer</span>
+{
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+   {
+      ////////////////////////////////////////////////////////
+      // determine start-of-day in the system's time zone   //
+      ////////////////////////////////////////////////////////
+<span class="fc" id="L50">      ZoneId zoneId = ZoneId.systemDefault();</span>
+<span class="fc" id="L51">      ZonedDateTime startOfDay = LocalDate.now(zoneId).atStartOfDay(zoneId);</span>
+<span class="fc" id="L52">      Instant todayStart = startOfDay.toInstant();</span>
+
+      ////////////////////////////////////////////////////////////////
+      // query all activity types for labeling                      //
+      ////////////////////////////////////////////////////////////////
+<span class="fc" id="L57">      Map&lt;Integer, String&gt; typeNameMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L58">      QueryOutput typeOutput = new QueryAction().execute(</span>
+         new QueryInput(ActivityType.TABLE_NAME));
+<span class="fc bfc" id="L60" title="All 2 branches covered.">      for(QRecord typeRecord : typeOutput.getRecords())</span>
+      {
+<span class="fc" id="L62">         typeNameMap.put(typeRecord.getValueInteger(&quot;id&quot;), typeRecord.getValueString(&quot;name&quot;));</span>
+<span class="fc" id="L63">      }</span>
+
+      ////////////////////////////////////////////////////////////
+      // query activities created today                         //
+      ////////////////////////////////////////////////////////////
+<span class="fc" id="L68">      QueryOutput activityOutput = new QueryAction().execute(</span>
+         new QueryInput(Activity.TABLE_NAME)
+<span class="fc" id="L70">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L71">               .withCriteria(new QFilterCriteria(&quot;createDate&quot;, QCriteriaOperator.GREATER_THAN_OR_EQUALS, todayStart))));</span>
+
+      ////////////////////////////////////////////////////////////
+      // count by activityTypeId                                //
+      ////////////////////////////////////////////////////////////
+<span class="fc" id="L76">      Map&lt;Integer, Integer&gt; countByType = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">      for(QRecord record : activityOutput.getRecords())</span>
+      {
+<span class="fc" id="L79">         Integer typeId = record.getValueInteger(&quot;activityTypeId&quot;);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">         if(typeId != null)</span>
+         {
+<span class="fc" id="L82">            countByType.merge(typeId, 1, Integer::sum);</span>
+         }
+<span class="fc" id="L84">      }</span>
+
+      ////////////////////////////////////////////////////////////
+      // build statistics group data                            //
+      ////////////////////////////////////////////////////////////
+<span class="fc" id="L89">      List&lt;MultiStatisticsData.StatisticsGroupData&gt; groups = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">      for(Map.Entry&lt;Integer, Integer&gt; entry : countByType.entrySet())</span>
+      {
+<span class="fc" id="L92">         String typeName = typeNameMap.getOrDefault(entry.getKey(), &quot;Type &quot; + entry.getKey());</span>
+<span class="fc" id="L93">         groups.add(new MultiStatisticsData.StatisticsGroupData()</span>
+<span class="fc" id="L94">            .withHeader(typeName)</span>
+<span class="fc" id="L95">            .withSubheader(&quot;today&quot;)</span>
+<span class="fc" id="L96">            .withStatisticList(List.of(</span>
+<span class="fc" id="L97">               new MultiStatisticsData.StatisticsGroupData.Statistic(typeName, entry.getValue(), null)</span>
+            )));
+<span class="fc" id="L99">      }</span>
+
+<span class="fc" id="L101">      MultiStatisticsData data = new MultiStatisticsData(&quot;Activity Counts (Today)&quot;, groups);</span>
+
+<span class="fc" id="L103">      return (new RenderWidgetOutput(data));</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BulkRemoveTagProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">BulkRemoveTagProcess.java</span></div><h1>BulkRemoveTagProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Bulk action process to remove a tag from selected contact records. Deletes
+ ** the junction row in crmContactTag.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.ContactTag;
+import com.kingsrook.qbits.crm.core.model.Tag;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for bulk-removing a tag from contacts.
+ ** For each selected record, deletes the crmContactTag junction row if it
+ ** exists for that contactId + tagId combination.
+ *******************************************************************************/
+<span class="fc" id="L41">public class BulkRemoveTagProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;bulkRemoveTag&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L53">      return new QProcessMetaData()</span>
+<span class="fc" id="L54">         .withName(NAME)</span>
+<span class="fc" id="L55">         .withLabel(&quot;Bulk Remove Tag&quot;)</span>
+<span class="fc" id="L56">         .withTableName(Contact.TABLE_NAME)</span>
+<span class="fc" id="L57">         .withIcon(new QIcon().withName(&quot;label_off&quot;))</span>
+<span class="fc" id="L58">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L60">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L61">               .withCode(new QCodeReference(BulkRemoveTagProcess.class))</span>
+<span class="fc" id="L62">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L63">                  new QFieldMetaData(&quot;tagId&quot;, QFieldType.INTEGER).withIsRequired(true).withPossibleValueSourceName(Tag.TABLE_NAME),</span>
+<span class="fc" id="L64">                  new QFieldMetaData(&quot;recordIds&quot;, QFieldType.STRING).withIsRequired(true).withLabel(&quot;Record IDs (comma-separated)&quot;)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute: for each record id, delete the junction row if it exists.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L77">      Integer tagId     = input.getValueInteger(&quot;tagId&quot;);</span>
+<span class="fc" id="L78">      String  recordIds = input.getValueString(&quot;recordIds&quot;);</span>
+
+<span class="fc" id="L80">      Integer removedCount = 0;</span>
+<span class="fc" id="L81">      Integer skippedCount = 0;</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">      for(String idStr : recordIds.split(&quot;,&quot;))</span>
+      {
+<span class="fc" id="L85">         Integer contactId = Integer.parseInt(idStr.trim());</span>
+
+         /////////////////////////////////////////////////////////////
+         // find the junction row                                   //
+         /////////////////////////////////////////////////////////////
+<span class="fc" id="L90">         QueryOutput existingTags = new QueryAction().execute(</span>
+            new QueryInput(ContactTag.TABLE_NAME)
+<span class="fc" id="L92">               .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L93">                  .withCriteria(new QFilterCriteria(&quot;contactId&quot;, QCriteriaOperator.EQUALS, contactId))</span>
+<span class="fc" id="L94">                  .withCriteria(new QFilterCriteria(&quot;tagId&quot;, QCriteriaOperator.EQUALS, tagId))));</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">         if(!existingTags.getRecords().isEmpty())</span>
+         {
+<span class="fc" id="L98">            QRecord tagRecord = existingTags.getRecords().get(0);</span>
+<span class="fc" id="L99">            new DeleteAction().execute(</span>
+               new DeleteInput(ContactTag.TABLE_NAME)
+<span class="fc" id="L101">                  .withPrimaryKeys(List.of(tagRecord.getValueInteger(&quot;id&quot;))));</span>
+<span class="fc" id="L102">            removedCount++;</span>
+<span class="fc" id="L103">         }</span>
+         else
+         {
+<span class="nc" id="L106">            skippedCount++;</span>
+         }
+      }
+
+<span class="fc" id="L110">      output.addValue(&quot;removedCount&quot;, removedCount);</span>
+<span class="fc" id="L111">      output.addValue(&quot;skippedCount&quot;, skippedCount);</span>
+<span class="fc" id="L112">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

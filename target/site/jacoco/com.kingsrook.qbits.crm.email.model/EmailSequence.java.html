@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailSequence.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.email.model</a> &gt; <span class="el_source">EmailSequence.java</span></div><h1>EmailSequence.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for EmailSequence table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.email.model;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
+
+
+/*******************************************************************************
+ ** QRecord Entity for EmailSequence table -- an automated multi-step email
+ ** sequence that enrolls contacts and executes steps on a schedule.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   producePossibleValueSource = true,
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = EmailSequence.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(
+         childTableEntityClass = SequenceStep.class,
+         joinFieldName = &quot;sequenceId&quot;,
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = &quot;Steps&quot;, enabled = true, maxRows = 50)),
+      @ChildTable(
+         childTableEntityClass = SequenceEnrollment.class,
+         joinFieldName = &quot;sequenceId&quot;,
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = &quot;Enrollments&quot;, enabled = true, maxRows = 50))
+   }
+)
+public class EmailSequence extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmEmailSequence&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L57">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L66">         table</span>
+<span class="fc" id="L67">            .withIcon(new QIcon().withName(&quot;playlist_play&quot;))</span>
+<span class="fc" id="L68">            .withRecordLabelFormat(&quot;%s&quot;)</span>
+<span class="fc" id="L69">            .withRecordLabelFields(&quot;name&quot;)</span>
+<span class="fc" id="L70">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;name&quot;, &quot;ownerUserId&quot;, &quot;isActive&quot;))</span>
+<span class="fc" id="L71">            .withSection(new QFieldSection(&quot;details&quot;, new QIcon().withName(&quot;info&quot;), Tier.T2,</span>
+<span class="fc" id="L72">               List.of(&quot;description&quot;, &quot;totalSteps&quot;, &quot;businessDaysOnly&quot;)))</span>
+<span class="fc" id="L73">            .withSection(new QFieldSection(&quot;sendWindow&quot;, new QIcon().withName(&quot;schedule&quot;), Tier.T2,</span>
+<span class="fc" id="L74">               List.of(&quot;sendWindowStartHour&quot;, &quot;sendWindowEndHour&quot;)))</span>
+<span class="fc" id="L75">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L77">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String name;
+
+   @QField()
+   private String description;
+
+   @QField(isRequired = true)
+   private String ownerUserId;
+
+   @QField(isRequired = true, defaultValue = &quot;true&quot;)
+   private Boolean isActive;
+
+   @QField(isEditable = false)
+   private Integer totalSteps;
+
+   @QField(isRequired = true, defaultValue = &quot;true&quot;)
+   private Boolean businessDaysOnly;
+
+   @QField()
+   private Integer sendWindowStartHour;
+
+   @QField()
+   private Integer sendWindowEndHour;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public EmailSequence()
+<span class="fc" id="L122">   {</span>
+<span class="fc" id="L123">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public EmailSequence(QRecord record)
+<span class="fc" id="L131">   {</span>
+<span class="fc" id="L132">      populateFromQRecord(record);</span>
+<span class="fc" id="L133">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L142">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L152">      this.id = id;</span>
+<span class="fc" id="L153">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public EmailSequence withId(Integer id)
+   {
+<span class="nc" id="L162">      this.id = id;</span>
+<span class="nc" id="L163">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for name
+    *******************************************************************************/
+   public String getName()
+   {
+<span class="fc" id="L173">      return (this.name);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for name
+    *******************************************************************************/
+   public void setName(String name)
+   {
+<span class="fc" id="L183">      this.name = name;</span>
+<span class="fc" id="L184">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for name
+    *******************************************************************************/
+   public EmailSequence withName(String name)
+   {
+<span class="fc" id="L193">      this.name = name;</span>
+<span class="fc" id="L194">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for description
+    *******************************************************************************/
+   public String getDescription()
+   {
+<span class="fc" id="L204">      return (this.description);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for description
+    *******************************************************************************/
+   public void setDescription(String description)
+   {
+<span class="fc" id="L214">      this.description = description;</span>
+<span class="fc" id="L215">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for description
+    *******************************************************************************/
+   public EmailSequence withDescription(String description)
+   {
+<span class="fc" id="L224">      this.description = description;</span>
+<span class="fc" id="L225">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for ownerUserId
+    *******************************************************************************/
+   public String getOwnerUserId()
+   {
+<span class="fc" id="L235">      return (this.ownerUserId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for ownerUserId
+    *******************************************************************************/
+   public void setOwnerUserId(String ownerUserId)
+   {
+<span class="fc" id="L245">      this.ownerUserId = ownerUserId;</span>
+<span class="fc" id="L246">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for ownerUserId
+    *******************************************************************************/
+   public EmailSequence withOwnerUserId(String ownerUserId)
+   {
+<span class="fc" id="L255">      this.ownerUserId = ownerUserId;</span>
+<span class="fc" id="L256">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isActive
+    *******************************************************************************/
+   public Boolean getIsActive()
+   {
+<span class="fc" id="L266">      return (this.isActive);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isActive
+    *******************************************************************************/
+   public void setIsActive(Boolean isActive)
+   {
+<span class="fc" id="L276">      this.isActive = isActive;</span>
+<span class="fc" id="L277">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isActive
+    *******************************************************************************/
+   public EmailSequence withIsActive(Boolean isActive)
+   {
+<span class="fc" id="L286">      this.isActive = isActive;</span>
+<span class="fc" id="L287">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for totalSteps
+    *******************************************************************************/
+   public Integer getTotalSteps()
+   {
+<span class="fc" id="L297">      return (this.totalSteps);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for totalSteps
+    *******************************************************************************/
+   public void setTotalSteps(Integer totalSteps)
+   {
+<span class="fc" id="L307">      this.totalSteps = totalSteps;</span>
+<span class="fc" id="L308">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for totalSteps
+    *******************************************************************************/
+   public EmailSequence withTotalSteps(Integer totalSteps)
+   {
+<span class="fc" id="L317">      this.totalSteps = totalSteps;</span>
+<span class="fc" id="L318">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for businessDaysOnly
+    *******************************************************************************/
+   public Boolean getBusinessDaysOnly()
+   {
+<span class="fc" id="L328">      return (this.businessDaysOnly);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for businessDaysOnly
+    *******************************************************************************/
+   public void setBusinessDaysOnly(Boolean businessDaysOnly)
+   {
+<span class="fc" id="L338">      this.businessDaysOnly = businessDaysOnly;</span>
+<span class="fc" id="L339">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for businessDaysOnly
+    *******************************************************************************/
+   public EmailSequence withBusinessDaysOnly(Boolean businessDaysOnly)
+   {
+<span class="fc" id="L348">      this.businessDaysOnly = businessDaysOnly;</span>
+<span class="fc" id="L349">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sendWindowStartHour
+    *******************************************************************************/
+   public Integer getSendWindowStartHour()
+   {
+<span class="fc" id="L359">      return (this.sendWindowStartHour);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sendWindowStartHour
+    *******************************************************************************/
+   public void setSendWindowStartHour(Integer sendWindowStartHour)
+   {
+<span class="fc" id="L369">      this.sendWindowStartHour = sendWindowStartHour;</span>
+<span class="fc" id="L370">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sendWindowStartHour
+    *******************************************************************************/
+   public EmailSequence withSendWindowStartHour(Integer sendWindowStartHour)
+   {
+<span class="fc" id="L379">      this.sendWindowStartHour = sendWindowStartHour;</span>
+<span class="fc" id="L380">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sendWindowEndHour
+    *******************************************************************************/
+   public Integer getSendWindowEndHour()
+   {
+<span class="fc" id="L390">      return (this.sendWindowEndHour);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sendWindowEndHour
+    *******************************************************************************/
+   public void setSendWindowEndHour(Integer sendWindowEndHour)
+   {
+<span class="fc" id="L400">      this.sendWindowEndHour = sendWindowEndHour;</span>
+<span class="fc" id="L401">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sendWindowEndHour
+    *******************************************************************************/
+   public EmailSequence withSendWindowEndHour(Integer sendWindowEndHour)
+   {
+<span class="fc" id="L410">      this.sendWindowEndHour = sendWindowEndHour;</span>
+<span class="fc" id="L411">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L421">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L431">      this.createDate = createDate;</span>
+<span class="fc" id="L432">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public EmailSequence withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L441">      this.createDate = createDate;</span>
+<span class="nc" id="L442">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L452">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L462">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L463">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public EmailSequence withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L472">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L473">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

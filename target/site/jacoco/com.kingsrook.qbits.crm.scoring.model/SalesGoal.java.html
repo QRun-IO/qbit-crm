@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SalesGoal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.scoring.model</a> &gt; <span class="el_source">SalesGoal.java</span></div><h1>SalesGoal.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for SalesGoal table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.scoring.model;
+
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import com.kingsrook.qbits.crm.core.model.enums.CrmGoalPeriod;
+import com.kingsrook.qbits.crm.deals.model.Pipeline;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+
+
+/*******************************************************************************
+ ** QRecord Entity for SalesGoal table -- a revenue target for a user over a
+ ** defined period, optionally scoped to a specific pipeline.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = SalesGoal.TableMetaDataCustomizer.class
+)
+public class SalesGoal extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmSalesGoal&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L43">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L52">         table</span>
+<span class="fc" id="L53">            .withIcon(new QIcon().withName(&quot;flag&quot;))</span>
+<span class="fc" id="L54">            .withRecordLabelFormat(&quot;Goal #%s&quot;)</span>
+<span class="fc" id="L55">            .withRecordLabelFields(&quot;id&quot;)</span>
+<span class="fc" id="L56">            .withUniqueKey(new UniqueKey(&quot;userId&quot;, &quot;pipelineId&quot;, &quot;periodType&quot;, &quot;periodStart&quot;))</span>
+<span class="fc" id="L57">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;userId&quot;, &quot;pipelineId&quot;, &quot;periodType&quot;))</span>
+<span class="fc" id="L58">            .withSection(SectionFactory.defaultT2(&quot;periodStart&quot;, &quot;periodEnd&quot;, &quot;targetAmount&quot;, &quot;currencyCode&quot;))</span>
+<span class="fc" id="L59">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L61">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true)
+   private String userId;
+
+   @QField(possibleValueSourceName = Pipeline.TABLE_NAME)
+   private Integer pipelineId;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmGoalPeriod.NAME)
+   private Integer periodType;
+
+   @QField(isRequired = true)
+   private LocalDate periodStart;
+
+   @QField(isRequired = true)
+   private LocalDate periodEnd;
+
+   @QField(isRequired = true)
+   private BigDecimal targetAmount;
+
+   @QField(maxLength = 3, valueTooLongBehavior = ValueTooLongBehavior.ERROR, defaultValue = &quot;USD&quot;)
+   private String currencyCode;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public SalesGoal()
+<span class="fc" id="L103">   {</span>
+<span class="fc" id="L104">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public SalesGoal(QRecord record)
+<span class="fc" id="L112">   {</span>
+<span class="fc" id="L113">      populateFromQRecord(record);</span>
+<span class="fc" id="L114">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L123">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L133">      this.id = id;</span>
+<span class="fc" id="L134">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public SalesGoal withId(Integer id)
+   {
+<span class="nc" id="L143">      this.id = id;</span>
+<span class="nc" id="L144">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for userId
+    *******************************************************************************/
+   public String getUserId()
+   {
+<span class="fc" id="L154">      return (this.userId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for userId
+    *******************************************************************************/
+   public void setUserId(String userId)
+   {
+<span class="fc" id="L164">      this.userId = userId;</span>
+<span class="fc" id="L165">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for userId
+    *******************************************************************************/
+   public SalesGoal withUserId(String userId)
+   {
+<span class="fc" id="L174">      this.userId = userId;</span>
+<span class="fc" id="L175">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for pipelineId
+    *******************************************************************************/
+   public Integer getPipelineId()
+   {
+<span class="fc" id="L185">      return (this.pipelineId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for pipelineId
+    *******************************************************************************/
+   public void setPipelineId(Integer pipelineId)
+   {
+<span class="fc" id="L195">      this.pipelineId = pipelineId;</span>
+<span class="fc" id="L196">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for pipelineId
+    *******************************************************************************/
+   public SalesGoal withPipelineId(Integer pipelineId)
+   {
+<span class="fc" id="L205">      this.pipelineId = pipelineId;</span>
+<span class="fc" id="L206">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for periodType
+    *******************************************************************************/
+   public Integer getPeriodType()
+   {
+<span class="fc" id="L216">      return (this.periodType);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for periodType
+    *******************************************************************************/
+   public void setPeriodType(Integer periodType)
+   {
+<span class="fc" id="L226">      this.periodType = periodType;</span>
+<span class="fc" id="L227">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for periodType
+    *******************************************************************************/
+   public SalesGoal withPeriodType(Integer periodType)
+   {
+<span class="fc" id="L236">      this.periodType = periodType;</span>
+<span class="fc" id="L237">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for periodStart
+    *******************************************************************************/
+   public LocalDate getPeriodStart()
+   {
+<span class="fc" id="L247">      return (this.periodStart);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for periodStart
+    *******************************************************************************/
+   public void setPeriodStart(LocalDate periodStart)
+   {
+<span class="fc" id="L257">      this.periodStart = periodStart;</span>
+<span class="fc" id="L258">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for periodStart
+    *******************************************************************************/
+   public SalesGoal withPeriodStart(LocalDate periodStart)
+   {
+<span class="fc" id="L267">      this.periodStart = periodStart;</span>
+<span class="fc" id="L268">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for periodEnd
+    *******************************************************************************/
+   public LocalDate getPeriodEnd()
+   {
+<span class="fc" id="L278">      return (this.periodEnd);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for periodEnd
+    *******************************************************************************/
+   public void setPeriodEnd(LocalDate periodEnd)
+   {
+<span class="fc" id="L288">      this.periodEnd = periodEnd;</span>
+<span class="fc" id="L289">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for periodEnd
+    *******************************************************************************/
+   public SalesGoal withPeriodEnd(LocalDate periodEnd)
+   {
+<span class="fc" id="L298">      this.periodEnd = periodEnd;</span>
+<span class="fc" id="L299">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for targetAmount
+    *******************************************************************************/
+   public BigDecimal getTargetAmount()
+   {
+<span class="fc" id="L309">      return (this.targetAmount);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for targetAmount
+    *******************************************************************************/
+   public void setTargetAmount(BigDecimal targetAmount)
+   {
+<span class="fc" id="L319">      this.targetAmount = targetAmount;</span>
+<span class="fc" id="L320">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for targetAmount
+    *******************************************************************************/
+   public SalesGoal withTargetAmount(BigDecimal targetAmount)
+   {
+<span class="fc" id="L329">      this.targetAmount = targetAmount;</span>
+<span class="fc" id="L330">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for currencyCode
+    *******************************************************************************/
+   public String getCurrencyCode()
+   {
+<span class="fc" id="L340">      return (this.currencyCode);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for currencyCode
+    *******************************************************************************/
+   public void setCurrencyCode(String currencyCode)
+   {
+<span class="fc" id="L350">      this.currencyCode = currencyCode;</span>
+<span class="fc" id="L351">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for currencyCode
+    *******************************************************************************/
+   public SalesGoal withCurrencyCode(String currencyCode)
+   {
+<span class="fc" id="L360">      this.currencyCode = currencyCode;</span>
+<span class="fc" id="L361">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L371">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L381">      this.createDate = createDate;</span>
+<span class="fc" id="L382">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public SalesGoal withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L391">      this.createDate = createDate;</span>
+<span class="nc" id="L392">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L402">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L412">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L413">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public SalesGoal withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L422">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L423">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

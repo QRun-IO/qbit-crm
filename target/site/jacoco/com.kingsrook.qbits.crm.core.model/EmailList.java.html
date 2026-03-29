@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.model</a> &gt; <span class="el_source">EmailList.java</span></div><h1>EmailList.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for EmailList table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.model;
+
+
+import java.time.Instant;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+
+
+/*******************************************************************************
+ ** QRecord Entity for EmailList table -- marketing email lists / subscription
+ ** channels. Distinct from sales sequences.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   producePossibleValueSource = true,
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = EmailList.TableMetaDataCustomizer.class
+)
+public class EmailList extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmEmailList&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L40">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L49">         table</span>
+<span class="fc" id="L50">            .withIcon(new QIcon().withName(&quot;mail&quot;))</span>
+<span class="fc" id="L51">            .withRecordLabelFormat(&quot;%s&quot;)</span>
+<span class="fc" id="L52">            .withRecordLabelFields(&quot;name&quot;)</span>
+<span class="fc" id="L53">            .withUniqueKey(new UniqueKey(&quot;name&quot;))</span>
+<span class="fc" id="L54">            .withUniqueKey(new UniqueKey(&quot;slug&quot;))</span>
+<span class="fc" id="L55">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;name&quot;, &quot;slug&quot;, &quot;isActive&quot;, &quot;isPublic&quot;, &quot;sortOrder&quot;))</span>
+<span class="fc" id="L56">            .withSection(SectionFactory.defaultT2(&quot;description&quot;, &quot;memberCount&quot;))</span>
+<span class="fc" id="L57">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L59">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String name;
+
+   @QField(isRequired = true, maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String slug;
+
+   @QField()
+   private String description;
+
+   @QField(isRequired = true, defaultValue = &quot;true&quot;)
+   private Boolean isActive;
+
+   @QField(isRequired = true, defaultValue = &quot;true&quot;)
+   private Boolean isPublic;
+
+   @QField(isRequired = true)
+   private Integer sortOrder;
+
+   @QField(defaultValue = &quot;0&quot;, isEditable = false)
+   private Integer memberCount;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public EmailList()
+<span class="fc" id="L101">   {</span>
+<span class="fc" id="L102">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public EmailList(QRecord record)
+<span class="fc" id="L110">   {</span>
+<span class="fc" id="L111">      populateFromQRecord(record);</span>
+<span class="fc" id="L112">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L121">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L131">      this.id = id;</span>
+<span class="fc" id="L132">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public EmailList withId(Integer id)
+   {
+<span class="nc" id="L141">      this.id = id;</span>
+<span class="nc" id="L142">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for name
+    *******************************************************************************/
+   public String getName()
+   {
+<span class="fc" id="L152">      return (this.name);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for name
+    *******************************************************************************/
+   public void setName(String name)
+   {
+<span class="fc" id="L162">      this.name = name;</span>
+<span class="fc" id="L163">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for name
+    *******************************************************************************/
+   public EmailList withName(String name)
+   {
+<span class="fc" id="L172">      this.name = name;</span>
+<span class="fc" id="L173">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for slug
+    *******************************************************************************/
+   public String getSlug()
+   {
+<span class="fc" id="L183">      return (this.slug);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for slug
+    *******************************************************************************/
+   public void setSlug(String slug)
+   {
+<span class="fc" id="L193">      this.slug = slug;</span>
+<span class="fc" id="L194">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for slug
+    *******************************************************************************/
+   public EmailList withSlug(String slug)
+   {
+<span class="fc" id="L203">      this.slug = slug;</span>
+<span class="fc" id="L204">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for description
+    *******************************************************************************/
+   public String getDescription()
+   {
+<span class="fc" id="L214">      return (this.description);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for description
+    *******************************************************************************/
+   public void setDescription(String description)
+   {
+<span class="fc" id="L224">      this.description = description;</span>
+<span class="fc" id="L225">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for description
+    *******************************************************************************/
+   public EmailList withDescription(String description)
+   {
+<span class="nc" id="L234">      this.description = description;</span>
+<span class="nc" id="L235">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isActive
+    *******************************************************************************/
+   public Boolean getIsActive()
+   {
+<span class="fc" id="L245">      return (this.isActive);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isActive
+    *******************************************************************************/
+   public void setIsActive(Boolean isActive)
+   {
+<span class="fc" id="L255">      this.isActive = isActive;</span>
+<span class="fc" id="L256">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isActive
+    *******************************************************************************/
+   public EmailList withIsActive(Boolean isActive)
+   {
+<span class="fc" id="L265">      this.isActive = isActive;</span>
+<span class="fc" id="L266">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isPublic
+    *******************************************************************************/
+   public Boolean getIsPublic()
+   {
+<span class="fc" id="L276">      return (this.isPublic);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isPublic
+    *******************************************************************************/
+   public void setIsPublic(Boolean isPublic)
+   {
+<span class="fc" id="L286">      this.isPublic = isPublic;</span>
+<span class="fc" id="L287">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isPublic
+    *******************************************************************************/
+   public EmailList withIsPublic(Boolean isPublic)
+   {
+<span class="fc" id="L296">      this.isPublic = isPublic;</span>
+<span class="fc" id="L297">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sortOrder
+    *******************************************************************************/
+   public Integer getSortOrder()
+   {
+<span class="fc" id="L307">      return (this.sortOrder);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sortOrder
+    *******************************************************************************/
+   public void setSortOrder(Integer sortOrder)
+   {
+<span class="fc" id="L317">      this.sortOrder = sortOrder;</span>
+<span class="fc" id="L318">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sortOrder
+    *******************************************************************************/
+   public EmailList withSortOrder(Integer sortOrder)
+   {
+<span class="fc" id="L327">      this.sortOrder = sortOrder;</span>
+<span class="fc" id="L328">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for memberCount
+    *******************************************************************************/
+   public Integer getMemberCount()
+   {
+<span class="fc" id="L338">      return (this.memberCount);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for memberCount
+    *******************************************************************************/
+   public void setMemberCount(Integer memberCount)
+   {
+<span class="fc" id="L348">      this.memberCount = memberCount;</span>
+<span class="fc" id="L349">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for memberCount
+    *******************************************************************************/
+   public EmailList withMemberCount(Integer memberCount)
+   {
+<span class="nc" id="L358">      this.memberCount = memberCount;</span>
+<span class="nc" id="L359">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L369">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L379">      this.createDate = createDate;</span>
+<span class="fc" id="L380">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public EmailList withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L389">      this.createDate = createDate;</span>
+<span class="nc" id="L390">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L400">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L410">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L411">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public EmailList withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L420">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L421">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AssignmentRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.scoring.model</a> &gt; <span class="el_source">AssignmentRule.java</span></div><h1>AssignmentRule.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for AssignmentRule table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.scoring.model;
+
+
+import java.time.Instant;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAssignStrategy;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAssignableEntity;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+
+
+/*******************************************************************************
+ ** QRecord Entity for AssignmentRule table -- a configurable rule that
+ ** determines how new contacts or deals are assigned to team members.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   producePossibleValueSource = true,
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = AssignmentRule.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(
+         childTableEntityClass = AssignmentRuleMember.class,
+         joinFieldName = &quot;assignmentRuleId&quot;,
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = &quot;Members&quot;, enabled = true, maxRows = 50))
+   }
+)
+public class AssignmentRule extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmAssignmentRule&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L51">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L60">         table</span>
+<span class="fc" id="L61">            .withIcon(new QIcon().withName(&quot;assignment_ind&quot;))</span>
+<span class="fc" id="L62">            .withRecordLabelFormat(&quot;%s&quot;)</span>
+<span class="fc" id="L63">            .withRecordLabelFields(&quot;name&quot;)</span>
+<span class="fc" id="L64">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;name&quot;, &quot;entityType&quot;, &quot;assignStrategy&quot;, &quot;isActive&quot;, &quot;sortOrder&quot;))</span>
+<span class="fc" id="L65">            .withSection(SectionFactory.defaultT2(&quot;description&quot;, &quot;criteriaJson&quot;, &quot;assignToUserId&quot;))</span>
+<span class="fc" id="L66">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L68">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String name;
+
+   @QField()
+   private String description;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmAssignableEntity.NAME)
+   private Integer entityType;
+
+   @QField()
+   private String criteriaJson;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmAssignStrategy.NAME)
+   private Integer assignStrategy;
+
+   @QField()
+   private String assignToUserId;
+
+   @QField(isRequired = true, defaultValue = &quot;true&quot;)
+   private Boolean isActive;
+
+   @QField(isRequired = true)
+   private Integer sortOrder;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public AssignmentRule()
+<span class="fc" id="L113">   {</span>
+<span class="fc" id="L114">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public AssignmentRule(QRecord record)
+<span class="fc" id="L122">   {</span>
+<span class="fc" id="L123">      populateFromQRecord(record);</span>
+<span class="fc" id="L124">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L133">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L143">      this.id = id;</span>
+<span class="fc" id="L144">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public AssignmentRule withId(Integer id)
+   {
+<span class="nc" id="L153">      this.id = id;</span>
+<span class="nc" id="L154">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for name
+    *******************************************************************************/
+   public String getName()
+   {
+<span class="fc" id="L164">      return (this.name);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for name
+    *******************************************************************************/
+   public void setName(String name)
+   {
+<span class="fc" id="L174">      this.name = name;</span>
+<span class="fc" id="L175">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for name
+    *******************************************************************************/
+   public AssignmentRule withName(String name)
+   {
+<span class="fc" id="L184">      this.name = name;</span>
+<span class="fc" id="L185">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for description
+    *******************************************************************************/
+   public String getDescription()
+   {
+<span class="fc" id="L195">      return (this.description);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for description
+    *******************************************************************************/
+   public void setDescription(String description)
+   {
+<span class="fc" id="L205">      this.description = description;</span>
+<span class="fc" id="L206">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for description
+    *******************************************************************************/
+   public AssignmentRule withDescription(String description)
+   {
+<span class="nc" id="L215">      this.description = description;</span>
+<span class="nc" id="L216">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for entityType
+    *******************************************************************************/
+   public Integer getEntityType()
+   {
+<span class="fc" id="L226">      return (this.entityType);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for entityType
+    *******************************************************************************/
+   public void setEntityType(Integer entityType)
+   {
+<span class="fc" id="L236">      this.entityType = entityType;</span>
+<span class="fc" id="L237">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for entityType
+    *******************************************************************************/
+   public AssignmentRule withEntityType(Integer entityType)
+   {
+<span class="fc" id="L246">      this.entityType = entityType;</span>
+<span class="fc" id="L247">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for criteriaJson
+    *******************************************************************************/
+   public String getCriteriaJson()
+   {
+<span class="fc" id="L257">      return (this.criteriaJson);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for criteriaJson
+    *******************************************************************************/
+   public void setCriteriaJson(String criteriaJson)
+   {
+<span class="fc" id="L267">      this.criteriaJson = criteriaJson;</span>
+<span class="fc" id="L268">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for criteriaJson
+    *******************************************************************************/
+   public AssignmentRule withCriteriaJson(String criteriaJson)
+   {
+<span class="fc" id="L277">      this.criteriaJson = criteriaJson;</span>
+<span class="fc" id="L278">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for assignStrategy
+    *******************************************************************************/
+   public Integer getAssignStrategy()
+   {
+<span class="fc" id="L288">      return (this.assignStrategy);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for assignStrategy
+    *******************************************************************************/
+   public void setAssignStrategy(Integer assignStrategy)
+   {
+<span class="fc" id="L298">      this.assignStrategy = assignStrategy;</span>
+<span class="fc" id="L299">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for assignStrategy
+    *******************************************************************************/
+   public AssignmentRule withAssignStrategy(Integer assignStrategy)
+   {
+<span class="fc" id="L308">      this.assignStrategy = assignStrategy;</span>
+<span class="fc" id="L309">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for assignToUserId
+    *******************************************************************************/
+   public String getAssignToUserId()
+   {
+<span class="fc" id="L319">      return (this.assignToUserId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for assignToUserId
+    *******************************************************************************/
+   public void setAssignToUserId(String assignToUserId)
+   {
+<span class="fc" id="L329">      this.assignToUserId = assignToUserId;</span>
+<span class="fc" id="L330">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for assignToUserId
+    *******************************************************************************/
+   public AssignmentRule withAssignToUserId(String assignToUserId)
+   {
+<span class="fc" id="L339">      this.assignToUserId = assignToUserId;</span>
+<span class="fc" id="L340">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for isActive
+    *******************************************************************************/
+   public Boolean getIsActive()
+   {
+<span class="fc" id="L350">      return (this.isActive);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for isActive
+    *******************************************************************************/
+   public void setIsActive(Boolean isActive)
+   {
+<span class="fc" id="L360">      this.isActive = isActive;</span>
+<span class="fc" id="L361">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for isActive
+    *******************************************************************************/
+   public AssignmentRule withIsActive(Boolean isActive)
+   {
+<span class="fc" id="L370">      this.isActive = isActive;</span>
+<span class="fc" id="L371">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sortOrder
+    *******************************************************************************/
+   public Integer getSortOrder()
+   {
+<span class="fc" id="L381">      return (this.sortOrder);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sortOrder
+    *******************************************************************************/
+   public void setSortOrder(Integer sortOrder)
+   {
+<span class="fc" id="L391">      this.sortOrder = sortOrder;</span>
+<span class="fc" id="L392">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sortOrder
+    *******************************************************************************/
+   public AssignmentRule withSortOrder(Integer sortOrder)
+   {
+<span class="fc" id="L401">      this.sortOrder = sortOrder;</span>
+<span class="fc" id="L402">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L412">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L422">      this.createDate = createDate;</span>
+<span class="fc" id="L423">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public AssignmentRule withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L432">      this.createDate = createDate;</span>
+<span class="nc" id="L433">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L443">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L453">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L454">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public AssignmentRule withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L463">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L464">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

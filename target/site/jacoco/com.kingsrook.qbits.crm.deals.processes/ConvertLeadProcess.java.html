@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConvertLeadProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.deals.processes</a> &gt; <span class="el_source">ConvertLeadProcess.java</span></div><h1>ConvertLeadProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to convert a contact (lead) into a deal opportunity. Updates the
+ ** contact's lifecycle stage to &quot;Opportunity&quot;, creates a new Deal, links
+ ** them via DealContact junction, and logs audit entries.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.deals.processes;
+
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.audit.model.AuditLog;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.LifecycleStage;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.deals.model.DealContact;
+import com.kingsrook.qbits.crm.deals.model.Pipeline;
+import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.ValueUtils;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for converting a lead (contact) into a
+ ** deal opportunity. Transitions the contact's lifecycle stage, creates
+ ** a deal with the first pipeline stage, and links them via DealContact.
+ *******************************************************************************/
+<span class="fc" id="L58">public class ConvertLeadProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;convertLead&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L70">      return new QProcessMetaData()</span>
+<span class="fc" id="L71">         .withName(NAME)</span>
+<span class="fc" id="L72">         .withLabel(&quot;Convert Lead&quot;)</span>
+<span class="fc" id="L73">         .withTableName(Contact.TABLE_NAME)</span>
+<span class="fc" id="L74">         .withIcon(new QIcon().withName(&quot;trending_up&quot;))</span>
+<span class="fc" id="L75">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L77">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L78">               .withCode(new QCodeReference(ConvertLeadProcess.class))</span>
+<span class="fc" id="L79">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L80">                  new QFieldMetaData(&quot;contactId&quot;, QFieldType.INTEGER).withIsRequired(true),</span>
+                  new QFieldMetaData(&quot;pipelineId&quot;, QFieldType.INTEGER),
+<span class="fc" id="L82">                  new QFieldMetaData(&quot;dealName&quot;, QFieldType.STRING).withIsRequired(true),</span>
+                  new QFieldMetaData(&quot;dealAmount&quot;, QFieldType.DECIMAL)
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the lead conversion process.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L96">      Integer    contactId  = input.getValueInteger(&quot;contactId&quot;);</span>
+<span class="fc" id="L97">      Integer    pipelineId = input.getValueInteger(&quot;pipelineId&quot;);</span>
+<span class="fc" id="L98">      String     dealName   = input.getValueString(&quot;dealName&quot;);</span>
+<span class="fc" id="L99">      BigDecimal dealAmount = ValueUtils.getValueAsBigDecimal(input.getValue(&quot;dealAmount&quot;));</span>
+<span class="fc" id="L100">      String     userId     = QContext.getQSession().getIdReference();</span>
+
+      ///////////////////////////////////////
+      // Step 1: load the contact          //
+      ///////////////////////////////////////
+<span class="fc" id="L105">      QRecord contactRecord = GetAction.execute(Contact.TABLE_NAME, contactId);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">      if(contactRecord == null)</span>
+      {
+<span class="nc" id="L108">         throw new QUserFacingException(&quot;Contact not found: &quot; + contactId);</span>
+      }
+
+<span class="fc" id="L111">      Contact contact = new Contact(contactRecord);</span>
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 2: update contact lifecycle stage to &quot;Opportunity&quot;         //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc" id="L116">      Integer opportunityStageId = lookupLifecycleStageId(&quot;Opportunity&quot;);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">      if(opportunityStageId != null)</span>
+      {
+<span class="fc" id="L119">         QRecord contactUpdate = new QRecord()</span>
+<span class="fc" id="L120">            .withValue(&quot;id&quot;, contactId)</span>
+<span class="fc" id="L121">            .withValue(&quot;lifecycleStageId&quot;, opportunityStageId);</span>
+
+<span class="fc" id="L123">         new UpdateAction().execute(</span>
+<span class="fc" id="L124">            new UpdateInput(Contact.TABLE_NAME).withRecord(contactUpdate));</span>
+      }
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 3: resolve pipeline (use provided or default)              //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc bfc" id="L130" title="All 2 branches covered.">      if(pipelineId == null)</span>
+      {
+<span class="fc" id="L132">         pipelineId = lookupDefaultPipelineId();</span>
+      }
+
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">      if(pipelineId == null)</span>
+      {
+<span class="nc" id="L137">         throw new QUserFacingException(&quot;No pipeline specified and no default pipeline found&quot;);</span>
+      }
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 4: find the first stage of the pipeline (lowest sortOrder) //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc" id="L143">      Integer firstStageId = lookupFirstStageId(pipelineId);</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">      if(firstStageId == null)</span>
+      {
+<span class="nc" id="L146">         throw new QUserFacingException(&quot;No stages found for pipeline: &quot; + pipelineId);</span>
+      }
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 5: create the deal                                         //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc" id="L152">      Deal deal = new Deal()</span>
+<span class="fc" id="L153">         .withName(dealName)</span>
+<span class="fc" id="L154">         .withPipelineId(pipelineId)</span>
+<span class="fc" id="L155">         .withPipelineStageId(firstStageId)</span>
+<span class="fc" id="L156">         .withAmount(dealAmount)</span>
+<span class="fc" id="L157">         .withCompanyId(contact.getCompanyId())</span>
+<span class="fc" id="L158">         .withOwnerUserId(userId)</span>
+<span class="fc" id="L159">         .withStageEnteredDate(Instant.now());</span>
+
+<span class="fc" id="L161">      InsertOutput dealInsert = new InsertAction().execute(</span>
+<span class="fc" id="L162">         new InsertInput(Deal.TABLE_NAME).withRecordEntity(deal));</span>
+
+<span class="fc" id="L164">      Integer dealId = dealInsert.getRecords().get(0).getValueInteger(&quot;id&quot;);</span>
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 6: create DealContact junction                              //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc" id="L169">      DealContact dealContact = new DealContact()</span>
+<span class="fc" id="L170">         .withDealId(dealId)</span>
+<span class="fc" id="L171">         .withContactId(contactId)</span>
+<span class="fc" id="L172">         .withIsPrimary(true);</span>
+
+<span class="fc" id="L174">      new InsertAction().execute(</span>
+<span class="fc" id="L175">         new InsertInput(DealContact.TABLE_NAME).withRecordEntity(dealContact));</span>
+
+      /////////////////////////////////////////////////////////////////////
+      // Step 7: log audit entries                                       //
+      /////////////////////////////////////////////////////////////////////
+<span class="fc" id="L180">      AuditLog contactAudit = new AuditLog()</span>
+<span class="fc" id="L181">         .withEntityType(CrmEntityType.CONTACT.getId())</span>
+<span class="fc" id="L182">         .withEntityId(contactId)</span>
+<span class="fc" id="L183">         .withAction(CrmAuditAction.STAGE_CHANGED.getId())</span>
+<span class="fc" id="L184">         .withUserId(userId)</span>
+<span class="fc" id="L185">         .withFieldName(&quot;lifecycleStageId&quot;)</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">         .withNewValue(opportunityStageId != null ? String.valueOf(opportunityStageId) : null)</span>
+<span class="fc" id="L187">         .withMessage(&quot;Lead converted to deal: &quot; + dealName);</span>
+
+<span class="fc" id="L189">      AuditLog dealAudit = new AuditLog()</span>
+<span class="fc" id="L190">         .withEntityType(CrmEntityType.DEAL.getId())</span>
+<span class="fc" id="L191">         .withEntityId(dealId)</span>
+<span class="fc" id="L192">         .withAction(CrmAuditAction.CREATED.getId())</span>
+<span class="fc" id="L193">         .withUserId(userId)</span>
+<span class="fc" id="L194">         .withMessage(&quot;Deal created from lead conversion (contact &quot; + contactId + &quot;)&quot;);</span>
+
+<span class="fc" id="L196">      new InsertAction().execute(</span>
+<span class="fc" id="L197">         new InsertInput(AuditLog.TABLE_NAME).withRecords(List.of(</span>
+<span class="fc" id="L198">            contactAudit.toQRecord(), dealAudit.toQRecord())));</span>
+
+<span class="fc" id="L200">      output.addValue(&quot;dealId&quot;, dealId);</span>
+<span class="fc" id="L201">   }</span>
+
+
+
+   /***************************************************************************
+    ** Look up the &quot;Opportunity&quot; lifecycle stage id. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupLifecycleStageId(String name) throws QException
+   {
+<span class="fc" id="L210">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(LifecycleStage.TABLE_NAME)
+<span class="fc" id="L212">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L213">               .withCriteria(new QFilterCriteria(&quot;name&quot;, QCriteriaOperator.EQUALS, name))));</span>
+
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L217">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L220">      return (null);</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Look up the default pipeline id. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupDefaultPipelineId() throws QException
+   {
+<span class="fc" id="L230">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(Pipeline.TABLE_NAME)
+<span class="fc" id="L232">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L233">               .withCriteria(new QFilterCriteria(&quot;isDefault&quot;, QCriteriaOperator.EQUALS, true))));</span>
+
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L237">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L240">      return (null);</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Look up the first stage (lowest sortOrder) for a pipeline.
+    ***************************************************************************/
+   private Integer lookupFirstStageId(Integer pipelineId) throws QException
+   {
+<span class="fc" id="L250">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(PipelineStage.TABLE_NAME)
+<span class="fc" id="L252">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L253">               .withCriteria(new QFilterCriteria(&quot;pipelineId&quot;, QCriteriaOperator.EQUALS, pipelineId))</span>
+<span class="fc" id="L254">               .withOrderBy(new QFilterOrderBy(&quot;sortOrder&quot;, true))</span>
+<span class="fc" id="L255">               .withLimit(1)));</span>
+
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L259">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L262">      return (null);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

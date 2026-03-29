@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutoAssignProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.scoring.processes</a> &gt; <span class="el_source">AutoAssignProcess.java</span></div><h1>AutoAssignProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to auto-assign a contact or deal based on assignment rules.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.scoring.processes;
+
+
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAssignStrategy;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAssignableEntity;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.scoring.model.AssignmentRule;
+import com.kingsrook.qbits.crm.scoring.model.AssignmentRuleMember;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.StringUtils;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep to auto-assign a contact or deal to a user
+ ** based on configured assignment rules. Evaluates rules in sortOrder; first
+ ** match wins. Supports SPECIFIC_USER, ROUND_ROBIN, and LEAST_ACTIVE strategies.
+ *******************************************************************************/
+<span class="fc" id="L51">public class AutoAssignProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;autoAssign&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L63">      return new QProcessMetaData()</span>
+<span class="fc" id="L64">         .withName(NAME)</span>
+<span class="fc" id="L65">         .withLabel(&quot;Auto Assign&quot;)</span>
+<span class="fc" id="L66">         .withIcon(new QIcon().withName(&quot;assignment_ind&quot;))</span>
+<span class="fc" id="L67">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L69">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L70">               .withCode(new QCodeReference(AutoAssignProcess.class))</span>
+<span class="fc" id="L71">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L72">                  new QFieldMetaData(&quot;entityType&quot;, QFieldType.STRING).withIsRequired(true),</span>
+<span class="fc" id="L73">                  new QFieldMetaData(&quot;recordId&quot;, QFieldType.INTEGER).withIsRequired(true)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the assignment logic.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L86">      String  entityTypeStr = input.getValueString(&quot;entityType&quot;);</span>
+<span class="fc" id="L87">      Integer recordId      = input.getValueInteger(&quot;recordId&quot;);</span>
+
+      ///////////////////////////////////////////////
+      // resolve entity type                       //
+      ///////////////////////////////////////////////
+<span class="fc" id="L92">      CrmAssignableEntity entityType = null;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">      for(CrmAssignableEntity e : CrmAssignableEntity.values())</span>
+      {
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">         if(e.getLabel().equalsIgnoreCase(entityTypeStr) || e.name().equalsIgnoreCase(entityTypeStr))</span>
+         {
+<span class="fc" id="L97">            entityType = e;</span>
+<span class="fc" id="L98">            break;</span>
+         }
+      }
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">      if(entityType == null)</span>
+      {
+<span class="fc" id="L104">         output.addValue(&quot;action&quot;, &quot;NO_MATCH&quot;);</span>
+<span class="fc" id="L105">         return;</span>
+      }
+
+      ///////////////////////////////////////////////
+      // resolve table name                        //
+      ///////////////////////////////////////////////
+<span class="fc bfc" id="L111" title="All 2 branches covered.">      String tableName = entityType == CrmAssignableEntity.CONTACT</span>
+<span class="fc" id="L112">         ? Contact.TABLE_NAME : Deal.TABLE_NAME;</span>
+
+      ///////////////////////////////////////////////
+      // load the record                           //
+      ///////////////////////////////////////////////
+<span class="fc" id="L117">      GetOutput recordGet = new GetAction().execute(</span>
+<span class="fc" id="L118">         new GetInput(tableName).withPrimaryKey(recordId));</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">      if(recordGet.getRecord() == null)</span>
+      {
+<span class="fc" id="L122">         output.addValue(&quot;action&quot;, &quot;RECORD_NOT_FOUND&quot;);</span>
+<span class="fc" id="L123">         return;</span>
+      }
+
+<span class="fc" id="L126">      QRecord record = recordGet.getRecord();</span>
+
+      ///////////////////////////////////////////////
+      // query active rules for this entity type   //
+      ///////////////////////////////////////////////
+<span class="fc" id="L131">      QueryOutput rulesQuery = new QueryAction().execute(</span>
+         new QueryInput(AssignmentRule.TABLE_NAME)
+<span class="fc" id="L133">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L134">               .withCriteria(new QFilterCriteria(&quot;entityType&quot;, QCriteriaOperator.EQUALS, entityType.getId()))</span>
+<span class="fc" id="L135">               .withCriteria(new QFilterCriteria(&quot;isActive&quot;, QCriteriaOperator.EQUALS, true))</span>
+<span class="fc" id="L136">               .withOrderBy(new QFilterOrderBy(&quot;sortOrder&quot;))));</span>
+
+      ///////////////////////////////////////////////
+      // evaluate rules, first match wins          //
+      ///////////////////////////////////////////////
+<span class="fc bfc" id="L141" title="All 2 branches covered.">      for(QRecord ruleRecord : rulesQuery.getRecords())</span>
+      {
+<span class="fc" id="L143">         AssignmentRule rule = new AssignmentRule(ruleRecord);</span>
+
+<span class="fc bfc" id="L145" title="All 2 branches covered.">         if(evaluateCriteria(rule, record))</span>
+         {
+<span class="fc" id="L147">            String assignedUserId = resolveAssignment(rule);</span>
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if(StringUtils.hasContent(assignedUserId))</span>
+            {
+<span class="fc" id="L151">               QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L152">                  .withValue(&quot;id&quot;, recordId)</span>
+<span class="fc" id="L153">                  .withValue(&quot;ownerUserId&quot;, assignedUserId);</span>
+
+<span class="fc" id="L155">               new UpdateAction().execute(</span>
+<span class="fc" id="L156">                  new UpdateInput(tableName).withRecord(updateRecord));</span>
+
+<span class="fc" id="L158">               output.addValue(&quot;action&quot;, &quot;ASSIGNED&quot;);</span>
+<span class="fc" id="L159">               output.addValue(&quot;assignedUserId&quot;, assignedUserId);</span>
+<span class="fc" id="L160">               output.addValue(&quot;ruleId&quot;, rule.getId());</span>
+<span class="fc" id="L161">               return;</span>
+            }
+         }
+<span class="fc" id="L164">      }</span>
+
+      ///////////////////////////////////////////////
+      // no rules matched -- keep existing owner   //
+      ///////////////////////////////////////////////
+<span class="fc" id="L169">      output.addValue(&quot;action&quot;, &quot;NO_MATCH&quot;);</span>
+<span class="fc" id="L170">   }</span>
+
+
+
+   /***************************************************************************
+    ** Evaluate a rule's criteria against a record. If criteriaJson is null
+    ** or empty, the rule matches all records.
+    ***************************************************************************/
+   private boolean evaluateCriteria(AssignmentRule rule, QRecord record)
+   {
+      /////////////////////////////////////////////
+      // null or empty criteria matches all      //
+      /////////////////////////////////////////////
+<span class="fc bfc" id="L183" title="All 2 branches covered.">      if(!StringUtils.hasContent(rule.getCriteriaJson()))</span>
+      {
+<span class="fc" id="L185">         return (true);</span>
+      }
+
+      /////////////////////////////////////////////
+      // simple JSON criteria evaluation         //
+      // format: {&quot;fieldName&quot;:&quot;expectedValue&quot;}   //
+      /////////////////////////////////////////////
+      try
+      {
+<span class="fc" id="L194">         String json = rule.getCriteriaJson().trim();</span>
+<span class="pc bpc" id="L195" title="2 of 4 branches missed.">         if(json.startsWith(&quot;{&quot;) &amp;&amp; json.endsWith(&quot;}&quot;))</span>
+         {
+<span class="fc" id="L197">            json = json.substring(1, json.length() - 1);</span>
+<span class="fc" id="L198">            String[] pairs = json.split(&quot;,&quot;);</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            for(String pair : pairs)</span>
+            {
+<span class="fc" id="L201">               String[] kv = pair.split(&quot;:&quot;, 2);</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">               if(kv.length == 2)</span>
+               {
+<span class="fc" id="L204">                  String fieldName = kv[0].trim().replace(&quot;\&quot;&quot;, &quot;&quot;);</span>
+<span class="fc" id="L205">                  String expectedValue = kv[1].trim().replace(&quot;\&quot;&quot;, &quot;&quot;);</span>
+<span class="fc" id="L206">                  String actualValue = record.getValueString(fieldName);</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                  if(!Objects.equals(actualValue, expectedValue))</span>
+                  {
+<span class="fc" id="L210">                     return (false);</span>
+                  }
+               }
+            }
+         }
+<span class="fc" id="L215">         return (true);</span>
+      }
+<span class="nc" id="L217">      catch(Exception e)</span>
+      {
+<span class="nc" id="L219">         return (false);</span>
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Resolve the user to assign to based on the rule's strategy.
+    ***************************************************************************/
+   private String resolveAssignment(AssignmentRule rule) throws QException
+   {
+<span class="fc" id="L230">      CrmAssignStrategy strategy = CrmAssignStrategy.getById(rule.getAssignStrategy());</span>
+
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">      if(strategy == null)</span>
+      {
+<span class="nc" id="L234">         return (null);</span>
+      }
+
+<span class="pc bpc" id="L237" title="1 of 4 branches missed.">      switch(strategy)</span>
+      {
+         case SPECIFIC_USER:
+<span class="fc" id="L240">            return (rule.getAssignToUserId());</span>
+
+         case ROUND_ROBIN:
+<span class="fc" id="L243">            return (resolveRoundRobin(rule));</span>
+
+         case LEAST_ACTIVE:
+<span class="fc" id="L246">            return (resolveLeastActive(rule));</span>
+
+         default:
+<span class="nc" id="L249">            return (null);</span>
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Round robin: find active members, pick the one after the most recently
+    ** assigned (by sortOrder), wrapping around.
+    ***************************************************************************/
+   private String resolveRoundRobin(AssignmentRule rule) throws QException
+   {
+<span class="fc" id="L261">      List&lt;AssignmentRuleMember&gt; members = getActiveMembers(rule.getId());</span>
+
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">      if(members.isEmpty())</span>
+      {
+<span class="nc" id="L265">         return (null);</span>
+      }
+
+      /////////////////////////////////////////////
+      // find the last assigned member           //
+      /////////////////////////////////////////////
+<span class="fc" id="L271">      AssignmentRuleMember lastAssigned = null;</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">      for(AssignmentRuleMember member : members)</span>
+      {
+<span class="fc bfc" id="L274" title="All 2 branches covered.">         if(member.getLastAssignedDate() != null)</span>
+         {
+<span class="pc bpc" id="L276" title="3 of 4 branches missed.">            if(lastAssigned == null || member.getLastAssignedDate().isAfter(lastAssigned.getLastAssignedDate()))</span>
+            {
+<span class="fc" id="L278">               lastAssigned = member;</span>
+            }
+         }
+<span class="fc" id="L281">      }</span>
+
+      /////////////////////////////////////////////
+      // pick next member after last assigned    //
+      /////////////////////////////////////////////
+      AssignmentRuleMember selected;
+<span class="fc bfc" id="L287" title="All 2 branches covered.">      if(lastAssigned == null)</span>
+      {
+<span class="fc" id="L289">         selected = members.get(0);</span>
+      }
+      else
+      {
+<span class="fc" id="L293">         int lastIndex = members.indexOf(lastAssigned);</span>
+<span class="fc" id="L294">         int nextIndex = (lastIndex + 1) % members.size();</span>
+<span class="fc" id="L295">         selected = members.get(nextIndex);</span>
+      }
+
+      /////////////////////////////////////////////
+      // update lastAssignedDate                 //
+      /////////////////////////////////////////////
+<span class="fc" id="L301">      updateLastAssignedDate(selected);</span>
+
+<span class="fc" id="L303">      return (selected.getUserId());</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Least active: find active members, pick the one with fewest owned
+    ** records (approximated by oldest lastAssignedDate or null).
+    ***************************************************************************/
+   private String resolveLeastActive(AssignmentRule rule) throws QException
+   {
+<span class="fc" id="L314">      List&lt;AssignmentRuleMember&gt; members = getActiveMembers(rule.getId());</span>
+
+<span class="fc bfc" id="L316" title="All 2 branches covered.">      if(members.isEmpty())</span>
+      {
+<span class="fc" id="L318">         return (null);</span>
+      }
+
+      /////////////////////////////////////////////////////////////
+      // pick member with null lastAssignedDate, or oldest date  //
+      /////////////////////////////////////////////////////////////
+<span class="fc" id="L324">      AssignmentRuleMember selected = members.stream()</span>
+<span class="fc" id="L325">         .min(Comparator.comparing(</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            m -&gt; m.getLastAssignedDate() != null ? m.getLastAssignedDate() : Instant.EPOCH))</span>
+<span class="fc" id="L327">         .orElse(members.get(0));</span>
+
+<span class="fc" id="L329">      updateLastAssignedDate(selected);</span>
+
+<span class="fc" id="L331">      return (selected.getUserId());</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Query active members for a rule, ordered by sortOrder.
+    ***************************************************************************/
+   private List&lt;AssignmentRuleMember&gt; getActiveMembers(Integer ruleId) throws QException
+   {
+<span class="fc" id="L341">      QueryOutput membersQuery = new QueryAction().execute(</span>
+         new QueryInput(AssignmentRuleMember.TABLE_NAME)
+<span class="fc" id="L343">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L344">               .withCriteria(new QFilterCriteria(&quot;assignmentRuleId&quot;, QCriteriaOperator.EQUALS, ruleId))</span>
+<span class="fc" id="L345">               .withCriteria(new QFilterCriteria(&quot;isActive&quot;, QCriteriaOperator.EQUALS, true))</span>
+<span class="fc" id="L346">               .withOrderBy(new QFilterOrderBy(&quot;sortOrder&quot;))));</span>
+
+<span class="fc" id="L348">      return (membersQuery.getRecords().stream()</span>
+<span class="fc" id="L349">         .map(AssignmentRuleMember::new)</span>
+<span class="fc" id="L350">         .toList());</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Update the lastAssignedDate on a member.
+    ***************************************************************************/
+   private void updateLastAssignedDate(AssignmentRuleMember member) throws QException
+   {
+<span class="fc" id="L360">      QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L361">         .withValue(&quot;id&quot;, member.getId())</span>
+<span class="fc" id="L362">         .withValue(&quot;lastAssignedDate&quot;, Instant.now());</span>
+
+<span class="fc" id="L364">      new UpdateAction().execute(</span>
+<span class="fc" id="L365">         new UpdateInput(AssignmentRuleMember.TABLE_NAME).withRecord(updateRecord));</span>
+<span class="fc" id="L366">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

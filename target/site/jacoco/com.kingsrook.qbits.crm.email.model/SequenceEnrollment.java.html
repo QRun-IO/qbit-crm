@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SequenceEnrollment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.email.model</a> &gt; <span class="el_source">SequenceEnrollment.java</span></div><h1>SequenceEnrollment.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for SequenceEnrollment table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.email.model;
+
+
+import java.time.Instant;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+import java.util.List;
+
+
+/*******************************************************************************
+ ** QRecord Entity for SequenceEnrollment table -- tracks a contact's enrollment
+ ** in an email sequence, including current step, status, and scheduling.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = SequenceEnrollment.TableMetaDataCustomizer.class
+)
+public class SequenceEnrollment extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmSequenceEnrollment&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L43">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L52">         table</span>
+<span class="fc" id="L53">            .withIcon(new QIcon().withName(&quot;person_play&quot;))</span>
+<span class="fc" id="L54">            .withRecordLabelFormat(&quot;Enrollment #%s&quot;)</span>
+<span class="fc" id="L55">            .withRecordLabelFields(&quot;id&quot;)</span>
+<span class="fc" id="L56">            .withUniqueKey(new UniqueKey(&quot;sequenceId&quot;, &quot;contactId&quot;))</span>
+<span class="fc" id="L57">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;sequenceId&quot;, &quot;contactId&quot;, &quot;dealId&quot;, &quot;status&quot;))</span>
+<span class="fc" id="L58">            .withSection(new QFieldSection(&quot;progress&quot;, new QIcon().withName(&quot;trending_up&quot;), Tier.T2,</span>
+<span class="fc" id="L59">               List.of(&quot;currentStepNumber&quot;, &quot;enrolledDate&quot;, &quot;enrolledByUserId&quot;, &quot;nextStepDate&quot;)))</span>
+<span class="fc" id="L60">            .withSection(new QFieldSection(&quot;completion&quot;, new QIcon().withName(&quot;check_circle&quot;), Tier.T2,</span>
+<span class="fc" id="L61">               List.of(&quot;completedDate&quot;, &quot;unenrolledDate&quot;, &quot;unenrollReason&quot;)))</span>
+<span class="fc" id="L62">            .withSection(new QFieldSection(&quot;errors&quot;, new QIcon().withName(&quot;error&quot;), Tier.T2,</span>
+<span class="fc" id="L63">               List.of(&quot;failureCount&quot;, &quot;lastFailureMessage&quot;)))</span>
+<span class="fc" id="L64">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L66">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, possibleValueSourceName = EmailSequence.TABLE_NAME)
+   private Integer sequenceId;
+
+   @QField(isRequired = true)
+   private Integer contactId;
+
+   @QField()
+   private Integer dealId;
+
+   @QField(isRequired = true, defaultValue = &quot;0&quot;)
+   private Integer currentStepNumber;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmEnrollmentStatus.NAME)
+   private Integer status;
+
+   @QField(isRequired = true)
+   private Instant enrolledDate;
+
+   @QField(isRequired = true)
+   private String enrolledByUserId;
+
+   @QField()
+   private Instant completedDate;
+
+   @QField()
+   private Instant unenrolledDate;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String unenrollReason;
+
+   @QField()
+   private Instant nextStepDate;
+
+   @QField(defaultValue = &quot;0&quot;)
+   private Integer failureCount;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastFailureMessage;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public SequenceEnrollment()
+<span class="fc" id="L126">   {</span>
+<span class="fc" id="L127">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public SequenceEnrollment(QRecord record)
+<span class="fc" id="L135">   {</span>
+<span class="fc" id="L136">      populateFromQRecord(record);</span>
+<span class="fc" id="L137">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L146">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L156">      this.id = id;</span>
+<span class="fc" id="L157">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public SequenceEnrollment withId(Integer id)
+   {
+<span class="nc" id="L166">      this.id = id;</span>
+<span class="nc" id="L167">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sequenceId
+    *******************************************************************************/
+   public Integer getSequenceId()
+   {
+<span class="fc" id="L177">      return (this.sequenceId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sequenceId
+    *******************************************************************************/
+   public void setSequenceId(Integer sequenceId)
+   {
+<span class="fc" id="L187">      this.sequenceId = sequenceId;</span>
+<span class="fc" id="L188">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sequenceId
+    *******************************************************************************/
+   public SequenceEnrollment withSequenceId(Integer sequenceId)
+   {
+<span class="fc" id="L197">      this.sequenceId = sequenceId;</span>
+<span class="fc" id="L198">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for contactId
+    *******************************************************************************/
+   public Integer getContactId()
+   {
+<span class="fc" id="L208">      return (this.contactId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for contactId
+    *******************************************************************************/
+   public void setContactId(Integer contactId)
+   {
+<span class="fc" id="L218">      this.contactId = contactId;</span>
+<span class="fc" id="L219">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for contactId
+    *******************************************************************************/
+   public SequenceEnrollment withContactId(Integer contactId)
+   {
+<span class="fc" id="L228">      this.contactId = contactId;</span>
+<span class="fc" id="L229">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for dealId
+    *******************************************************************************/
+   public Integer getDealId()
+   {
+<span class="fc" id="L239">      return (this.dealId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for dealId
+    *******************************************************************************/
+   public void setDealId(Integer dealId)
+   {
+<span class="fc" id="L249">      this.dealId = dealId;</span>
+<span class="fc" id="L250">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for dealId
+    *******************************************************************************/
+   public SequenceEnrollment withDealId(Integer dealId)
+   {
+<span class="fc" id="L259">      this.dealId = dealId;</span>
+<span class="fc" id="L260">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for currentStepNumber
+    *******************************************************************************/
+   public Integer getCurrentStepNumber()
+   {
+<span class="fc" id="L270">      return (this.currentStepNumber);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for currentStepNumber
+    *******************************************************************************/
+   public void setCurrentStepNumber(Integer currentStepNumber)
+   {
+<span class="fc" id="L280">      this.currentStepNumber = currentStepNumber;</span>
+<span class="fc" id="L281">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for currentStepNumber
+    *******************************************************************************/
+   public SequenceEnrollment withCurrentStepNumber(Integer currentStepNumber)
+   {
+<span class="fc" id="L290">      this.currentStepNumber = currentStepNumber;</span>
+<span class="fc" id="L291">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for status
+    *******************************************************************************/
+   public Integer getStatus()
+   {
+<span class="fc" id="L301">      return (this.status);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for status
+    *******************************************************************************/
+   public void setStatus(Integer status)
+   {
+<span class="fc" id="L311">      this.status = status;</span>
+<span class="fc" id="L312">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for status
+    *******************************************************************************/
+   public SequenceEnrollment withStatus(Integer status)
+   {
+<span class="fc" id="L321">      this.status = status;</span>
+<span class="fc" id="L322">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for enrolledDate
+    *******************************************************************************/
+   public Instant getEnrolledDate()
+   {
+<span class="fc" id="L332">      return (this.enrolledDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for enrolledDate
+    *******************************************************************************/
+   public void setEnrolledDate(Instant enrolledDate)
+   {
+<span class="fc" id="L342">      this.enrolledDate = enrolledDate;</span>
+<span class="fc" id="L343">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for enrolledDate
+    *******************************************************************************/
+   public SequenceEnrollment withEnrolledDate(Instant enrolledDate)
+   {
+<span class="fc" id="L352">      this.enrolledDate = enrolledDate;</span>
+<span class="fc" id="L353">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for enrolledByUserId
+    *******************************************************************************/
+   public String getEnrolledByUserId()
+   {
+<span class="fc" id="L363">      return (this.enrolledByUserId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for enrolledByUserId
+    *******************************************************************************/
+   public void setEnrolledByUserId(String enrolledByUserId)
+   {
+<span class="fc" id="L373">      this.enrolledByUserId = enrolledByUserId;</span>
+<span class="fc" id="L374">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for enrolledByUserId
+    *******************************************************************************/
+   public SequenceEnrollment withEnrolledByUserId(String enrolledByUserId)
+   {
+<span class="fc" id="L383">      this.enrolledByUserId = enrolledByUserId;</span>
+<span class="fc" id="L384">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for completedDate
+    *******************************************************************************/
+   public Instant getCompletedDate()
+   {
+<span class="fc" id="L394">      return (this.completedDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for completedDate
+    *******************************************************************************/
+   public void setCompletedDate(Instant completedDate)
+   {
+<span class="fc" id="L404">      this.completedDate = completedDate;</span>
+<span class="fc" id="L405">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for completedDate
+    *******************************************************************************/
+   public SequenceEnrollment withCompletedDate(Instant completedDate)
+   {
+<span class="nc" id="L414">      this.completedDate = completedDate;</span>
+<span class="nc" id="L415">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for unenrolledDate
+    *******************************************************************************/
+   public Instant getUnenrolledDate()
+   {
+<span class="fc" id="L425">      return (this.unenrolledDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for unenrolledDate
+    *******************************************************************************/
+   public void setUnenrolledDate(Instant unenrolledDate)
+   {
+<span class="fc" id="L435">      this.unenrolledDate = unenrolledDate;</span>
+<span class="fc" id="L436">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for unenrolledDate
+    *******************************************************************************/
+   public SequenceEnrollment withUnenrolledDate(Instant unenrolledDate)
+   {
+<span class="nc" id="L445">      this.unenrolledDate = unenrolledDate;</span>
+<span class="nc" id="L446">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for unenrollReason
+    *******************************************************************************/
+   public String getUnenrollReason()
+   {
+<span class="fc" id="L456">      return (this.unenrollReason);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for unenrollReason
+    *******************************************************************************/
+   public void setUnenrollReason(String unenrollReason)
+   {
+<span class="fc" id="L466">      this.unenrollReason = unenrollReason;</span>
+<span class="fc" id="L467">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for unenrollReason
+    *******************************************************************************/
+   public SequenceEnrollment withUnenrollReason(String unenrollReason)
+   {
+<span class="nc" id="L476">      this.unenrollReason = unenrollReason;</span>
+<span class="nc" id="L477">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for nextStepDate
+    *******************************************************************************/
+   public Instant getNextStepDate()
+   {
+<span class="fc" id="L487">      return (this.nextStepDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for nextStepDate
+    *******************************************************************************/
+   public void setNextStepDate(Instant nextStepDate)
+   {
+<span class="fc" id="L497">      this.nextStepDate = nextStepDate;</span>
+<span class="fc" id="L498">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for nextStepDate
+    *******************************************************************************/
+   public SequenceEnrollment withNextStepDate(Instant nextStepDate)
+   {
+<span class="fc" id="L507">      this.nextStepDate = nextStepDate;</span>
+<span class="fc" id="L508">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for failureCount
+    *******************************************************************************/
+   public Integer getFailureCount()
+   {
+<span class="fc" id="L518">      return (this.failureCount);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for failureCount
+    *******************************************************************************/
+   public void setFailureCount(Integer failureCount)
+   {
+<span class="fc" id="L528">      this.failureCount = failureCount;</span>
+<span class="fc" id="L529">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for failureCount
+    *******************************************************************************/
+   public SequenceEnrollment withFailureCount(Integer failureCount)
+   {
+<span class="fc" id="L538">      this.failureCount = failureCount;</span>
+<span class="fc" id="L539">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for lastFailureMessage
+    *******************************************************************************/
+   public String getLastFailureMessage()
+   {
+<span class="fc" id="L549">      return (this.lastFailureMessage);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for lastFailureMessage
+    *******************************************************************************/
+   public void setLastFailureMessage(String lastFailureMessage)
+   {
+<span class="fc" id="L559">      this.lastFailureMessage = lastFailureMessage;</span>
+<span class="fc" id="L560">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastFailureMessage
+    *******************************************************************************/
+   public SequenceEnrollment withLastFailureMessage(String lastFailureMessage)
+   {
+<span class="nc" id="L569">      this.lastFailureMessage = lastFailureMessage;</span>
+<span class="nc" id="L570">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L580">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L590">      this.createDate = createDate;</span>
+<span class="fc" id="L591">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public SequenceEnrollment withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L600">      this.createDate = createDate;</span>
+<span class="nc" id="L601">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L611">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L621">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L622">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public SequenceEnrollment withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L631">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L632">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

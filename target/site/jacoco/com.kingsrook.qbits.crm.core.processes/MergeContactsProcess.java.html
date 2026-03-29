@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MergeContactsProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">MergeContactsProcess.java</span></div><h1>MergeContactsProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to merge two contacts. Re-links activities, deal contacts, tags,
+ ** and email list memberships from the secondary to the primary, then deletes
+ ** the secondary contact and logs audit entries.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.audit.model.AuditLog;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.ContactTag;
+import com.kingsrook.qbits.crm.core.model.EmailListMember;
+import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
+import com.kingsrook.qbits.crm.deals.model.DealContact;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep for merging two contacts into one.
+ *******************************************************************************/
+<span class="fc" id="L53">public class MergeContactsProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;mergeContacts&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L65">      return new QProcessMetaData()</span>
+<span class="fc" id="L66">         .withName(NAME)</span>
+<span class="fc" id="L67">         .withLabel(&quot;Merge Contacts&quot;)</span>
+<span class="fc" id="L68">         .withTableName(Contact.TABLE_NAME)</span>
+<span class="fc" id="L69">         .withIcon(new QIcon().withName(&quot;merge&quot;))</span>
+<span class="fc" id="L70">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L72">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L73">               .withCode(new QCodeReference(MergeContactsProcess.class))</span>
+<span class="fc" id="L74">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L75">                  new QFieldMetaData(&quot;primaryContactId&quot;, QFieldType.INTEGER).withIsRequired(true),</span>
+<span class="fc" id="L76">                  new QFieldMetaData(&quot;secondaryContactId&quot;, QFieldType.INTEGER).withIsRequired(true)</span>
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the merge contacts process.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L89">      Integer primaryContactId   = input.getValueInteger(&quot;primaryContactId&quot;);</span>
+<span class="fc" id="L90">      Integer secondaryContactId = input.getValueInteger(&quot;secondaryContactId&quot;);</span>
+<span class="fc" id="L91">      String  sessionUserId      = QContext.getQSession().getIdReference();</span>
+
+      /////////////////////////////////////////
+      // validate both contacts exist        //
+      /////////////////////////////////////////
+<span class="fc" id="L96">      QRecord primaryRecord = GetAction.execute(Contact.TABLE_NAME, primaryContactId);</span>
+<span class="fc" id="L97">      QRecord secondaryRecord = GetAction.execute(Contact.TABLE_NAME, secondaryContactId);</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">      if(primaryRecord == null)</span>
+      {
+<span class="nc" id="L101">         throw new QException(&quot;Primary contact not found: &quot; + primaryContactId);</span>
+      }
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">      if(secondaryRecord == null)</span>
+      {
+<span class="nc" id="L105">         throw new QException(&quot;Secondary contact not found: &quot; + secondaryContactId);</span>
+      }
+
+      ///////////////////////////////////////////////
+      // Re-link activities from secondary         //
+      ///////////////////////////////////////////////
+<span class="fc" id="L111">      relinkRecords(Activity.TABLE_NAME, &quot;contactId&quot;, secondaryContactId, primaryContactId);</span>
+
+      ///////////////////////////////////////////////
+      // Re-link DealContact rows                  //
+      ///////////////////////////////////////////////
+<span class="fc" id="L116">      relinkDealContacts(primaryContactId, secondaryContactId);</span>
+
+      ///////////////////////////////////////////////
+      // Re-link ContactTag rows                   //
+      ///////////////////////////////////////////////
+<span class="fc" id="L121">      relinkJunctionRecords(ContactTag.TABLE_NAME, &quot;contactId&quot;, &quot;tagId&quot;, primaryContactId, secondaryContactId);</span>
+
+      ///////////////////////////////////////////////
+      // Re-link EmailListMember rows              //
+      ///////////////////////////////////////////////
+<span class="fc" id="L126">      relinkJunctionRecords(EmailListMember.TABLE_NAME, &quot;contactId&quot;, &quot;emailListId&quot;, primaryContactId, secondaryContactId);</span>
+
+      ///////////////////////////////////////////////
+      // Delete the secondary contact              //
+      ///////////////////////////////////////////////
+<span class="fc" id="L131">      new DeleteAction().execute(</span>
+<span class="fc" id="L132">         new DeleteInput(Contact.TABLE_NAME).withPrimaryKeys(List.of(secondaryContactId)));</span>
+
+      ///////////////////////////////////////////////
+      // Log audit entries                         //
+      ///////////////////////////////////////////////
+<span class="fc" id="L137">      new InsertAction().execute(</span>
+<span class="fc" id="L138">         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(</span>
+            new AuditLog()
+<span class="fc" id="L140">               .withEntityType(CrmEntityType.CONTACT.getId())</span>
+<span class="fc" id="L141">               .withEntityId(primaryContactId)</span>
+<span class="fc" id="L142">               .withAction(CrmAuditAction.MERGED.getId())</span>
+<span class="fc" id="L143">               .withUserId(sessionUserId)</span>
+<span class="fc" id="L144">               .withMessage(&quot;Merged contact &quot; + secondaryContactId + &quot; into this contact&quot;)));</span>
+
+<span class="fc" id="L146">      new InsertAction().execute(</span>
+<span class="fc" id="L147">         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(</span>
+            new AuditLog()
+<span class="fc" id="L149">               .withEntityType(CrmEntityType.CONTACT.getId())</span>
+<span class="fc" id="L150">               .withEntityId(secondaryContactId)</span>
+<span class="fc" id="L151">               .withAction(CrmAuditAction.DELETED.getId())</span>
+<span class="fc" id="L152">               .withUserId(sessionUserId)</span>
+<span class="fc" id="L153">               .withMessage(&quot;Contact deleted during merge into contact &quot; + primaryContactId)));</span>
+
+<span class="fc" id="L155">      output.addValue(&quot;primaryContactId&quot;, primaryContactId);</span>
+<span class="fc" id="L156">   }</span>
+
+
+
+   /***************************************************************************
+    ** Re-link simple FK records from secondary to primary.
+    ***************************************************************************/
+   private void relinkRecords(String tableName, String fkField, Integer fromId, Integer toId) throws QException
+   {
+<span class="fc" id="L165">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(tableName)
+<span class="fc" id="L167">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L168">               .withCriteria(new QFilterCriteria(fkField, QCriteriaOperator.EQUALS, fromId))));</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">      for(QRecord record : queryOutput.getRecords())</span>
+      {
+<span class="fc" id="L172">         QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L173">            .withValue(&quot;id&quot;, record.getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L174">            .withValue(fkField, toId);</span>
+
+<span class="fc" id="L176">         new UpdateAction().execute(</span>
+<span class="fc" id="L177">            new UpdateInput(tableName).withRecord(updateRecord));</span>
+<span class="fc" id="L178">      }</span>
+<span class="fc" id="L179">   }</span>
+
+
+
+   /***************************************************************************
+    ** Re-link DealContact rows: if same deal exists for both, delete secondary;
+    ** otherwise update contactId.
+    ***************************************************************************/
+   private void relinkDealContacts(Integer primaryContactId, Integer secondaryContactId) throws QException
+   {
+      //////////////////////////////////////////////////////////
+      // find deals already linked to primary                 //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L192">      QueryOutput primaryDeals = new QueryAction().execute(</span>
+         new QueryInput(DealContact.TABLE_NAME)
+<span class="fc" id="L194">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L195">               .withCriteria(new QFilterCriteria(&quot;contactId&quot;, QCriteriaOperator.EQUALS, primaryContactId))));</span>
+
+<span class="fc" id="L197">      Set&lt;Integer&gt; primaryDealIds = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">      for(QRecord record : primaryDeals.getRecords())</span>
+      {
+<span class="nc" id="L200">         primaryDealIds.add(record.getValueInteger(&quot;dealId&quot;));</span>
+<span class="nc" id="L201">      }</span>
+
+      //////////////////////////////////////////////////////////
+      // process secondary deal contacts                      //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L206">      QueryOutput secondaryDeals = new QueryAction().execute(</span>
+         new QueryInput(DealContact.TABLE_NAME)
+<span class="fc" id="L208">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L209">               .withCriteria(new QFilterCriteria(&quot;contactId&quot;, QCriteriaOperator.EQUALS, secondaryContactId))));</span>
+
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">      for(QRecord record : secondaryDeals.getRecords())</span>
+      {
+<span class="nc" id="L213">         Integer dealId = record.getValueInteger(&quot;dealId&quot;);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">         if(primaryDealIds.contains(dealId))</span>
+         {
+<span class="nc" id="L216">            new DeleteAction().execute(</span>
+<span class="nc" id="L217">               new DeleteInput(DealContact.TABLE_NAME).withPrimaryKeys(List.of(record.getValueInteger(&quot;id&quot;))));</span>
+         }
+         else
+         {
+<span class="nc" id="L221">            QRecord updateRecord = new QRecord()</span>
+<span class="nc" id="L222">               .withValue(&quot;id&quot;, record.getValueInteger(&quot;id&quot;))</span>
+<span class="nc" id="L223">               .withValue(&quot;contactId&quot;, primaryContactId);</span>
+<span class="nc" id="L224">            new UpdateAction().execute(</span>
+<span class="nc" id="L225">               new UpdateInput(DealContact.TABLE_NAME).withRecord(updateRecord));</span>
+         }
+<span class="nc" id="L227">      }</span>
+<span class="fc" id="L228">   }</span>
+
+
+
+   /***************************************************************************
+    ** Re-link junction table records: if same FK2 exists for both, delete
+    ** secondary; otherwise update FK1 (contactId).
+    ***************************************************************************/
+   private void relinkJunctionRecords(String tableName, String fk1Field, String fk2Field, Integer primaryId, Integer secondaryId) throws QException
+   {
+      //////////////////////////////////////////////////////////
+      // find FK2 values already linked to primary            //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L241">      QueryOutput primaryRecords = new QueryAction().execute(</span>
+         new QueryInput(tableName)
+<span class="fc" id="L243">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L244">               .withCriteria(new QFilterCriteria(fk1Field, QCriteriaOperator.EQUALS, primaryId))));</span>
+
+<span class="fc" id="L246">      Set&lt;Integer&gt; primaryFk2Ids = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">      for(QRecord record : primaryRecords.getRecords())</span>
+      {
+<span class="fc" id="L249">         primaryFk2Ids.add(record.getValueInteger(fk2Field));</span>
+<span class="fc" id="L250">      }</span>
+
+      //////////////////////////////////////////////////////////
+      // process secondary records                            //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L255">      QueryOutput secondaryRecords = new QueryAction().execute(</span>
+         new QueryInput(tableName)
+<span class="fc" id="L257">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L258">               .withCriteria(new QFilterCriteria(fk1Field, QCriteriaOperator.EQUALS, secondaryId))));</span>
+
+<span class="fc bfc" id="L260" title="All 2 branches covered.">      for(QRecord record : secondaryRecords.getRecords())</span>
+      {
+<span class="fc" id="L262">         Integer fk2Value = record.getValueInteger(fk2Field);</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">         if(primaryFk2Ids.contains(fk2Value))</span>
+         {
+<span class="fc" id="L265">            new DeleteAction().execute(</span>
+<span class="fc" id="L266">               new DeleteInput(tableName).withPrimaryKeys(List.of(record.getValueInteger(&quot;id&quot;))));</span>
+         }
+         else
+         {
+<span class="fc" id="L270">            QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L271">               .withValue(&quot;id&quot;, record.getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L272">               .withValue(fk1Field, primaryId);</span>
+<span class="fc" id="L273">            new UpdateAction().execute(</span>
+<span class="fc" id="L274">               new UpdateInput(tableName).withRecord(updateRecord));</span>
+         }
+<span class="fc" id="L276">      }</span>
+<span class="fc" id="L277">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

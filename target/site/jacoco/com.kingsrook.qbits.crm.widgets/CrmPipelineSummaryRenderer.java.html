@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmPipelineSummaryRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.widgets</a> &gt; <span class="el_source">CrmPipelineSummaryRenderer.java</span></div><h1>CrmPipelineSummaryRenderer.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Renderer for the CRM Pipeline Summary widget.
+ **
+ ** Queries deals grouped by pipelineStageId for a given pipelineId and returns
+ ** a table with columns: stageName, dealCount, totalAmount, weightedAmount.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.widgets;
+
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetOutput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.utils.collections.MapBuilder;
+
+
+/*******************************************************************************
+ ** Renders the pipeline summary as a table widget showing deal counts and
+ ** amounts grouped by pipeline stage.
+ *******************************************************************************/
+<span class="fc" id="L37">public class CrmPipelineSummaryRenderer extends AbstractWidgetRenderer</span>
+{
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+   {
+      ///////////////////////////////////////////////////////////////
+      // get pipelineId from widget input query params             //
+      ///////////////////////////////////////////////////////////////
+<span class="fc" id="L49">      Integer pipelineId = null;</span>
+<span class="pc bpc" id="L50" title="2 of 4 branches missed.">      if(input.getQueryParams() != null &amp;&amp; input.getQueryParams().containsKey(&quot;pipelineId&quot;))</span>
+      {
+<span class="fc" id="L52">         pipelineId = Integer.valueOf(input.getQueryParams().get(&quot;pipelineId&quot;));</span>
+      }
+
+      ///////////////////////////////////////////////////////////////
+      // query all stages for the pipeline, ordered by sortOrder   //
+      ///////////////////////////////////////////////////////////////
+<span class="fc" id="L58">      QQueryFilter stageFilter = new QQueryFilter()</span>
+<span class="fc" id="L59">         .withOrderBy(new QFilterOrderBy(&quot;sortOrder&quot;, true));</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">      if(pipelineId != null)</span>
+      {
+<span class="fc" id="L62">         stageFilter.withCriteria(new QFilterCriteria(&quot;pipelineId&quot;, QCriteriaOperator.EQUALS, pipelineId));</span>
+      }
+
+<span class="fc" id="L65">      QueryOutput stageOutput = new QueryAction().execute(</span>
+<span class="fc" id="L66">         new QueryInput(PipelineStage.TABLE_NAME).withFilter(stageFilter));</span>
+
+      //////////////////////////////////////////////////////////
+      // build a map of stageId -&gt; stageName for display      //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L71">      Map&lt;Integer, String&gt; stageNames = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">      for(QRecord stageRecord : stageOutput.getRecords())</span>
+      {
+<span class="fc" id="L74">         stageNames.put(stageRecord.getValueInteger(&quot;id&quot;), stageRecord.getValueString(&quot;name&quot;));</span>
+<span class="fc" id="L75">      }</span>
+
+      ///////////////////////////////////////////////////////////////
+      // query deals for the pipeline                              //
+      ///////////////////////////////////////////////////////////////
+<span class="fc" id="L80">      QQueryFilter dealFilter = new QQueryFilter();</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">      if(pipelineId != null)</span>
+      {
+<span class="fc" id="L83">         dealFilter.withCriteria(new QFilterCriteria(&quot;pipelineId&quot;, QCriteriaOperator.EQUALS, pipelineId));</span>
+      }
+
+<span class="fc" id="L86">      QueryOutput dealOutput = new QueryAction().execute(</span>
+<span class="fc" id="L87">         new QueryInput(Deal.TABLE_NAME).withFilter(dealFilter));</span>
+
+      //////////////////////////////////////////////////////////
+      // aggregate deals by stage                             //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L92">      Map&lt;Integer, Integer&gt; countByStage          = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L93">      Map&lt;Integer, BigDecimal&gt; totalAmountByStage = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L94">      Map&lt;Integer, BigDecimal&gt; weightedByStage    = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">      for(Integer stageId : stageNames.keySet())</span>
+      {
+<span class="fc" id="L98">         countByStage.put(stageId, 0);</span>
+<span class="fc" id="L99">         totalAmountByStage.put(stageId, BigDecimal.ZERO);</span>
+<span class="fc" id="L100">         weightedByStage.put(stageId, BigDecimal.ZERO);</span>
+<span class="fc" id="L101">      }</span>
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">      for(QRecord dealRecord : dealOutput.getRecords())</span>
+      {
+<span class="fc" id="L105">         Integer stageId = dealRecord.getValueInteger(&quot;pipelineStageId&quot;);</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">         if(stageId == null || !stageNames.containsKey(stageId))</span>
+         {
+<span class="nc" id="L108">            continue;</span>
+         }
+
+<span class="fc" id="L111">         countByStage.merge(stageId, 1, Integer::sum);</span>
+
+<span class="fc" id="L113">         BigDecimal amount = dealRecord.getValueBigDecimal(&quot;amount&quot;);</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">         if(amount != null)</span>
+         {
+<span class="fc" id="L116">            totalAmountByStage.merge(stageId, amount, BigDecimal::add);</span>
+         }
+
+<span class="fc" id="L119">         BigDecimal weighted = dealRecord.getValueBigDecimal(&quot;weightedAmount&quot;);</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">         if(weighted != null)</span>
+         {
+<span class="fc" id="L122">            weightedByStage.merge(stageId, weighted, BigDecimal::add);</span>
+         }
+<span class="fc" id="L124">      }</span>
+
+      ///////////////////////////
+      // build table columns   //
+      ///////////////////////////
+<span class="fc" id="L129">      List&lt;TableData.Column&gt; columns = List.of(</span>
+         new TableData.Column(&quot;html&quot;, &quot;Stage&quot;, &quot;stageName&quot;, &quot;2fr&quot;, null),
+         new TableData.Column(&quot;html&quot;, &quot;Deal Count&quot;, &quot;dealCount&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Total Amount&quot;, &quot;totalAmount&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Weighted Amount&quot;, &quot;weightedAmount&quot;, &quot;1fr&quot;, &quot;right&quot;)
+      );
+
+      //////////////////////////
+      // build table rows     //
+      //////////////////////////
+<span class="fc" id="L139">      List&lt;Map&lt;String, Object&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">      for(Integer stageId : stageNames.keySet())</span>
+      {
+<span class="fc" id="L142">         rows.add(MapBuilder.of(</span>
+<span class="fc" id="L143">            &quot;stageName&quot;, stageNames.get(stageId),</span>
+<span class="fc" id="L144">            &quot;dealCount&quot;, countByStage.getOrDefault(stageId, 0),</span>
+<span class="fc" id="L145">            &quot;totalAmount&quot;, totalAmountByStage.getOrDefault(stageId, BigDecimal.ZERO).toPlainString(),</span>
+<span class="fc" id="L146">            &quot;weightedAmount&quot;, weightedByStage.getOrDefault(stageId, BigDecimal.ZERO).toPlainString()</span>
+         ));
+<span class="fc" id="L148">      }</span>
+
+<span class="fc" id="L150">      TableData tableData = new TableData(null, columns, rows)</span>
+<span class="fc" id="L151">         .withRowsPerPage(50)</span>
+<span class="fc" id="L152">         .withHidePaginationDropdown(true);</span>
+
+<span class="fc" id="L154">      return (new RenderWidgetOutput(tableData));</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

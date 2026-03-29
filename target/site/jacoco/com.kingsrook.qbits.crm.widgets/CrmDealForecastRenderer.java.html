@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmDealForecastRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.widgets</a> &gt; <span class="el_source">CrmDealForecastRenderer.java</span></div><h1>CrmDealForecastRenderer.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Renderer for the CRM Deal Forecast widget.
+ **
+ ** Queries open deals (not in closed stages) and groups them by expected close
+ ** month. Returns a table with columns: month, dealCount, totalAmount,
+ ** totalWeightedAmount.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.widgets;
+
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetOutput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.utils.collections.MapBuilder;
+
+
+/*******************************************************************************
+ ** Renders the deal forecast as a table widget showing open deal aggregates
+ ** grouped by expected close month.
+ *******************************************************************************/
+<span class="fc" id="L43">public class CrmDealForecastRenderer extends AbstractWidgetRenderer</span>
+{
+<span class="fc" id="L45">   private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern(&quot;yyyy-MM&quot;);</span>
+
+
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+   {
+      ///////////////////////////////////////////////////////////////
+      // find all closed stage IDs to exclude                      //
+      ///////////////////////////////////////////////////////////////
+<span class="fc" id="L58">      Set&lt;Integer&gt; closedStageIds = findClosedStageIds();</span>
+
+      ///////////////////////////////////////////////////////////////
+      // query all deals that are NOT in closed stages             //
+      ///////////////////////////////////////////////////////////////
+<span class="fc" id="L63">      QQueryFilter filter = new QQueryFilter();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">      if(!closedStageIds.isEmpty())</span>
+      {
+<span class="fc" id="L66">         filter.withCriteria(new QFilterCriteria(&quot;pipelineStageId&quot;, QCriteriaOperator.NOT_IN, new ArrayList&lt;&gt;(closedStageIds)));</span>
+      }
+
+<span class="fc" id="L69">      QueryOutput dealOutput = new QueryAction().execute(</span>
+<span class="fc" id="L70">         new QueryInput(Deal.TABLE_NAME).withFilter(filter));</span>
+
+      //////////////////////////////////////////////////////////
+      // aggregate deals by expected close month              //
+      //////////////////////////////////////////////////////////
+<span class="fc" id="L75">      Map&lt;YearMonth, Integer&gt; countByMonth          = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L76">      Map&lt;YearMonth, BigDecimal&gt; amountByMonth      = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L77">      Map&lt;YearMonth, BigDecimal&gt; weightedByMonth    = new TreeMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">      for(QRecord record : dealOutput.getRecords())</span>
+      {
+<span class="fc" id="L81">         LocalDate expectedCloseDate = record.getValueLocalDate(&quot;expectedCloseDate&quot;);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">         if(expectedCloseDate == null)</span>
+         {
+<span class="nc" id="L84">            continue;</span>
+         }
+
+<span class="fc" id="L87">         YearMonth yearMonth = YearMonth.from(expectedCloseDate);</span>
+
+<span class="fc" id="L89">         countByMonth.merge(yearMonth, 1, Integer::sum);</span>
+
+<span class="fc" id="L91">         BigDecimal amount = record.getValueBigDecimal(&quot;amount&quot;);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">         if(amount != null)</span>
+         {
+<span class="fc" id="L94">            amountByMonth.merge(yearMonth, amount, BigDecimal::add);</span>
+         }
+
+<span class="fc" id="L97">         BigDecimal weighted = record.getValueBigDecimal(&quot;weightedAmount&quot;);</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">         if(weighted != null)</span>
+         {
+<span class="fc" id="L100">            weightedByMonth.merge(yearMonth, weighted, BigDecimal::add);</span>
+         }
+<span class="fc" id="L102">      }</span>
+
+      ///////////////////////////
+      // build table columns   //
+      ///////////////////////////
+<span class="fc" id="L107">      List&lt;TableData.Column&gt; columns = List.of(</span>
+         new TableData.Column(&quot;html&quot;, &quot;Month&quot;, &quot;month&quot;, &quot;1fr&quot;, null),
+         new TableData.Column(&quot;html&quot;, &quot;Deal Count&quot;, &quot;dealCount&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Total Amount&quot;, &quot;totalAmount&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Weighted Amount&quot;, &quot;totalWeightedAmount&quot;, &quot;1fr&quot;, &quot;right&quot;)
+      );
+
+      //////////////////////////
+      // build table rows     //
+      //////////////////////////
+<span class="fc" id="L117">      List&lt;Map&lt;String, Object&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">      for(YearMonth yearMonth : countByMonth.keySet())</span>
+      {
+<span class="fc" id="L120">         rows.add(MapBuilder.of(</span>
+<span class="fc" id="L121">            &quot;month&quot;, yearMonth.format(MONTH_FORMAT),</span>
+<span class="fc" id="L122">            &quot;dealCount&quot;, countByMonth.getOrDefault(yearMonth, 0),</span>
+<span class="fc" id="L123">            &quot;totalAmount&quot;, amountByMonth.getOrDefault(yearMonth, BigDecimal.ZERO).toPlainString(),</span>
+<span class="fc" id="L124">            &quot;totalWeightedAmount&quot;, weightedByMonth.getOrDefault(yearMonth, BigDecimal.ZERO).toPlainString()</span>
+         ));
+<span class="fc" id="L126">      }</span>
+
+<span class="fc" id="L128">      TableData tableData = new TableData(null, columns, rows)</span>
+<span class="fc" id="L129">         .withRowsPerPage(50)</span>
+<span class="fc" id="L130">         .withHidePaginationDropdown(true);</span>
+
+<span class="fc" id="L132">      return (new RenderWidgetOutput(tableData));</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Find all pipeline stage IDs that are closed (won or lost).
+    ***************************************************************************/
+   private Set&lt;Integer&gt; findClosedStageIds() throws QException
+   {
+<span class="fc" id="L142">      QQueryFilter filter = new QQueryFilter()</span>
+<span class="fc" id="L143">         .withCriteria(new QFilterCriteria(&quot;isClosedWon&quot;, QCriteriaOperator.EQUALS, true));</span>
+
+<span class="fc" id="L145">      QQueryFilter lostFilter = new QQueryFilter()</span>
+<span class="fc" id="L146">         .withCriteria(new QFilterCriteria(&quot;isClosedLost&quot;, QCriteriaOperator.EQUALS, true));</span>
+
+      ///////////////////////////////////////////////////////////////////////////
+      // query stages that are closed won OR closed lost                       //
+      ///////////////////////////////////////////////////////////////////////////
+<span class="fc" id="L151">      QueryOutput wonOutput = new QueryAction().execute(</span>
+<span class="fc" id="L152">         new QueryInput(PipelineStage.TABLE_NAME).withFilter(filter));</span>
+
+<span class="fc" id="L154">      QueryOutput lostOutput = new QueryAction().execute(</span>
+<span class="fc" id="L155">         new QueryInput(PipelineStage.TABLE_NAME).withFilter(lostFilter));</span>
+
+<span class="fc" id="L157">      Set&lt;Integer&gt; closedIds = wonOutput.getRecords().stream()</span>
+<span class="fc" id="L158">         .map(r -&gt; r.getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L159">         .collect(Collectors.toSet());</span>
+
+<span class="fc" id="L161">      lostOutput.getRecords().stream()</span>
+<span class="pc" id="L162">         .map(r -&gt; r.getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L163">         .forEach(closedIds::add);</span>
+
+<span class="fc" id="L165">      return (closedIds);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

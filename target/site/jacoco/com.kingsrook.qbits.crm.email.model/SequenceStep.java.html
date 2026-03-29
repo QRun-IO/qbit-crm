@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SequenceStep.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.email.model</a> &gt; <span class="el_source">SequenceStep.java</span></div><h1>SequenceStep.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** QRecord Entity for SequenceStep table
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.email.model;
+
+
+import java.time.Instant;
+import com.kingsrook.qbits.crm.core.model.enums.CrmSequenceStepType;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.data.QField;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
+
+
+/*******************************************************************************
+ ** QRecord Entity for SequenceStep table -- a single step within an email
+ ** sequence, defining what action to take and after what delay.
+ *******************************************************************************/
+@QMetaDataProducingEntity(
+   produceTableMetaData = true,
+   tableMetaDataCustomizer = SequenceStep.TableMetaDataCustomizer.class
+)
+public class SequenceStep extends QRecordEntity
+{
+   public static final String TABLE_NAME = &quot;crmSequenceStep&quot;;
+
+
+
+   /***************************************************************************
+    **
+    ***************************************************************************/
+<span class="fc" id="L40">   public static class TableMetaDataCustomizer implements MetaDataCustomizerInterface&lt;QTableMetaData&gt;</span>
+   {
+
+      /***************************************************************************
+       **
+       ***************************************************************************/
+      @Override
+      public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
+      {
+<span class="fc" id="L49">         table</span>
+<span class="fc" id="L50">            .withIcon(new QIcon().withName(&quot;format_list_numbered&quot;))</span>
+<span class="fc" id="L51">            .withRecordLabelFormat(&quot;Step %s&quot;)</span>
+<span class="fc" id="L52">            .withRecordLabelFields(&quot;stepNumber&quot;)</span>
+<span class="fc" id="L53">            .withUniqueKey(new UniqueKey(&quot;sequenceId&quot;, &quot;stepNumber&quot;))</span>
+<span class="fc" id="L54">            .withSection(SectionFactory.defaultT1(&quot;id&quot;, &quot;sequenceId&quot;, &quot;stepNumber&quot;, &quot;stepType&quot;))</span>
+<span class="fc" id="L55">            .withSection(SectionFactory.defaultT2(&quot;delayDays&quot;, &quot;delayHours&quot;, &quot;emailTemplateId&quot;, &quot;taskSubject&quot;, &quot;taskDescription&quot;))</span>
+<span class="fc" id="L56">            .withSection(SectionFactory.defaultT3(&quot;createDate&quot;, &quot;modifyDate&quot;));</span>
+
+<span class="fc" id="L58">         return (table);</span>
+      }
+   }
+
+
+
+   @QField(isEditable = false, isPrimaryKey = true)
+   private Integer id;
+
+   @QField(isRequired = true, possibleValueSourceName = EmailSequence.TABLE_NAME)
+   private Integer sequenceId;
+
+   @QField(isRequired = true)
+   private Integer stepNumber;
+
+   @QField(isRequired = true, possibleValueSourceName = CrmSequenceStepType.NAME)
+   private Integer stepType;
+
+   @QField(isRequired = true, defaultValue = &quot;0&quot;)
+   private Integer delayDays;
+
+   @QField(defaultValue = &quot;0&quot;)
+   private Integer delayHours;
+
+   @QField(possibleValueSourceName = EmailTemplate.TABLE_NAME)
+   private Integer emailTemplateId;
+
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String taskSubject;
+
+   @QField()
+   private String taskDescription;
+
+   @QField(isEditable = false)
+   private Instant createDate;
+
+   @QField(isEditable = false)
+   private Instant modifyDate;
+
+
+
+   /*******************************************************************************
+    ** Default constructor
+    *******************************************************************************/
+   public SequenceStep()
+<span class="fc" id="L103">   {</span>
+<span class="fc" id="L104">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Constructor that takes a QRecord
+    *******************************************************************************/
+   public SequenceStep(QRecord record)
+<span class="fc" id="L112">   {</span>
+<span class="fc" id="L113">      populateFromQRecord(record);</span>
+<span class="fc" id="L114">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Getter for id
+    *******************************************************************************/
+   public Integer getId()
+   {
+<span class="fc" id="L123">      return (this.id);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for id
+    *******************************************************************************/
+   public void setId(Integer id)
+   {
+<span class="fc" id="L133">      this.id = id;</span>
+<span class="fc" id="L134">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for id
+    *******************************************************************************/
+   public SequenceStep withId(Integer id)
+   {
+<span class="nc" id="L143">      this.id = id;</span>
+<span class="nc" id="L144">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for sequenceId
+    *******************************************************************************/
+   public Integer getSequenceId()
+   {
+<span class="fc" id="L154">      return (this.sequenceId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for sequenceId
+    *******************************************************************************/
+   public void setSequenceId(Integer sequenceId)
+   {
+<span class="fc" id="L164">      this.sequenceId = sequenceId;</span>
+<span class="fc" id="L165">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for sequenceId
+    *******************************************************************************/
+   public SequenceStep withSequenceId(Integer sequenceId)
+   {
+<span class="fc" id="L174">      this.sequenceId = sequenceId;</span>
+<span class="fc" id="L175">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for stepNumber
+    *******************************************************************************/
+   public Integer getStepNumber()
+   {
+<span class="fc" id="L185">      return (this.stepNumber);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for stepNumber
+    *******************************************************************************/
+   public void setStepNumber(Integer stepNumber)
+   {
+<span class="fc" id="L195">      this.stepNumber = stepNumber;</span>
+<span class="fc" id="L196">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for stepNumber
+    *******************************************************************************/
+   public SequenceStep withStepNumber(Integer stepNumber)
+   {
+<span class="fc" id="L205">      this.stepNumber = stepNumber;</span>
+<span class="fc" id="L206">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for stepType
+    *******************************************************************************/
+   public Integer getStepType()
+   {
+<span class="fc" id="L216">      return (this.stepType);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for stepType
+    *******************************************************************************/
+   public void setStepType(Integer stepType)
+   {
+<span class="fc" id="L226">      this.stepType = stepType;</span>
+<span class="fc" id="L227">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for stepType
+    *******************************************************************************/
+   public SequenceStep withStepType(Integer stepType)
+   {
+<span class="fc" id="L236">      this.stepType = stepType;</span>
+<span class="fc" id="L237">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for delayDays
+    *******************************************************************************/
+   public Integer getDelayDays()
+   {
+<span class="fc" id="L247">      return (this.delayDays);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for delayDays
+    *******************************************************************************/
+   public void setDelayDays(Integer delayDays)
+   {
+<span class="fc" id="L257">      this.delayDays = delayDays;</span>
+<span class="fc" id="L258">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for delayDays
+    *******************************************************************************/
+   public SequenceStep withDelayDays(Integer delayDays)
+   {
+<span class="fc" id="L267">      this.delayDays = delayDays;</span>
+<span class="fc" id="L268">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for delayHours
+    *******************************************************************************/
+   public Integer getDelayHours()
+   {
+<span class="fc" id="L278">      return (this.delayHours);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for delayHours
+    *******************************************************************************/
+   public void setDelayHours(Integer delayHours)
+   {
+<span class="fc" id="L288">      this.delayHours = delayHours;</span>
+<span class="fc" id="L289">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for delayHours
+    *******************************************************************************/
+   public SequenceStep withDelayHours(Integer delayHours)
+   {
+<span class="fc" id="L298">      this.delayHours = delayHours;</span>
+<span class="fc" id="L299">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for emailTemplateId
+    *******************************************************************************/
+   public Integer getEmailTemplateId()
+   {
+<span class="fc" id="L309">      return (this.emailTemplateId);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for emailTemplateId
+    *******************************************************************************/
+   public void setEmailTemplateId(Integer emailTemplateId)
+   {
+<span class="fc" id="L319">      this.emailTemplateId = emailTemplateId;</span>
+<span class="fc" id="L320">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for emailTemplateId
+    *******************************************************************************/
+   public SequenceStep withEmailTemplateId(Integer emailTemplateId)
+   {
+<span class="nc" id="L329">      this.emailTemplateId = emailTemplateId;</span>
+<span class="nc" id="L330">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for taskSubject
+    *******************************************************************************/
+   public String getTaskSubject()
+   {
+<span class="fc" id="L340">      return (this.taskSubject);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for taskSubject
+    *******************************************************************************/
+   public void setTaskSubject(String taskSubject)
+   {
+<span class="fc" id="L350">      this.taskSubject = taskSubject;</span>
+<span class="fc" id="L351">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for taskSubject
+    *******************************************************************************/
+   public SequenceStep withTaskSubject(String taskSubject)
+   {
+<span class="nc" id="L360">      this.taskSubject = taskSubject;</span>
+<span class="nc" id="L361">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for taskDescription
+    *******************************************************************************/
+   public String getTaskDescription()
+   {
+<span class="fc" id="L371">      return (this.taskDescription);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for taskDescription
+    *******************************************************************************/
+   public void setTaskDescription(String taskDescription)
+   {
+<span class="fc" id="L381">      this.taskDescription = taskDescription;</span>
+<span class="fc" id="L382">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for taskDescription
+    *******************************************************************************/
+   public SequenceStep withTaskDescription(String taskDescription)
+   {
+<span class="nc" id="L391">      this.taskDescription = taskDescription;</span>
+<span class="nc" id="L392">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for createDate
+    *******************************************************************************/
+   public Instant getCreateDate()
+   {
+<span class="fc" id="L402">      return (this.createDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for createDate
+    *******************************************************************************/
+   public void setCreateDate(Instant createDate)
+   {
+<span class="fc" id="L412">      this.createDate = createDate;</span>
+<span class="fc" id="L413">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for createDate
+    *******************************************************************************/
+   public SequenceStep withCreateDate(Instant createDate)
+   {
+<span class="nc" id="L422">      this.createDate = createDate;</span>
+<span class="nc" id="L423">      return (this);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for modifyDate
+    *******************************************************************************/
+   public Instant getModifyDate()
+   {
+<span class="fc" id="L433">      return (this.modifyDate);</span>
+   }
+
+
+
+   /*******************************************************************************
+    ** Setter for modifyDate
+    *******************************************************************************/
+   public void setModifyDate(Instant modifyDate)
+   {
+<span class="fc" id="L443">      this.modifyDate = modifyDate;</span>
+<span class="fc" id="L444">   }</span>
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for modifyDate
+    *******************************************************************************/
+   public SequenceStep withModifyDate(Instant modifyDate)
+   {
+<span class="nc" id="L453">      this.modifyDate = modifyDate;</span>
+<span class="nc" id="L454">      return (this);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

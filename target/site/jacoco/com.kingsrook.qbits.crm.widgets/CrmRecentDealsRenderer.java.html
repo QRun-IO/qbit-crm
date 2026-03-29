@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrmRecentDealsRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.widgets</a> &gt; <span class="el_source">CrmRecentDealsRenderer.java</span></div><h1>CrmRecentDealsRenderer.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Renderer for the Recent Deals widget.
+ **
+ ** Queries deals with actualCloseDate set, ordered by actualCloseDate DESC,
+ ** limited to 20 rows. Returns table with name, amount, owner, closedDate,
+ ** winLossReason.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.widgets;
+
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetOutput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.utils.collections.MapBuilder;
+
+
+/*******************************************************************************
+ ** Renders recent deals as a table widget.
+ *******************************************************************************/
+<span class="fc" id="L36">public class CrmRecentDealsRenderer extends AbstractWidgetRenderer</span>
+{
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   @Override
+   public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+   {
+      ///////////////////////////////////////////////////////////
+      // query recent deals with actualCloseDate set           //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L48">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(Deal.TABLE_NAME)
+<span class="fc" id="L50">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L51">               .withCriteria(new QFilterCriteria(&quot;actualCloseDate&quot;, QCriteriaOperator.IS_NOT_BLANK))</span>
+<span class="fc" id="L52">               .withOrderBy(new QFilterOrderBy(&quot;actualCloseDate&quot;, false))</span>
+<span class="fc" id="L53">               .withLimit(20)));</span>
+
+      ///////////////////////////
+      // build table columns   //
+      ///////////////////////////
+<span class="fc" id="L58">      List&lt;TableData.Column&gt; columns = List.of(</span>
+         new TableData.Column(&quot;html&quot;, &quot;Name&quot;, &quot;name&quot;, &quot;2fr&quot;, null),
+         new TableData.Column(&quot;html&quot;, &quot;Amount&quot;, &quot;amount&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Owner&quot;, &quot;ownerUserId&quot;, &quot;1fr&quot;, null),
+         new TableData.Column(&quot;html&quot;, &quot;Closed Date&quot;, &quot;closedDate&quot;, &quot;1fr&quot;, &quot;right&quot;),
+         new TableData.Column(&quot;html&quot;, &quot;Win/Loss Reason&quot;, &quot;winLossReason&quot;, &quot;1fr&quot;, null)
+      );
+
+      //////////////////////////
+      // build table rows     //
+      //////////////////////////
+<span class="fc" id="L69">      List&lt;Map&lt;String, Object&gt;&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">      for(QRecord record : queryOutput.getRecords())</span>
+      {
+<span class="fc" id="L72">         String name = record.getValueString(&quot;name&quot;);</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">         if(name == null)</span>
+         {
+<span class="nc" id="L75">            name = &quot;&quot;;</span>
+         }
+
+<span class="fc" id="L78">         BigDecimal amount = record.getValueBigDecimal(&quot;amount&quot;);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">         String amountDisplay = amount != null ? &quot;$&quot; + amount.toPlainString() : &quot;-&quot;;</span>
+
+<span class="fc" id="L81">         String ownerUserId = record.getValueString(&quot;ownerUserId&quot;);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">         if(ownerUserId == null)</span>
+         {
+<span class="nc" id="L84">            ownerUserId = &quot;-&quot;;</span>
+         }
+
+<span class="fc" id="L87">         LocalDate closedDate = record.getValueLocalDate(&quot;actualCloseDate&quot;);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">         String closedDateDisplay = closedDate != null ? closedDate.toString() : &quot;-&quot;;</span>
+
+<span class="fc" id="L90">         Integer winLossReasonId = record.getValueInteger(&quot;winLossReasonId&quot;);</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">         String winLossDisplay = winLossReasonId != null ? String.valueOf(winLossReasonId) : &quot;-&quot;;</span>
+
+<span class="fc" id="L93">         rows.add(MapBuilder.of(</span>
+            &quot;name&quot;, name,
+            &quot;amount&quot;, amountDisplay,
+            &quot;ownerUserId&quot;, ownerUserId,
+            &quot;closedDate&quot;, closedDateDisplay,
+            &quot;winLossReason&quot;, winLossDisplay
+         ));
+<span class="fc" id="L100">      }</span>
+
+<span class="fc" id="L102">      TableData tableData = new TableData(null, columns, rows)</span>
+<span class="fc" id="L103">         .withRowsPerPage(20)</span>
+<span class="fc" id="L104">         .withHidePaginationDropdown(true);</span>
+
+<span class="fc" id="L106">      return (new RenderWidgetOutput(tableData));</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

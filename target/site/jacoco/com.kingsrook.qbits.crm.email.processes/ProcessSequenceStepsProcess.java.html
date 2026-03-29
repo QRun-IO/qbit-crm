@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProcessSequenceStepsProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.email.processes</a> &gt; <span class="el_source">ProcessSequenceStepsProcess.java</span></div><h1>ProcessSequenceStepsProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Scheduled process to execute pending email sequence steps.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.email.processes;
+
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.activities.model.ActivityType;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
+import com.kingsrook.qbits.crm.core.model.enums.CrmSequenceStepType;
+import com.kingsrook.qbits.crm.email.model.EmailSequence;
+import com.kingsrook.qbits.crm.email.model.SequenceEnrollment;
+import com.kingsrook.qbits.crm.email.model.SequenceStep;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.StringUtils;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep to process pending sequence steps. Intended
+ ** to run on a schedule (every 5 minutes). Queries active enrollments whose
+ ** nextStepDate has passed and executes the appropriate step action.
+ *******************************************************************************/
+<span class="fc" id="L50">public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;processSequenceSteps&quot;;
+
+   private static final int MAX_FAILURES = 3;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L64">      return new QProcessMetaData()</span>
+<span class="fc" id="L65">         .withName(NAME)</span>
+<span class="fc" id="L66">         .withLabel(&quot;Process Sequence Steps&quot;)</span>
+<span class="fc" id="L67">         .withIcon(new QIcon().withName(&quot;play_circle&quot;))</span>
+<span class="fc" id="L68">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L70">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L71">               .withCode(new QCodeReference(ProcessSequenceStepsProcess.class))</span>
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the step processing logic.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+      ///////////////////////////////////////////////////////////
+      // query enrollments where status=ACTIVE and due now     //
+      ///////////////////////////////////////////////////////////
+<span class="fc" id="L86">      QueryOutput enrollmentQuery = new QueryAction().execute(</span>
+         new QueryInput(SequenceEnrollment.TABLE_NAME)
+<span class="fc" id="L88">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L89">               .withCriteria(new QFilterCriteria(&quot;status&quot;, QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getId()))</span>
+<span class="fc" id="L90">               .withCriteria(new QFilterCriteria(&quot;nextStepDate&quot;, QCriteriaOperator.LESS_THAN_OR_EQUALS, Instant.now()))));</span>
+
+<span class="fc" id="L92">      int processedCount = 0;</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">      for(QRecord enrollmentRecord : enrollmentQuery.getRecords())</span>
+      {
+<span class="fc" id="L96">         SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentRecord);</span>
+
+         try
+         {
+<span class="fc" id="L100">            processEnrollment(enrollment);</span>
+<span class="fc" id="L101">            processedCount++;</span>
+         }
+<span class="fc" id="L103">         catch(Exception e)</span>
+         {
+            /////////////////////////////////////////////
+            // handle step failure                     //
+            /////////////////////////////////////////////
+<span class="fc" id="L108">            handleFailure(enrollment, e.getMessage());</span>
+<span class="fc" id="L109">         }</span>
+<span class="fc" id="L110">      }</span>
+
+<span class="fc" id="L112">      output.addValue(&quot;processedCount&quot;, processedCount);</span>
+<span class="fc" id="L113">   }</span>
+
+
+
+   /***************************************************************************
+    ** Process a single enrollment: load the next step and execute it.
+    ***************************************************************************/
+   private void processEnrollment(SequenceEnrollment enrollment) throws QException
+   {
+<span class="fc" id="L122">      Integer nextStepNumber = enrollment.getCurrentStepNumber() + 1;</span>
+
+      /////////////////////////////////////////////
+      // load the sequence for totalSteps check  //
+      /////////////////////////////////////////////
+<span class="fc" id="L127">      GetOutput sequenceGet = new GetAction().execute(</span>
+<span class="fc" id="L128">         new GetInput(EmailSequence.TABLE_NAME).withPrimaryKey(enrollment.getSequenceId()));</span>
+
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">      EmailSequence sequence = sequenceGet.getRecord() != null</span>
+<span class="pc" id="L131">         ? new EmailSequence(sequenceGet.getRecord()) : null;</span>
+
+      /////////////////////////////////////////////
+      // load the next step                      //
+      /////////////////////////////////////////////
+<span class="fc" id="L136">      QueryOutput stepQuery = new QueryAction().execute(</span>
+         new QueryInput(SequenceStep.TABLE_NAME)
+<span class="fc" id="L138">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L139">               .withCriteria(new QFilterCriteria(&quot;sequenceId&quot;, QCriteriaOperator.EQUALS, enrollment.getSequenceId()))</span>
+<span class="fc" id="L140">               .withCriteria(new QFilterCriteria(&quot;stepNumber&quot;, QCriteriaOperator.EQUALS, nextStepNumber))));</span>
+
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">      if(stepQuery.getRecords().isEmpty())</span>
+      {
+         ///////////////////////////////////////////////////
+         // no more steps -- mark as completed            //
+         ///////////////////////////////////////////////////
+<span class="nc" id="L147">         completeEnrollment(enrollment);</span>
+<span class="nc" id="L148">         return;</span>
+      }
+
+<span class="fc" id="L151">      SequenceStep step = new SequenceStep(stepQuery.getRecords().get(0));</span>
+<span class="fc" id="L152">      CrmSequenceStepType stepType = CrmSequenceStepType.getById(step.getStepType());</span>
+
+      /////////////////////////////////////////////
+      // execute based on step type              //
+      /////////////////////////////////////////////
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">      if(stepType != null)</span>
+      {
+<span class="pc bpc" id="L159" title="2 of 4 branches missed.">         switch(stepType)</span>
+         {
+<span class="fc" id="L161">            case EMAIL -&gt; executeEmailStep(enrollment, step);</span>
+<span class="nc" id="L162">            case CALL -&gt; executeCallStep(enrollment, step);</span>
+<span class="nc" id="L163">            case TASK -&gt; executeTaskStep(enrollment, step);</span>
+            case WAIT -&gt;
+            {
+               // just advance
+            }
+         }
+      }
+
+      /////////////////////////////////////////////
+      // advance to next step                    //
+      /////////////////////////////////////////////
+<span class="fc" id="L174">      advanceEnrollment(enrollment, nextStepNumber, sequence);</span>
+<span class="fc" id="L175">   }</span>
+
+
+
+   /***************************************************************************
+    ** Execute an EMAIL step: verify doNotEmail, create an activity record.
+    ***************************************************************************/
+   private void executeEmailStep(SequenceEnrollment enrollment, SequenceStep step) throws QException
+   {
+      ///////////////////////////////////////////////
+      // check doNotEmail                          //
+      ///////////////////////////////////////////////
+<span class="fc" id="L187">      GetOutput contactGet = new GetAction().execute(</span>
+<span class="fc" id="L188">         new GetInput(Contact.TABLE_NAME).withPrimaryKey(enrollment.getContactId()));</span>
+
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">      if(contactGet.getRecord() != null)</span>
+      {
+<span class="fc" id="L192">         Contact contact = new Contact(contactGet.getRecord());</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">         if(Boolean.TRUE.equals(contact.getDoNotEmail()))</span>
+         {
+<span class="fc" id="L195">            throw (new QException(&quot;Contact has opted out of email&quot;));</span>
+         }
+      }
+
+      ///////////////////////////////////////////////
+      // create activity for the email             //
+      ///////////////////////////////////////////////
+<span class="fc" id="L202">      String subject = &quot;Sequence email: step &quot; + step.getStepNumber();</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">      if(step.getEmailTemplateId() != null)</span>
+      {
+<span class="nc" id="L205">         subject += &quot; (template #&quot; + step.getEmailTemplateId() + &quot;)&quot;;</span>
+      }
+
+<span class="fc" id="L208">      Integer activityTypeId = lookupActivityTypeByName(&quot;Email&quot;);</span>
+
+<span class="fc" id="L210">      new InsertAction().execute(</span>
+<span class="fc" id="L211">         new InsertInput(Activity.TABLE_NAME).withRecordEntity(</span>
+            new Activity()
+<span class="fc" id="L213">               .withActivityTypeId(activityTypeId)</span>
+<span class="fc" id="L214">               .withContactId(enrollment.getContactId())</span>
+<span class="fc" id="L215">               .withDealId(enrollment.getDealId())</span>
+<span class="fc" id="L216">               .withSubject(subject)</span>
+<span class="fc" id="L217">               .withOwnerUserId(&quot;system&quot;)</span>
+<span class="fc" id="L218">               .withIsCompleted(true)));</span>
+<span class="fc" id="L219">   }</span>
+
+
+
+   /***************************************************************************
+    ** Execute a CALL step: create a task activity assigned to the contact owner.
+    ***************************************************************************/
+   private void executeCallStep(SequenceEnrollment enrollment, SequenceStep step) throws QException
+   {
+<span class="nc" id="L228">      String ownerUserId = &quot;system&quot;;</span>
+<span class="nc" id="L229">      GetOutput contactGet = new GetAction().execute(</span>
+<span class="nc" id="L230">         new GetInput(Contact.TABLE_NAME).withPrimaryKey(enrollment.getContactId()));</span>
+
+<span class="nc bnc" id="L232" title="All 2 branches missed.">      if(contactGet.getRecord() != null)</span>
+      {
+<span class="nc" id="L234">         String contactOwner = contactGet.getRecord().getValueString(&quot;ownerUserId&quot;);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">         if(StringUtils.hasContent(contactOwner))</span>
+         {
+<span class="nc" id="L237">            ownerUserId = contactOwner;</span>
+         }
+      }
+
+<span class="nc" id="L241">      Integer activityTypeId = lookupActivityTypeByName(&quot;Call&quot;);</span>
+
+<span class="nc" id="L243">      new InsertAction().execute(</span>
+<span class="nc" id="L244">         new InsertInput(Activity.TABLE_NAME).withRecordEntity(</span>
+            new Activity()
+<span class="nc" id="L246">               .withActivityTypeId(activityTypeId)</span>
+<span class="nc" id="L247">               .withContactId(enrollment.getContactId())</span>
+<span class="nc" id="L248">               .withDealId(enrollment.getDealId())</span>
+<span class="nc" id="L249">               .withSubject(&quot;Call task: sequence step &quot; + step.getStepNumber())</span>
+<span class="nc" id="L250">               .withOwnerUserId(ownerUserId)</span>
+<span class="nc" id="L251">               .withIsCompleted(false)));</span>
+<span class="nc" id="L252">   }</span>
+
+
+
+   /***************************************************************************
+    ** Execute a TASK step: create a task activity with subject/description.
+    ***************************************************************************/
+   private void executeTaskStep(SequenceEnrollment enrollment, SequenceStep step) throws QException
+   {
+<span class="nc bnc" id="L261" title="All 2 branches missed.">      String subject = StringUtils.hasContent(step.getTaskSubject())</span>
+<span class="nc" id="L262">         ? step.getTaskSubject()</span>
+<span class="nc" id="L263">         : &quot;Task: sequence step &quot; + step.getStepNumber();</span>
+
+<span class="nc" id="L265">      Integer activityTypeId = lookupActivityTypeByName(&quot;Task&quot;);</span>
+
+<span class="nc" id="L267">      new InsertAction().execute(</span>
+<span class="nc" id="L268">         new InsertInput(Activity.TABLE_NAME).withRecordEntity(</span>
+            new Activity()
+<span class="nc" id="L270">               .withActivityTypeId(activityTypeId)</span>
+<span class="nc" id="L271">               .withContactId(enrollment.getContactId())</span>
+<span class="nc" id="L272">               .withDealId(enrollment.getDealId())</span>
+<span class="nc" id="L273">               .withSubject(subject)</span>
+<span class="nc" id="L274">               .withDescription(step.getTaskDescription())</span>
+<span class="nc" id="L275">               .withOwnerUserId(&quot;system&quot;)</span>
+<span class="nc" id="L276">               .withIsCompleted(false)));</span>
+<span class="nc" id="L277">   }</span>
+
+
+
+   /***************************************************************************
+    ** Look up an ActivityType by name. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupActivityTypeByName(String name) throws QException
+   {
+<span class="fc" id="L286">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(ActivityType.TABLE_NAME)
+<span class="fc" id="L288">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L289">               .withCriteria(new QFilterCriteria(&quot;name&quot;, QCriteriaOperator.EQUALS, name))));</span>
+
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L293">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="nc" id="L296">      return (null);</span>
+   }
+
+
+
+   /***************************************************************************
+    ** Advance the enrollment to the next step and calculate the next date.
+    ***************************************************************************/
+   private void advanceEnrollment(SequenceEnrollment enrollment, Integer newStepNumber, EmailSequence sequence) throws QException
+   {
+      ///////////////////////////////////////////////
+      // check if we've completed all steps        //
+      ///////////////////////////////////////////////
+<span class="pc bpc" id="L309" title="2 of 4 branches missed.">      Integer totalSteps = (sequence != null &amp;&amp; sequence.getTotalSteps() != null)</span>
+<span class="pc" id="L310">         ? sequence.getTotalSteps() : Integer.MAX_VALUE;</span>
+
+<span class="fc bfc" id="L312" title="All 2 branches covered.">      if(newStepNumber &gt;= totalSteps)</span>
+      {
+<span class="fc" id="L314">         completeEnrollment(enrollment);</span>
+<span class="fc" id="L315">         return;</span>
+      }
+
+      ///////////////////////////////////////////////
+      // look up the NEXT step for delay calc      //
+      ///////////////////////////////////////////////
+<span class="fc" id="L321">      Integer followingStepNumber = newStepNumber + 1;</span>
+<span class="fc" id="L322">      QueryOutput nextStepQuery = new QueryAction().execute(</span>
+         new QueryInput(SequenceStep.TABLE_NAME)
+<span class="fc" id="L324">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L325">               .withCriteria(new QFilterCriteria(&quot;sequenceId&quot;, QCriteriaOperator.EQUALS, enrollment.getSequenceId()))</span>
+<span class="fc" id="L326">               .withCriteria(new QFilterCriteria(&quot;stepNumber&quot;, QCriteriaOperator.EQUALS, followingStepNumber))));</span>
+
+      Instant nextDate;
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">      if(nextStepQuery.getRecords().isEmpty())</span>
+      {
+         ////////////////////////////////////////////////////////
+         // no following step -- this was the last step        //
+         ////////////////////////////////////////////////////////
+<span class="nc" id="L334">         completeEnrollment(enrollment);</span>
+<span class="nc" id="L335">         return;</span>
+      }
+      else
+      {
+<span class="fc" id="L339">         SequenceStep nextStep = new SequenceStep(nextStepQuery.getRecords().get(0));</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">         Integer delayDays = nextStep.getDelayDays() != null ? nextStep.getDelayDays() : 0;</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">         Integer delayHours = nextStep.getDelayHours() != null ? nextStep.getDelayHours() : 0;</span>
+<span class="fc" id="L342">         nextDate = Instant.now()</span>
+<span class="fc" id="L343">            .plus(delayDays, ChronoUnit.DAYS)</span>
+<span class="fc" id="L344">            .plus(delayHours, ChronoUnit.HOURS);</span>
+      }
+
+<span class="fc" id="L347">      QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L348">         .withValue(&quot;id&quot;, enrollment.getId())</span>
+<span class="fc" id="L349">         .withValue(&quot;currentStepNumber&quot;, newStepNumber)</span>
+<span class="fc" id="L350">         .withValue(&quot;nextStepDate&quot;, nextDate);</span>
+
+<span class="fc" id="L352">      new UpdateAction().execute(</span>
+<span class="fc" id="L353">         new UpdateInput(SequenceEnrollment.TABLE_NAME).withRecord(updateRecord));</span>
+<span class="fc" id="L354">   }</span>
+
+
+
+   /***************************************************************************
+    ** Mark an enrollment as completed.
+    ***************************************************************************/
+   private void completeEnrollment(SequenceEnrollment enrollment) throws QException
+   {
+<span class="fc" id="L363">      QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L364">         .withValue(&quot;id&quot;, enrollment.getId())</span>
+<span class="fc" id="L365">         .withValue(&quot;status&quot;, CrmEnrollmentStatus.COMPLETED.getId())</span>
+<span class="fc" id="L366">         .withValue(&quot;completedDate&quot;, Instant.now())</span>
+<span class="fc" id="L367">         .withValue(&quot;nextStepDate&quot;, null);</span>
+
+<span class="fc" id="L369">      new UpdateAction().execute(</span>
+<span class="fc" id="L370">         new UpdateInput(SequenceEnrollment.TABLE_NAME).withRecord(updateRecord));</span>
+<span class="fc" id="L371">   }</span>
+
+
+
+   /***************************************************************************
+    ** Handle a failure: increment failure count, mark as FAILED after max.
+    ***************************************************************************/
+   private void handleFailure(SequenceEnrollment enrollment, String message) throws QException
+   {
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">      Integer newFailureCount = (enrollment.getFailureCount() != null ? enrollment.getFailureCount() : 0) + 1;</span>
+
+<span class="fc" id="L382">      QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L383">         .withValue(&quot;id&quot;, enrollment.getId())</span>
+<span class="fc" id="L384">         .withValue(&quot;failureCount&quot;, newFailureCount)</span>
+<span class="fc" id="L385">         .withValue(&quot;lastFailureMessage&quot;, message);</span>
+
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">      if(newFailureCount &gt;= MAX_FAILURES)</span>
+      {
+<span class="fc" id="L389">         updateRecord.withValue(&quot;status&quot;, CrmEnrollmentStatus.FAILED.getId());</span>
+<span class="fc" id="L390">         updateRecord.withValue(&quot;nextStepDate&quot;, null);</span>
+      }
+
+<span class="fc" id="L393">      new UpdateAction().execute(</span>
+<span class="fc" id="L394">         new UpdateInput(SequenceEnrollment.TABLE_NAME).withRecord(updateRecord));</span>
+<span class="fc" id="L395">   }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

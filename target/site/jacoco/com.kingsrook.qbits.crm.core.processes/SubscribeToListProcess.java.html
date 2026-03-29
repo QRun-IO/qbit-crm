@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SubscribeToListProcess.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">QBit CRM</a> &gt; <a href="index.source.html" class="el_package">com.kingsrook.qbits.crm.core.processes</a> &gt; <span class="el_source">SubscribeToListProcess.java</span></div><h1>SubscribeToListProcess.java</h1><pre class="source lang-java linenums">/*******************************************************************************
+ ** Process to subscribe an email address to an email list. Handles
+ ** resubscription after unsubscribe and links to an existing contact.
+ *******************************************************************************/
+package com.kingsrook.qbits.crm.core.processes;
+
+
+import java.time.Instant;
+import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.EmailListMember;
+import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
+import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
+import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.utils.StringUtils;
+
+
+/*******************************************************************************
+ ** MetaDataProducer + BackendStep to subscribe an email address to a list.
+ ** Handles: new subscription, resubscription after unsub, and no-op for
+ ** existing active subscribers.
+ *******************************************************************************/
+<span class="fc" id="L45">public class SubscribeToListProcess implements BackendStep, MetaDataProducerInterface&lt;QProcessMetaData&gt;</span>
+{
+   public static final String NAME = &quot;subscribeToList&quot;;
+
+
+
+   /*******************************************************************************
+    ** Produce the process metadata.
+    *******************************************************************************/
+   @Override
+   public QProcessMetaData produce(QInstance qInstance) throws QException
+   {
+<span class="fc" id="L57">      return new QProcessMetaData()</span>
+<span class="fc" id="L58">         .withName(NAME)</span>
+<span class="fc" id="L59">         .withLabel(&quot;Subscribe to List&quot;)</span>
+<span class="fc" id="L60">         .withIcon(new QIcon().withName(&quot;person_add&quot;))</span>
+<span class="fc" id="L61">         .withStepList(List.of(</span>
+            new QBackendStepMetaData()
+<span class="fc" id="L63">               .withName(&quot;execute&quot;)</span>
+<span class="fc" id="L64">               .withCode(new QCodeReference(SubscribeToListProcess.class))</span>
+<span class="fc" id="L65">               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(</span>
+<span class="fc" id="L66">                  new QFieldMetaData(&quot;email&quot;, QFieldType.STRING).withIsRequired(true),</span>
+<span class="fc" id="L67">                  new QFieldMetaData(&quot;emailListId&quot;, QFieldType.INTEGER).withIsRequired(true),</span>
+                  new QFieldMetaData(&quot;firstName&quot;, QFieldType.STRING),
+                  new QFieldMetaData(&quot;subscriptionSource&quot;, QFieldType.STRING)
+               )))
+         ));
+   }
+
+
+
+   /*******************************************************************************
+    ** Execute the subscription logic.
+    *******************************************************************************/
+   @Override
+   public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+   {
+<span class="fc" id="L82">      String  email              = input.getValueString(&quot;email&quot;);</span>
+<span class="fc" id="L83">      Integer emailListId        = input.getValueInteger(&quot;emailListId&quot;);</span>
+<span class="fc" id="L84">      String  firstName          = input.getValueString(&quot;firstName&quot;);</span>
+<span class="fc" id="L85">      String  subscriptionSource = input.getValueString(&quot;subscriptionSource&quot;);</span>
+
+      ////////////////////////////////////////////////////
+      // check if already subscribed to this list       //
+      ////////////////////////////////////////////////////
+<span class="fc" id="L90">      QueryOutput existingMembers = new QueryAction().execute(</span>
+         new QueryInput(EmailListMember.TABLE_NAME)
+<span class="fc" id="L92">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L93">               .withCriteria(new QFilterCriteria(&quot;emailListId&quot;, QCriteriaOperator.EQUALS, emailListId))</span>
+<span class="fc" id="L94">               .withCriteria(new QFilterCriteria(&quot;email&quot;, QCriteriaOperator.EQUALS, email))));</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">      if(!existingMembers.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L98">         QRecord existingRecord = existingMembers.getRecords().get(0);</span>
+<span class="fc" id="L99">         Integer currentStatus = existingRecord.getValueInteger(&quot;status&quot;);</span>
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">         if(CrmListMemberStatus.UNSUBSCRIBED.getId().equals(currentStatus))</span>
+         {
+            ///////////////////////////////////////////////
+            // resubscribe: update status and date       //
+            ///////////////////////////////////////////////
+<span class="fc" id="L106">            QRecord updateRecord = new QRecord()</span>
+<span class="fc" id="L107">               .withValue(&quot;id&quot;, existingRecord.getValueInteger(&quot;id&quot;))</span>
+<span class="fc" id="L108">               .withValue(&quot;status&quot;, CrmListMemberStatus.SUBSCRIBED.getId())</span>
+<span class="fc" id="L109">               .withValue(&quot;subscribedDate&quot;, Instant.now())</span>
+<span class="fc" id="L110">               .withValue(&quot;unsubscribedDate&quot;, null);</span>
+
+<span class="fc" id="L112">            new UpdateAction().execute(</span>
+<span class="fc" id="L113">               new UpdateInput(EmailListMember.TABLE_NAME).withRecord(updateRecord));</span>
+
+<span class="fc" id="L115">            output.addValue(&quot;action&quot;, &quot;RESUBSCRIBED&quot;);</span>
+<span class="fc" id="L116">            output.addValue(&quot;emailListMemberId&quot;, existingRecord.getValueInteger(&quot;id&quot;));</span>
+<span class="fc" id="L117">         }</span>
+         else
+         {
+            /////////////////////////
+            // already subscribed  //
+            /////////////////////////
+<span class="fc" id="L123">            output.addValue(&quot;action&quot;, &quot;NOOP&quot;);</span>
+<span class="fc" id="L124">            output.addValue(&quot;emailListMemberId&quot;, existingRecord.getValueInteger(&quot;id&quot;));</span>
+         }
+
+<span class="fc" id="L127">         return;</span>
+      }
+
+      ///////////////////////////////////////////////
+      // look up contact by email for linking      //
+      ///////////////////////////////////////////////
+<span class="fc" id="L133">      Integer contactId = lookupContactByEmail(email);</span>
+
+      ///////////////////////////////////////////////
+      // insert new EmailListMember               //
+      ///////////////////////////////////////////////
+<span class="fc" id="L138">      EmailListMember member = new EmailListMember()</span>
+<span class="fc" id="L139">         .withEmailListId(emailListId)</span>
+<span class="fc" id="L140">         .withEmail(email)</span>
+<span class="fc" id="L141">         .withFirstName(firstName)</span>
+<span class="fc" id="L142">         .withContactId(contactId)</span>
+<span class="fc" id="L143">         .withStatus(CrmListMemberStatus.SUBSCRIBED.getId())</span>
+<span class="fc" id="L144">         .withSubscribedDate(Instant.now())</span>
+<span class="fc" id="L145">         .withSubscriptionSource(subscriptionSource);</span>
+
+<span class="fc" id="L147">      new InsertAction().execute(</span>
+<span class="fc" id="L148">         new InsertInput(EmailListMember.TABLE_NAME).withRecordEntity(member));</span>
+
+<span class="fc" id="L150">      output.addValue(&quot;action&quot;, &quot;SUBSCRIBED&quot;);</span>
+<span class="fc" id="L151">   }</span>
+
+
+
+   /***************************************************************************
+    ** Look up a contact id by email address. Returns null if not found.
+    ***************************************************************************/
+   private Integer lookupContactByEmail(String email) throws QException
+   {
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">      if(!StringUtils.hasContent(email))</span>
+      {
+<span class="nc" id="L162">         return (null);</span>
+      }
+
+<span class="fc" id="L165">      QueryOutput queryOutput = new QueryAction().execute(</span>
+         new QueryInput(Contact.TABLE_NAME)
+<span class="fc" id="L167">            .withFilter(new QQueryFilter()</span>
+<span class="fc" id="L168">               .withCriteria(new QFilterCriteria(&quot;email&quot;, QCriteriaOperator.EQUALS, email))));</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">      if(!queryOutput.getRecords().isEmpty())</span>
+      {
+<span class="fc" id="L172">         return (queryOutput.getRecords().get(0).getValueInteger(&quot;id&quot;));</span>
+      }
+
+<span class="fc" id="L175">      return (null);</span>
+   }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
