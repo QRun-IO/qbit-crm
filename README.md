@@ -1,7 +1,7 @@
 # QBit: CRM
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/QRun-IO/qbit-crm)
-[![License](https://img.shields.io/badge/license-GNU%20Affero%20GPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0.en.html)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Java](https://img.shields.io/badge/java-17+-blue.svg)](https://adoptium.net/)
 
 > **Customer Relationship Management for QQQ Applications - Activity-Centric, Pipeline-Driven**
@@ -26,7 +26,7 @@ This QBit provides a complete CRM system for QQQ applications, covering contact 
 
 ## Open Source & Full Control
 
-QBit CRM is 100% open source under AGPL v3. All data stays in your systems. No external CRM services required.
+QBit CRM is 100% open source under Apache 2.0. All data stays in your systems. No external CRM services required.
 
 ## Architecture
 
@@ -482,4 +482,4 @@ QBit CRM is built by **[Kingsrook](https://qrun.io)** - making engineers more pr
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0** - see the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the **Apache License, Version 2.0** - see the [LICENSE](LICENSE) file for details.
