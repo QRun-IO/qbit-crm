@@ -7,6 +7,8 @@ package com.kingsrook.qbits.crm;
 import java.util.List;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.customizers.FormSubmissionAutoLinkCustomizer;
+import com.kingsrook.qbits.crm.core.model.FormSubmission;
 import com.kingsrook.qbits.crm.audit.customizers.CrmAuditLogCustomizer;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
@@ -99,6 +101,17 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          {
             addOrComposeCustomizer(table, TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(DealStageChangeCustomizer.class));
             addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, new QCodeReference(DealInitializationCustomizer.class));
+         }
+
+         ///////////////////////////////////////////////////////////////
+         // wire deal product recalculation                           //
+         ///////////////////////////////////////////////////////////////
+         ///////////////////////////////////////////////////////////////
+         // wire form submission auto-link                            //
+         ///////////////////////////////////////////////////////////////
+         if(tableName.equals(FormSubmission.TABLE_NAME))
+         {
+            addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, new QCodeReference(FormSubmissionAutoLinkCustomizer.class));
          }
 
          ///////////////////////////////////////////////////////////////
