@@ -10,29 +10,22 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
-import com.kingsrook.qbits.crm.core.model.Currency;
 import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.sync.CrmCurrencyUtils;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPostInsertCustomizer;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
-import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
-import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.utils.StringUtils;
 import com.kingsrook.qqq.backend.core.utils.ValueUtils;
 
 
@@ -169,36 +162,14 @@ public class DealInitializationCustomizer extends AbstractPostInsertCustomizer
 
 
    /*******************************************************************************
-    ** Calculate amountInBaseCurrency from the deal's currencyCode.
+    ** Calculate amountInBaseCurrency using the shared CrmCurrencyUtils.
     *******************************************************************************/
    private BigDecimal calculateAmountInBaseCurrency(BigDecimal amount, QRecord record) throws QException
    {
       String currencyCode = ValueUtils.getValueAsString(record.getValue("currencyCode"));
-      if(!StringUtils.hasContent(currencyCode))
-      {
-         return (amount);
-      }
-
       try
       {
-         QueryOutput queryOutput = new QueryAction().execute(
-            new QueryInput(Currency.TABLE_NAME)
-               .withFilter(new QQueryFilter()
-                  .withCriteria(new QFilterCriteria("currencyCode", QCriteriaOperator.EQUALS, currencyCode))));
-
-         if(queryOutput.getRecords().isEmpty())
-         {
-            return (amount);
-         }
-
-         Currency currency = new Currency(queryOutput.getRecords().get(0));
-         BigDecimal exchangeRate = currency.getExchangeRateToBase();
-         if(exchangeRate == null)
-         {
-            exchangeRate = BigDecimal.ONE;
-         }
-
-         return (amount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP));
+         return (CrmCurrencyUtils.convertToBaseCurrency(amount, currencyCode));
       }
       catch(Exception e)
       {
@@ -216,16 +187,7 @@ public class DealInitializationCustomizer extends AbstractPostInsertCustomizer
    {
       try
       {
-         String userId = "system";
-         if(QContext.getQSession() != null && QContext.getQSession().getUser() != null
-            && StringUtils.hasContent(QContext.getQSession().getUser().getIdReference()))
-         {
-            userId = QContext.getQSession().getUser().getIdReference();
-         }
-         else if(QContext.getQSession() != null && StringUtils.hasContent(QContext.getQSession().getIdReference()))
-         {
-            userId = QContext.getQSession().getIdReference();
-         }
+         String userId = CrmSessionUtils.getCurrentUserId();
 
          DealStageHistory history = new DealStageHistory()
             .withDealId(dealId)

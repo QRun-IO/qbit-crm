@@ -53,7 +53,6 @@ public class BulkAssignOwnerProcess implements MetaDataProducerInterface<QProces
             new QFieldMetaData("id", QFieldType.INTEGER),
             new QFieldMetaData("ownerUserId", QFieldType.STRING).withLabel("Current Owner")
          ))
-         .withInputFieldDefaultValue("newOwnerUserId", "")
          .getProcessMetaData();
 
       return (process);

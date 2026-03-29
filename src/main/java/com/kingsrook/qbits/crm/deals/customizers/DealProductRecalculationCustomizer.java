@@ -8,8 +8,11 @@ package com.kingsrook.qbits.crm.deals.customizers;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
@@ -95,10 +98,12 @@ public class DealProductRecalculationCustomizer implements TableCustomizerInterf
 
    /*******************************************************************************
     ** Recalculate totalAmount on each record and then update parent deals.
+    ** Tracks computed sums in-memory to avoid stale re-reads from the database.
     *******************************************************************************/
    private List<QRecord> recalculate(List<QRecord> records) throws QException
    {
-      Set<Integer> dealIds = new HashSet<>();
+      Map<Integer, BigDecimal> dealIdToComputedSum = new HashMap<>();
+      List<QRecord> updateRecords = new ArrayList<>();
 
       for(QRecord record : records)
       {
@@ -121,27 +126,47 @@ public class DealProductRecalculationCustomizer implements TableCustomizerInterf
                QRecord updateRecord = new QRecord();
                updateRecord.setValue("id", recordId);
                updateRecord.setValue("totalAmount", totalAmount);
-               new UpdateAction().execute(new UpdateInput(DealProduct.TABLE_NAME).withRecord(updateRecord));
+               updateRecords.add(updateRecord);
+
+               /////////////////////////////////////////////////////////////////
+               // track in-memory sum per deal to avoid stale re-reads (C-3) //
+               /////////////////////////////////////////////////////////////////
+               Integer dealId = ValueUtils.getValueAsInteger(record.getValue("dealId"));
+               if(dealId != null)
+               {
+                  dealIdToComputedSum.merge(dealId, totalAmount, BigDecimal::add);
+               }
+            }
+            else
+            {
+               Integer dealId = ValueUtils.getValueAsInteger(record.getValue("dealId"));
+               if(dealId != null)
+               {
+                  dealIdToComputedSum.putIfAbsent(dealId, BigDecimal.ZERO);
+               }
             }
          }
          catch(Exception e)
          {
             LOG.warn("Error calculating totalAmount for DealProduct id=" + recordId, e);
          }
-
-         Integer dealId = ValueUtils.getValueAsInteger(record.getValue("dealId"));
-         if(dealId != null)
-         {
-            dealIds.add(dealId);
-         }
       }
 
       ///////////////////////////////////////////
-      // recalculate each parent deal's amount //
+      // batch update all DealProduct rows     //
       ///////////////////////////////////////////
-      for(Integer dealId : dealIds)
+      if(!updateRecords.isEmpty())
       {
-         recalculateParentDeal(dealId);
+         new UpdateAction().execute(new UpdateInput(DealProduct.TABLE_NAME).withRecords(updateRecords));
+      }
+
+      /////////////////////////////////////////////////////////////////////////
+      // update each parent deal using in-memory sums plus any pre-existing //
+      // DealProduct rows not in this batch                                 //
+      /////////////////////////////////////////////////////////////////////////
+      for(Integer dealId : dealIdToComputedSum.keySet())
+      {
+         recalculateParentDealWithInMemorySums(dealId, dealIdToComputedSum.get(dealId), records);
       }
 
       return (records);
@@ -182,7 +207,8 @@ public class DealProductRecalculationCustomizer implements TableCustomizerInterf
 
    /*******************************************************************************
     ** Query all DealProduct rows for a deal, sum totalAmount, and update
-    ** the deal's amount field.
+    ** the deal's amount field. Used by post-delete where no in-memory sums
+    ** are available.
     *******************************************************************************/
    private void recalculateParentDeal(Integer dealId) throws QException
    {
@@ -206,6 +232,69 @@ public class DealProductRecalculationCustomizer implements TableCustomizerInterf
          QRecord dealUpdate = new QRecord();
          dealUpdate.setValue("id", dealId);
          dealUpdate.setValue("amount", sum);
+         new UpdateAction().execute(new UpdateInput(Deal.TABLE_NAME).withRecord(dealUpdate));
+      }
+      catch(Exception e)
+      {
+         LOG.warn("Error recalculating parent deal amount for dealId=" + dealId, e);
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Update a parent deal's amount using in-memory computed sums for the
+    ** current batch, plus any existing DealProduct rows not in this batch.
+    ** Avoids re-querying rows we just updated (C-3: stale read fix).
+    *******************************************************************************/
+   private void recalculateParentDealWithInMemorySums(Integer dealId, BigDecimal batchSum, List<QRecord> batchRecords) throws QException
+   {
+      try
+      {
+         /////////////////////////////////////////////////////////////////
+         // collect IDs of DealProduct rows in the current batch       //
+         /////////////////////////////////////////////////////////////////
+         Set<Integer> batchProductIds = new HashSet<>();
+         for(QRecord record : batchRecords)
+         {
+            Integer productDealId = ValueUtils.getValueAsInteger(record.getValue("dealId"));
+            if(dealId.equals(productDealId))
+            {
+               Integer productId = ValueUtils.getValueAsInteger(record.getValue("id"));
+               if(productId != null)
+               {
+                  batchProductIds.add(productId);
+               }
+            }
+         }
+
+         /////////////////////////////////////////////////////////////////
+         // query remaining DealProduct rows not in the current batch  //
+         /////////////////////////////////////////////////////////////////
+         QueryOutput queryOutput = new QueryAction().execute(
+            new QueryInput(DealProduct.TABLE_NAME)
+               .withFilter(new QQueryFilter()
+                  .withCriteria(new QFilterCriteria("dealId", QCriteriaOperator.EQUALS, dealId))));
+
+         BigDecimal otherSum = BigDecimal.ZERO;
+         for(QRecord dpRecord : queryOutput.getRecords())
+         {
+            Integer dpId = ValueUtils.getValueAsInteger(dpRecord.getValue("id"));
+            if(dpId != null && !batchProductIds.contains(dpId))
+            {
+               BigDecimal total = ValueUtils.getValueAsBigDecimal(dpRecord.getValue("totalAmount"));
+               if(total != null)
+               {
+                  otherSum = otherSum.add(total);
+               }
+            }
+         }
+
+         BigDecimal totalDealAmount = batchSum.add(otherSum);
+
+         QRecord dealUpdate = new QRecord();
+         dealUpdate.setValue("id", dealId);
+         dealUpdate.setValue("amount", totalDealAmount);
          new UpdateAction().execute(new UpdateInput(Deal.TABLE_NAME).withRecord(dealUpdate));
       }
       catch(Exception e)

@@ -90,7 +90,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       QueryOutput enrollmentQuery = new QueryAction().execute(
          new QueryInput(SequenceEnrollment.TABLE_NAME)
             .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getId()))
+               .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))
                .withCriteria(new QFilterCriteria("nextStepDate", QCriteriaOperator.LESS_THAN_OR_EQUALS, Instant.now()))));
 
       int processedCount = 0;
@@ -411,7 +411,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
    {
       QRecord updateRecord = new QRecord()
          .withValue("id", enrollment.getId())
-         .withValue("status", CrmEnrollmentStatus.COMPLETED.getId())
+         .withValue("status", CrmEnrollmentStatus.COMPLETED.getPossibleValueId())
          .withValue("completedDate", Instant.now())
          .withValue("nextStepDate", null);
 
@@ -489,7 +489,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
       if(newFailureCount >= MAX_FAILURES)
       {
-         updateRecord.withValue("status", CrmEnrollmentStatus.FAILED.getId());
+         updateRecord.withValue("status", CrmEnrollmentStatus.FAILED.getPossibleValueId());
          updateRecord.withValue("nextStepDate", null);
       }
 

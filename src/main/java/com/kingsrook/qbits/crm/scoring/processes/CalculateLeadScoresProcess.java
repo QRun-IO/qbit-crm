@@ -17,6 +17,7 @@ import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
@@ -45,6 +46,8 @@ import com.kingsrook.qqq.backend.core.utils.StringUtils;
  *******************************************************************************/
 public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
+   private static final QLogger LOG = QLogger.getLogger(CalculateLeadScoresProcess.class);
+
    public static final String NAME = "calculateLeadScores";
 
 
@@ -88,56 +91,88 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
          .map(LeadScoreRule::new)
          .toList();
 
-      ///////////////////////////////////////////////
-      // load all contacts                         //
-      ///////////////////////////////////////////////
-      QueryOutput contactsQuery = new QueryAction().execute(
-         new QueryInput(Contact.TABLE_NAME));
-
+      ///////////////////////////////////////////////////////////////
+      // paginate through all contacts to avoid OOM on large CRMs //
+      ///////////////////////////////////////////////////////////////
+      int pageSize     = 500;
       int updatedCount = 0;
+      int totalContacts = 0;
+      Integer lastId   = null;
 
-      for(QRecord contactRecord : contactsQuery.getRecords())
+      while(true)
       {
-         Contact contact = new Contact(contactRecord);
-         int newScore = 0;
+         QQueryFilter filter = new QQueryFilter()
+            .withOrderBy(new QFilterOrderBy("id"))
+            .withLimit(pageSize);
 
-         ///////////////////////////////////////////////
-         // evaluate each rule against the contact    //
-         ///////////////////////////////////////////////
-         for(LeadScoreRule rule : rules)
+         if(lastId != null)
          {
-            if(evaluateRule(rule, contactRecord))
-            {
-               newScore += rule.getScoreAdjustment();
-            }
+            filter.withCriteria(new QFilterCriteria("id", QCriteriaOperator.GREATER_THAN, lastId));
          }
 
-         ///////////////////////////////////////////////
-         // update only if score changed              //
-         ///////////////////////////////////////////////
-         Integer currentScore = contact.getLeadScore() != null ? contact.getLeadScore() : 0;
-         if(!Objects.equals(currentScore, newScore))
+         QueryOutput contactsQuery = new QueryAction().execute(
+            new QueryInput(Contact.TABLE_NAME).withFilter(filter));
+
+         if(contactsQuery.getRecords().isEmpty())
          {
-            QRecord updateRecord = new QRecord()
-               .withValue("id", contact.getId())
-               .withValue("leadScore", newScore);
+            break;
+         }
 
-            new UpdateAction().execute(
-               new UpdateInput(Contact.TABLE_NAME).withRecord(updateRecord));
+         for(QRecord contactRecord : contactsQuery.getRecords())
+         {
+            Contact contact = new Contact(contactRecord);
+            totalContacts++;
+            int newScore = 0;
 
-            updatedCount++;
+            ///////////////////////////////////////////////
+            // evaluate each rule against the contact    //
+            ///////////////////////////////////////////////
+            for(LeadScoreRule rule : rules)
+            {
+               if(evaluateRule(rule, contactRecord))
+               {
+                  newScore += rule.getScoreAdjustment();
+               }
+            }
+
+            ///////////////////////////////////////////////
+            // update only if score changed              //
+            ///////////////////////////////////////////////
+            Integer currentScore = contact.getLeadScore() != null ? contact.getLeadScore() : 0;
+            if(!Objects.equals(currentScore, newScore))
+            {
+               QRecord updateRecord = new QRecord()
+                  .withValue("id", contact.getId())
+                  .withValue("leadScore", newScore);
+
+               new UpdateAction().execute(
+                  new UpdateInput(Contact.TABLE_NAME).withRecord(updateRecord));
+
+               updatedCount++;
+            }
+
+            lastId = contact.getId();
+         }
+
+         /////////////////////////////////////////////
+         // if page was not full, we are done       //
+         /////////////////////////////////////////////
+         if(contactsQuery.getRecords().size() < pageSize)
+         {
+            break;
          }
       }
 
       output.addValue("updatedCount", updatedCount);
-      output.addValue("totalContacts", contactsQuery.getRecords().size());
+      output.addValue("totalContacts", totalContacts);
       output.addValue("totalRules", rules.size());
    }
 
 
 
    /***************************************************************************
-    ** Evaluate a single rule against a contact record.
+    ** Evaluate a single rule against a contact record. Supports dot-notation
+    ** field paths for related entities (e.g., "company.industry").
     ***************************************************************************/
    private boolean evaluateRule(LeadScoreRule rule, QRecord contactRecord)
    {
@@ -148,7 +183,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       }
 
       String fieldPath = rule.getFieldPath();
-      String actualValue = contactRecord.getValueString(fieldPath);
+      String actualValue = resolveFieldValue(fieldPath, contactRecord);
       String expectedValue = rule.getFieldValue();
 
       switch(operator)
@@ -197,6 +232,57 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       catch(NumberFormatException e)
       {
          return (0);
+      }
+   }
+
+
+
+   /***************************************************************************
+    ** Resolve a field value from a contact record, supporting dot-notation
+    ** for related entity fields (e.g., "company.industry" loads the contact's
+    ** company record and returns its "industry" field).
+    ***************************************************************************/
+   private String resolveFieldValue(String fieldPath, QRecord contactRecord)
+   {
+      if(fieldPath == null || !fieldPath.contains("."))
+      {
+         return (contactRecord.getValueString(fieldPath));
+      }
+
+      String[] parts = fieldPath.split("\\.", 2);
+      String prefix    = parts[0];
+      String fieldName = parts[1];
+
+      try
+      {
+         if("company".equalsIgnoreCase(prefix))
+         {
+            Integer companyId = contactRecord.getValueInteger("companyId");
+            if(companyId == null)
+            {
+               return (null);
+            }
+
+            GetOutput companyOutput = new GetAction().execute(
+               new GetInput(Company.TABLE_NAME).withPrimaryKey(companyId));
+
+            if(companyOutput.getRecord() == null)
+            {
+               return (null);
+            }
+
+            return (companyOutput.getRecord().getValueString(fieldName));
+         }
+         else
+         {
+            LOG.warn("Unsupported dot-notation prefix in lead score rule fieldPath: " + prefix);
+            return (null);
+         }
+      }
+      catch(Exception e)
+      {
+         LOG.warn("Error resolving dot-notation field [" + fieldPath + "] for contact", e);
+         return (null);
       }
    }
 

@@ -15,11 +15,11 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEmailStatus;
 import com.kingsrook.qbits.crm.email.model.EmailMessage;
 import com.kingsrook.qbits.crm.email.model.EmailTemplate;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
-import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
@@ -98,7 +98,7 @@ public class SendEmailProcess implements BackendStep, MetaDataProducerInterface<
       Integer dealId          = input.getValueInteger("dealId");
       String  ccAddresses     = input.getValueString("ccAddresses");
       String  bccAddresses    = input.getValueString("bccAddresses");
-      String  sessionUserId   = QContext.getQSession().getIdReference();
+      String  sessionUserId   = CrmSessionUtils.getCurrentUserId();
 
       ///////////////////////////////////////////
       // Step 1: load and validate the contact //
@@ -152,7 +152,7 @@ public class SendEmailProcess implements BackendStep, MetaDataProducerInterface<
          .withSubject(subject)
          .withContactId(contactId)
          .withDealId(dealId)
-         .withDirection(CrmDirection.OUTBOUND.getId())
+         .withDirection(CrmDirection.OUTBOUND.getPossibleValueId())
          .withOwnerUserId(sessionUserId)
          .withIsCompleted(true);
 
@@ -175,8 +175,8 @@ public class SendEmailProcess implements BackendStep, MetaDataProducerInterface<
          .withSubject(subject != null ? subject : "")
          .withBodyHtml(bodyHtml)
          .withBodyText(bodyText)
-         .withDirection(CrmDirection.OUTBOUND.getId())
-         .withStatus(CrmEmailStatus.SENT.getId())
+         .withDirection(CrmDirection.OUTBOUND.getPossibleValueId())
+         .withStatus(CrmEmailStatus.SENT.getPossibleValueId())
          .withSentDate(Instant.now())
          .withIsTracked(true)
          .withOpenCount(0)

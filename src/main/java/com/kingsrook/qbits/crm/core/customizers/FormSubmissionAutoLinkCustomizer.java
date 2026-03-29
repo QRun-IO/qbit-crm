@@ -44,6 +44,8 @@ public class FormSubmissionAutoLinkCustomizer extends AbstractPostInsertCustomiz
             continue;
          }
 
+         email = email.trim().toLowerCase();
+
          ///////////////////////////////////////////////////////////
          // skip if contactId is already set (manual or re-insert) //
          ///////////////////////////////////////////////////////////

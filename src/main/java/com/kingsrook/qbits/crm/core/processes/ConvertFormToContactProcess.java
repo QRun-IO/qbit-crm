@@ -148,7 +148,7 @@ public class ConvertFormToContactProcess implements BackendStep, MetaDataProduce
       QRecord updateRecord = new QRecord()
          .withValue("id", formSubmissionId)
          .withValue("contactId", contactId)
-         .withValue("conversionStatus", CrmFormConversionStatus.CONVERTED_TO_CONTACT.getId())
+         .withValue("conversionStatus", CrmFormConversionStatus.CONVERTED_TO_CONTACT.getPossibleValueId())
          .withValue("convertedDate", Instant.now())
          .withValue("convertedByUserId", sessionUserId);
 

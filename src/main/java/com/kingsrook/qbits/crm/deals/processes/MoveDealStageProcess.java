@@ -200,9 +200,9 @@ public class MoveDealStageProcess implements BackendStep, MetaDataProducerInterf
       // Step 10: log audit entry                                 //
       //////////////////////////////////////////////////////////////
       AuditLog auditEntry = new AuditLog()
-         .withEntityType(CrmEntityType.DEAL.getId())
+         .withEntityType(CrmEntityType.DEAL.getPossibleValueId())
          .withEntityId(dealId)
-         .withAction(CrmAuditAction.STAGE_CHANGED.getId())
+         .withAction(CrmAuditAction.STAGE_CHANGED.getPossibleValueId())
          .withUserId(sessionUserId)
          .withFieldName("pipelineStageId")
          .withOldValue(oldStageId != null ? String.valueOf(oldStageId) : null)

@@ -178,18 +178,18 @@ public class ConvertLeadProcess implements BackendStep, MetaDataProducerInterfac
       // Step 7: log audit entries                                       //
       /////////////////////////////////////////////////////////////////////
       AuditLog contactAudit = new AuditLog()
-         .withEntityType(CrmEntityType.CONTACT.getId())
+         .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
          .withEntityId(contactId)
-         .withAction(CrmAuditAction.STAGE_CHANGED.getId())
+         .withAction(CrmAuditAction.STAGE_CHANGED.getPossibleValueId())
          .withUserId(userId)
          .withFieldName("lifecycleStageId")
          .withNewValue(opportunityStageId != null ? String.valueOf(opportunityStageId) : null)
          .withMessage("Lead converted to deal: " + dealName);
 
       AuditLog dealAudit = new AuditLog()
-         .withEntityType(CrmEntityType.DEAL.getId())
+         .withEntityType(CrmEntityType.DEAL.getPossibleValueId())
          .withEntityId(dealId)
-         .withAction(CrmAuditAction.CREATED.getId())
+         .withAction(CrmAuditAction.CREATED.getPossibleValueId())
          .withUserId(userId)
          .withMessage("Deal created from lead conversion (contact " + contactId + ")");
 

@@ -98,7 +98,7 @@ public class UnsubscribeFromListProcess implements BackendStep, MetaDataProducer
       ////////////////////////////////////////////////////
       QRecord updateRecord = new QRecord()
          .withValue("id", memberRecord.getValueInteger("id"))
-         .withValue("status", CrmListMemberStatus.UNSUBSCRIBED.getId())
+         .withValue("status", CrmListMemberStatus.UNSUBSCRIBED.getPossibleValueId())
          .withValue("unsubscribedDate", Instant.now());
 
       new UpdateAction().execute(

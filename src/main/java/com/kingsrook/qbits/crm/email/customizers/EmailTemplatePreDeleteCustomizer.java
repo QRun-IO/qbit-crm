@@ -69,7 +69,7 @@ public class EmailTemplatePreDeleteCustomizer extends AbstractPreDeleteCustomize
             new QueryInput(SequenceEnrollment.TABLE_NAME)
                .withFilter(new QQueryFilter()
                   .withCriteria(new QFilterCriteria("sequenceId", QCriteriaOperator.IN, sequenceIds))
-                  .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getId()))));
+                  .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))));
 
          if(!enrollmentOutput.getRecords().isEmpty())
          {

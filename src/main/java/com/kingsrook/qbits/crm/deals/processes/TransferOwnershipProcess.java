@@ -130,9 +130,9 @@ public class TransferOwnershipProcess implements BackendStep, MetaDataProducerIn
          new InsertAction().execute(
             new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
                new AuditLog()
-                  .withEntityType(entityType.getId())
+                  .withEntityType(entityType.getPossibleValueId())
                   .withEntityId(recordId)
-                  .withAction(CrmAuditAction.OWNER_CHANGED.getId())
+                  .withAction(CrmAuditAction.OWNER_CHANGED.getPossibleValueId())
                   .withUserId(sessionUserId)
                   .withFieldName("ownerUserId")
                   .withOldValue(fromUserId)

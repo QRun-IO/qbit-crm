@@ -21,25 +21,19 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import com.kingsrook.qbits.crm.core.model.Currency;
 import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.sync.CrmCurrencyUtils;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreUpdateCustomizer;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
-import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
-import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.statusmessages.BadInputStatusMessage;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
@@ -155,18 +149,21 @@ public class DealStageChangeCustomizer extends AbstractPreUpdateCustomizer
          record.setValue("actualCloseDate", LocalDate.now());
       }
 
-      ///////////////////////////////////////////
-      // handle reopen (old was closed, new    //
-      // is not)                               //
-      ///////////////////////////////////////////
-      PipelineStage oldStage = loadPipelineStage(oldStageId);
-      boolean oldIsClosed = oldStage != null
-         && (Boolean.TRUE.equals(oldStage.getIsClosedWon()) || Boolean.TRUE.equals(oldStage.getIsClosedLost()));
-
-      if(oldIsClosed && !newIsClosed)
+      ///////////////////////////////////////////////////////////
+      // handle reopen (old was closed, new is not) -- only  //
+      // load old stage when reopen check is needed (M-4)    //
+      ///////////////////////////////////////////////////////////
+      if(!newIsClosed)
       {
-         record.setValue("actualCloseDate", null);
-         record.setValue("winLossReasonId", null);
+         PipelineStage oldStage = loadPipelineStage(oldStageId);
+         boolean oldIsClosed = oldStage != null
+            && (Boolean.TRUE.equals(oldStage.getIsClosedWon()) || Boolean.TRUE.equals(oldStage.getIsClosedLost()));
+
+         if(oldIsClosed)
+         {
+            record.setValue("actualCloseDate", null);
+            record.setValue("winLossReasonId", null);
+         }
       }
 
       ///////////////////////////////////////////
@@ -280,8 +277,7 @@ public class DealStageChangeCustomizer extends AbstractPreUpdateCustomizer
 
 
    /*******************************************************************************
-    ** Calculate amountInBaseCurrency by querying the Currency table for the
-    ** deal's currencyCode and multiplying amount by exchangeRateToBase.
+    ** Calculate amountInBaseCurrency using the shared CrmCurrencyUtils.
     *******************************************************************************/
    private void calculateAmountInBaseCurrency(QRecord record, QRecord oldRecord) throws QException
    {
@@ -303,33 +299,9 @@ public class DealStageChangeCustomizer extends AbstractPreUpdateCustomizer
          currencyCode = ValueUtils.getValueAsString(oldRecord.getValue("currencyCode"));
       }
 
-      if(!StringUtils.hasContent(currencyCode))
-      {
-         record.setValue("amountInBaseCurrency", amount);
-         return;
-      }
-
       try
       {
-         QueryOutput queryOutput = new QueryAction().execute(
-            new QueryInput(Currency.TABLE_NAME)
-               .withFilter(new QQueryFilter()
-                  .withCriteria(new QFilterCriteria("currencyCode", QCriteriaOperator.EQUALS, currencyCode))));
-
-         if(queryOutput.getRecords().isEmpty())
-         {
-            record.setValue("amountInBaseCurrency", amount);
-            return;
-         }
-
-         Currency currency = new Currency(queryOutput.getRecords().get(0));
-         BigDecimal exchangeRate = currency.getExchangeRateToBase();
-         if(exchangeRate == null)
-         {
-            exchangeRate = BigDecimal.ONE;
-         }
-
-         BigDecimal amountInBase = amount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+         BigDecimal amountInBase = CrmCurrencyUtils.convertToBaseCurrency(amount, currencyCode);
          record.setValue("amountInBaseCurrency", amountInBase);
       }
       catch(Exception e)
@@ -350,16 +322,7 @@ public class DealStageChangeCustomizer extends AbstractPreUpdateCustomizer
       {
          Integer dealId = ValueUtils.getValueAsInteger(record.getValue("id"));
 
-         String userId = "system";
-         if(QContext.getQSession() != null && QContext.getQSession().getUser() != null
-            && StringUtils.hasContent(QContext.getQSession().getUser().getIdReference()))
-         {
-            userId = QContext.getQSession().getUser().getIdReference();
-         }
-         else if(QContext.getQSession() != null && StringUtils.hasContent(QContext.getQSession().getIdReference()))
-         {
-            userId = QContext.getQSession().getIdReference();
-         }
+         String userId = CrmSessionUtils.getCurrentUserId();
 
          /////////////////////////////////////////////////////////////////////////
          // calculate duration in from-stage: days between old stageEnteredDate //

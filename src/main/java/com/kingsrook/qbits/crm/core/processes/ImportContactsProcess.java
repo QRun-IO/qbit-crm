@@ -141,9 +141,9 @@ public class ImportContactsProcess implements BackendStep, MetaDataProducerInter
          new InsertAction().execute(
             new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
                new AuditLog()
-                  .withEntityType(CrmEntityType.CONTACT.getId())
+                  .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
                   .withEntityId(newContactId)
-                  .withAction(CrmAuditAction.IMPORTED.getId())
+                  .withAction(CrmAuditAction.IMPORTED.getPossibleValueId())
                   .withUserId(sessionUserId)
                   .withMessage("Contact imported")));
 
