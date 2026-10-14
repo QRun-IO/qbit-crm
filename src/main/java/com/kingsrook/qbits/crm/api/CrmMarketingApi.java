@@ -25,7 +25,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import com.kingsrook.qbits.crm.CrmSessionUtils;
+import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
+import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
+import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
 import com.kingsrook.qbits.crm.security.CrmTokens;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -37,10 +39,13 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
 
 /*******************************************************************************
+ ** Enforces caller permissions because marketing runs for a signed-in user or worker.
  ** Supported marketing contract. Only eligible recipients expose addresses; all other responses contain identifiers or reason codes.
  *******************************************************************************/
 public class CrmMarketingApi
 {
+   private final CrmStore store = CrmStore.asUser();
+
    /*******************************************************************************
     ** Whether the current application contains the CRM contract tables.
     *******************************************************************************/
@@ -83,14 +88,14 @@ public class CrmMarketingApi
       }
       else
       {
-         QRecord list = CrmStore.get("crm_email_list", id);
-         for(QRecord member : CrmStore.by("crm_email_list_member", "emailListId", id))
+         QRecord list = store.get("crm_email_list", id);
+         for(QRecord member : store.by("crm_email_list_member", "emailListId", id))
          {
             Integer contactId = member.getValueInteger("contactId");
             if(contactId != null)
             {
                String reason = !Boolean.TRUE.equals(list.getValueBoolean("isActive")) ? "list_inactive"
-                  : Integer.valueOf(1).equals(member.getValueInteger("status")) ? null : "list_member_not_subscribed";
+                  : CrmListMemberStatus.SUBSCRIBED.getId().equals(member.getValueInteger("status")) ? null : "list_member_not_subscribed";
                result.add(recipient(contactId, reason));
             }
          }
@@ -103,7 +108,7 @@ public class CrmMarketingApi
     *******************************************************************************/
    public Eligibility checkEmailEligibility(Integer contactId) throws QException
    {
-      List<QRecord> contacts = contactId == null ? List.of() : CrmStore.by("crm_contact", "id", contactId);
+      List<QRecord> contacts = contactId == null ? List.of() : store.by("crm_contact", "id", contactId);
       if(contacts.isEmpty())
       {
          return (no("contact_not_found"));
@@ -121,22 +126,15 @@ public class CrmMarketingApi
       {
          return (no("no_email_address"));
       }
-      for(QRecord member : CrmStore.by("crm_email_list_member", "contactId", contactId))
-      {
-         if(!Integer.valueOf(1).equals(member.getValueInteger("status")))
-         {
-            return (no("list_member_not_subscribed"));
-         }
-      }
-      List<QRecord> consents = CrmStore.query("crm_consent_record", new QQueryFilter(
-         new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId), new QFilterCriteria("consentType", QCriteriaOperator.EQUALS, 1)));
+      List<QRecord> consents = store.query("crm_consent_record", new QQueryFilter(
+         new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId), new QFilterCriteria("consentType", QCriteriaOperator.EQUALS, CrmConsentType.EMAIL.getId())));
       if(consents.isEmpty())
       {
          return (no("no_email_consent"));
       }
       QRecord latest = consents.stream().max(Comparator.comparing((QRecord row) -> row.getValueInstant("consentDate") == null
          ? Instant.EPOCH : row.getValueInstant("consentDate")).thenComparing(row -> row.getValueInteger("id"))).orElseThrow();
-      if(!Integer.valueOf(1).equals(latest.getValueInteger("status")))
+      if(!CrmConsentStatus.GRANTED.getId().equals(latest.getValueInteger("status")))
       {
          return (no("email_consent_withdrawn"));
       }
@@ -162,7 +160,7 @@ public class CrmMarketingApi
       {
          filter.addCriteria(new QFilterCriteria("createDate", QCriteriaOperator.GREATER_THAN_OR_EQUALS, since));
       }
-      return (CrmStore.query("crm_form_submission", filter).stream().map(row -> new CrmFormSubmissionRef(row.getValueInteger("id"),
+      return (store.query("crm_form_submission", filter).stream().map(row -> new CrmFormSubmissionRef(row.getValueInteger("id"),
          row.getValueInteger("contactId"), row.getValueInstant("createDate"))).toList());
    }
 
@@ -171,16 +169,7 @@ public class CrmMarketingApi
     *******************************************************************************/
    public void recordActivity(Integer contactId, ActivityKind kind, String subject, String description) throws QException
    {
-      CrmStore.get("crm_contact", contactId);
-      if(kind == null || subject == null || subject.isBlank())
-      {
-         throw (new QUserFacingException("An activity kind and subject are required."));
-      }
-      CrmStarterData.ensure();
-      Integer typeId = CrmStore.by("crm_activity_type", "code", kind.name()).get(0).getValueInteger("id");
-      CrmStore.insert("crm_activity", new QRecord().withValue("contactId", contactId).withValue("activityTypeId", typeId)
-         .withValue("subject", subject).withValue("description", description).withValue("ownerUserId", CrmSessionUtils.getCurrentUserId())
-         .withValue("isCompleted", true).withValue("completedDate", Instant.now()));
+      store.recordActivity(contactId, kind, subject, description);
    }
 
    /*******************************************************************************
@@ -196,7 +185,7 @@ public class CrmMarketingApi
     *******************************************************************************/
    public void recordUnsubscribe(Integer contactId, Integer listId, String source) throws QException
    {
-      new CrmIntakeApi().unsubscribeByContact(contactId, listId, source);
+      new CrmIntakeApi(CrmApi.config(), null, store).unsubscribeByContact(contactId, listId, source);
    }
 
    /*******************************************************************************
@@ -204,10 +193,10 @@ public class CrmMarketingApi
     *******************************************************************************/
    public String buildUnsubscribeUrl(Integer contactId, Integer listId) throws QException
    {
-      CrmStore.get("crm_contact", contactId);
+      store.get("crm_contact", contactId);
       if(listId != null)
       {
-         CrmStore.get("crm_email_list", listId);
+         store.get("crm_email_list", listId);
       }
       CrmTokens tokens = new CrmTokens(CrmApi.config());
       return (tokens.url("unsubscribe", tokens.issue("unsubscribe", contactId, listId)));
@@ -218,7 +207,7 @@ public class CrmMarketingApi
     *******************************************************************************/
    public List<RecipientScopeOption> recipientScopeOptions() throws QException
    {
-      return (CrmStore.by("crm_email_list", "isActive", true).stream()
+      return (store.by("crm_email_list", "isActive", true).stream()
          .map(row -> new RecipientScopeOption("crm-list:" + row.getValueInteger("id"), row.getValueString("name"))).toList());
    }
 
@@ -228,7 +217,7 @@ public class CrmMarketingApi
    private CrmRecipient recipient(Integer contactId, String reason) throws QException
    {
       Eligibility eligibility = reason == null ? checkEmailEligibility(contactId) : no(reason);
-      return (new CrmRecipient(contactId, eligibility.eligible() ? CrmStore.get("crm_contact", contactId).getValueString("email") : null, eligibility));
+      return (new CrmRecipient(contactId, eligibility.eligible() ? store.get("crm_contact", contactId).getValueString("email") : null, eligibility));
    }
 
    /*******************************************************************************

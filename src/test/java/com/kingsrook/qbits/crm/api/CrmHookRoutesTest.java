@@ -52,15 +52,15 @@ class CrmHookRoutesTest extends BaseTest
    void confirmAndUnsubscribeRequirePostAndRejectBadTokens() throws Exception
    {
       CrmQBitConfig config = CrmApi.config().withTokenSecret("route-test-secret").withPublicBaseUrl("https://example.test");
-      Integer contactId = CrmStore.insert("crm_contact", new QRecord().withValue("firstName", "Private").withValue("lastName", "Person")
+      Integer contactId = CrmStore.asUser().insert("crm_contact", new QRecord().withValue("firstName", "Private").withValue("lastName", "Person")
          .withValue("email", "private@example.test").withValue("ownerUserId", TEST_USER_ID)).getValueInteger("id");
-      Integer listId = CrmStore.insert("crm_email_list", new QRecord().withValue("listKey", "news").withValue("slug", "news")
+      Integer listId = CrmStore.asUser().insert("crm_email_list", new QRecord().withValue("listKey", "news").withValue("slug", "news")
          .withValue("name", "News").withValue("sortOrder", 1)).getValueInteger("id");
-      Integer memberId = CrmStore.insert("crm_email_list_member", new QRecord().withValue("contactId", contactId).withValue("emailListId", listId)
+      Integer memberId = CrmStore.asUser().insert("crm_email_list_member", new QRecord().withValue("contactId", contactId).withValue("emailListId", listId)
          .withValue("email", "private@example.test").withValue("status", 5).withValue("consentText", "Send me news")).getValueInteger("id");
       CrmTokens tokens = new CrmTokens(config);
       String confirm = tokens.issue("confirm", memberId, listId);
-      CrmStore.update("crm_email_list_member", new QRecord().withValue("id", memberId).withValue("confirmationTokenHash", CrmTokens.hash(confirm)));
+      CrmStore.asUser().update("crm_email_list_member", new QRecord().withValue("id", memberId).withValue("confirmationTokenHash", CrmTokens.hash(confirm)));
       CrmHookRouteProvider routes = new CrmHookRouteProvider();
       routes.setQInstance(QContext.getQInstance());
       CrmHookRouteProvider.register(QContext.getQInstance());
@@ -74,14 +74,14 @@ class CrmHookRoutesTest extends BaseTest
          assertThat(get.statusCode()).isEqualTo(200);
          assertThat(get.body()).contains("<button", "method=\"post\"").doesNotContain("private@example.test", confirm);
          assertThat(get.headers().firstValue("Cache-Control")).contains("no-store");
-         assertThat(CrmStore.get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(5);
+         assertThat(CrmStore.asUser().get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(5);
          assertThat(request(client, base + "confirm/" + confirm, "POST").statusCode()).isEqualTo(200);
-         assertThat(CrmStore.get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(1);
+         assertThat(CrmStore.asUser().get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(1);
          String unsubscribe = tokens.issue("unsubscribe", contactId, listId);
          assertThat(request(client, base + "unsubscribe/" + unsubscribe, "GET").statusCode()).isEqualTo(200);
-         assertThat(CrmStore.get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(1);
+         assertThat(CrmStore.asUser().get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(1);
          assertThat(request(client, base + "unsubscribe/" + unsubscribe, "POST").statusCode()).isEqualTo(200);
-         assertThat(CrmStore.get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(2);
+         assertThat(CrmStore.asUser().get("crm_email_list_member", memberId).getValueInteger("status")).isEqualTo(2);
          for(String method : java.util.List.of("GET", "POST"))
          {
             assertThat(request(client, base + "confirm/invalid", method).statusCode()).isEqualTo(400);

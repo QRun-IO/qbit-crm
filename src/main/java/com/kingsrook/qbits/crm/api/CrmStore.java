@@ -22,13 +22,16 @@ package com.kingsrook.qbits.crm.api;
 
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.List;
+import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qqq.backend.core.actions.permissions.PermissionEnforcement;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
+import com.kingsrook.qqq.backend.core.model.actions.AbstractActionInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
@@ -39,31 +42,65 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
 
 /*******************************************************************************
- ** Internal table-action boundary. Always enforces caller permissions and record locks.
+ ** Internal table-action boundary. Explicitly selects trusted host work or caller permission enforcement.
  *******************************************************************************/
 final class CrmStore
 {
+   private final PermissionEnforcement permissionEnforcement;
+
    /*******************************************************************************
-    ** No instances.
+    ** Select permission enforcement for all actions in this store.
     *******************************************************************************/
-   private CrmStore()
+   private CrmStore(PermissionEnforcement permissionEnforcement)
    {
+      this.permissionEnforcement = permissionEnforcement;
+   }
+
+   /*******************************************************************************
+    ** Validated host intake is internal work, independent of the visitor's permissions.
+    *******************************************************************************/
+   static CrmStore trusted()
+   {
+      return (new CrmStore(PermissionEnforcement.SKIP));
+   }
+
+   /*******************************************************************************
+    ** Signed-in users and marketing workers must hold the permissions for their work.
+    *******************************************************************************/
+   static CrmStore asUser()
+   {
+      return (new CrmStore(PermissionEnforcement.ENFORCE));
+   }
+
+   /*******************************************************************************
+    ** Core requires an explicit reason when selecting SKIP for internal work.
+    *******************************************************************************/
+   private void applyPermissions(AbstractActionInput input)
+   {
+      if(permissionEnforcement == PermissionEnforcement.SKIP)
+      {
+         input.withPermissionBypass("CRM intake is trusted host work after public request validation");
+      }
+      else
+      {
+         input.withPermissionEnforcement(permissionEnforcement);
+      }
    }
 
    /*******************************************************************************
     ** Query through core actions.
     *******************************************************************************/
-   static List<QRecord> query(String table, QQueryFilter filter) throws QException
+   List<QRecord> query(String table, QQueryFilter filter) throws QException
    {
       QueryInput input = new QueryInput(table).withFilter(filter);
-      input.withPermissionEnforcement(PermissionEnforcement.ENFORCE);
+      applyPermissions(input);
       return (new QueryAction().execute(input).getRecords());
    }
 
    /*******************************************************************************
     ** Query a single field.
     *******************************************************************************/
-   static List<QRecord> by(String table, String field, Serializable value) throws QException
+   List<QRecord> by(String table, String field, Serializable value) throws QException
    {
       return (query(table, new QQueryFilter(new QFilterCriteria(field, QCriteriaOperator.EQUALS, value))));
    }
@@ -71,7 +108,7 @@ final class CrmStore
    /*******************************************************************************
     ** Retrieve a visible record or fail without disclosing its contents.
     *******************************************************************************/
-   static QRecord get(String table, Integer id) throws QException
+   QRecord get(String table, Integer id) throws QException
    {
       if(id == null)
       {
@@ -88,21 +125,38 @@ final class CrmStore
    /*******************************************************************************
     ** Insert and surface record-level validation failures.
     *******************************************************************************/
-   static QRecord insert(String table, QRecord record) throws QException
+   QRecord insert(String table, QRecord record) throws QException
    {
       InsertInput input = new InsertInput(table).withRecord(record);
-      input.withPermissionEnforcement(PermissionEnforcement.ENFORCE);
+      applyPermissions(input);
       return (checked(new InsertAction().execute(input).getRecords()));
    }
 
    /*******************************************************************************
     ** Update without bypassing customizers, audit or locks.
     *******************************************************************************/
-   static QRecord update(String table, QRecord record) throws QException
+   QRecord update(String table, QRecord record) throws QException
    {
       UpdateInput input = new UpdateInput(table).withRecords(List.of(record));
-      input.withPermissionEnforcement(PermissionEnforcement.ENFORCE);
+      applyPermissions(input);
       return (checked(new UpdateAction().execute(input).getRecords()));
+   }
+
+   /*******************************************************************************
+    ** Record an interaction with the same permission mode as the initiating operation.
+    *******************************************************************************/
+   void recordActivity(Integer contactId, ActivityKind kind, String subject, String description) throws QException
+   {
+      get("crm_contact", contactId);
+      if(kind == null || subject == null || subject.isBlank())
+      {
+         throw (new QUserFacingException("An activity kind and subject are required."));
+      }
+      CrmStarterData.ensure(this);
+      Integer typeId = by("crm_activity_type", "code", kind.name()).get(0).getValueInteger("id");
+      insert("crm_activity", new QRecord().withValue("contactId", contactId).withValue("activityTypeId", typeId)
+         .withValue("subject", subject).withValue("description", description).withValue("ownerUserId", CrmSessionUtils.getCurrentUserId())
+         .withValue("isCompleted", true).withValue("completedDate", Instant.now()));
    }
 
    /*******************************************************************************

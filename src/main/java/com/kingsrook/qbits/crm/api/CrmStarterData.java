@@ -44,28 +44,36 @@ public final class CrmStarterData
     *******************************************************************************/
    public static void ensure() throws QException
    {
+      ensure(CrmStore.asUser());
+   }
+
+   /*******************************************************************************
+    ** Initialize codes using the initiating operation's permission mode.
+    *******************************************************************************/
+   static void ensure(CrmStore store) throws QException
+   {
       for(ActivityKind kind : ActivityKind.values())
       {
-         if(!CrmStore.by("crm_activity_type", "code", kind.name()).isEmpty())
+         if(!store.by("crm_activity_type", "code", kind.name()).isEmpty())
          {
             continue;
          }
          String label = kind.name().substring(0, 1) + kind.name().substring(1).toLowerCase(Locale.ROOT).replace('_', ' ');
-         List<QRecord> named = CrmStore.by("crm_activity_type", "name", label);
+         List<QRecord> named = store.by("crm_activity_type", "name", label);
          if(!named.isEmpty() && named.get(0).getValue("code") == null)
          {
-            CrmStore.update("crm_activity_type", new QRecord().withValue("id", named.get(0).getValue("id")).withValue("code", kind.name()));
+            store.update("crm_activity_type", new QRecord().withValue("id", named.get(0).getValue("id")).withValue("code", kind.name()));
          }
          else
          {
             try
             {
-               CrmStore.insert("crm_activity_type", new QRecord().withValue("name", label).withValue("code", kind.name())
+               store.insert("crm_activity_type", new QRecord().withValue("name", label).withValue("code", kind.name())
                   .withValue("sortOrder", kind.ordinal()).withValue("isSystem", true));
             }
             catch(QException e)
             {
-               if(CrmStore.by("crm_activity_type", "code", kind.name()).isEmpty())
+               if(store.by("crm_activity_type", "code", kind.name()).isEmpty())
                {
                   throw e;
                }
