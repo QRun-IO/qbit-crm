@@ -44,6 +44,7 @@ import com.kingsrook.qbits.crm.api.CrmIntakeApi;
 import com.kingsrook.qbits.crm.api.CrmMarketingApi;
 import com.kingsrook.qbits.crm.api.FormType;
 import com.kingsrook.qbits.crm.security.CrmPermissions;
+import com.kingsrook.qqq.backend.core.actions.dashboard.RenderWidgetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
@@ -54,6 +55,9 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperat
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.StatisticsData;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
@@ -332,6 +336,38 @@ class CrmRdbmsTest
    {
       return (sql.lines().filter(line -> !line.stripLeading().startsWith("--")).filter(line -> !line.isBlank())
          .collect(java.util.stream.Collectors.joining("\n")));
+   }
+
+
+   /*******************************************************************************
+    ** Home sums and GROUP BY execute against the shipped SQL schema, too.
+    *******************************************************************************/
+   @Test
+   void testHomeAggregates() throws Exception
+   {
+      try(Statement statement = connection.createStatement())
+      {
+         statement.executeUpdate("INSERT INTO crm_pipeline (id, name) VALUES (1, 'Sales')");
+         statement.executeUpdate("INSERT INTO crm_pipeline_stage (id, pipeline_id, name, sort_order, probability_pct, is_closed_won, is_closed_lost) VALUES (1, 1, 'Open', 1, 50, FALSE, FALSE), (2, 1, 'Won', 2, 100, TRUE, FALSE)");
+         statement.executeUpdate("INSERT INTO crm_deal (name, pipeline_id, pipeline_stage_id, owner_user_id, amount_in_base_currency, weighted_amount, expected_close_date, actual_close_date) VALUES ('Open deal', 1, 1, 'Ada', 123.45, 61.73, CURRENT_DATE, NULL), ('Won deal', 1, 2, 'Ada', 20.25, 20.25, NULL, CURRENT_DATE)");
+      }
+      RenderWidgetAction renderer = new RenderWidgetAction();
+      RenderWidgetInput input = new RenderWidgetInput();
+      input.setWidgetMetaData(qInstance.getWidget("crm_open_pipeline"));
+      StatisticsData statistics = (StatisticsData) renderer.execute(input).getWidgetData();
+      assertThat(new BigDecimal(statistics.getCount().toString())).isEqualByComparingTo("123.45");
+      input.setWidgetMetaData(qInstance.getWidget("crm_pipeline_summary"));
+      TableData pipeline = (TableData) renderer.execute(input).getWidgetData();
+      assertThat(pipeline.getRows()).hasSize(2);
+      assertThat(pipeline.getRows().getFirst().get("first").toString()).endsWith(">Open (1 deals)</a>");
+      input.setWidgetMetaData(qInstance.getWidget("crm_deal_forecast"));
+      TableData forecast = (TableData) renderer.execute(input).getWidgetData();
+      assertThat(forecast.getRows()).hasSize(6);
+      assertThat(forecast.getRows().getFirst().get("second").toString()).endsWith(">1</a>");
+      input.setWidgetMetaData(qInstance.getWidget("crm_sales_leaderboard"));
+      TableData leaders = (TableData) renderer.execute(input).getWidgetData();
+      assertThat(leaders.getRows()).hasSize(1);
+      assertThat(leaders.getRows().getFirst().get("first").toString()).endsWith(">Ada</a>");
    }
 
 }

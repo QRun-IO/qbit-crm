@@ -35,6 +35,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.ValueTooLongBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildJoin;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
+import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
@@ -48,7 +51,12 @@ import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
 @QMetaDataProducingEntity(
    producePossibleValueSource = true,
    produceTableMetaData = true,
-   tableMetaDataCustomizer = EmailList.TableMetaDataCustomizer.class
+   tableMetaDataCustomizer = EmailList.TableMetaDataCustomizer.class,
+   childTables = {
+      @ChildTable(childTableEntityClass = EmailListMember.class, joinFieldName = "emailListId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Members", enabled = true, maxRows = 25))
+   }
 )
 public class EmailList extends QRecordEntity
 {

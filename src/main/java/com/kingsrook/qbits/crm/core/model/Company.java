@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
+import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.model.enums.CrmCompanyType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -63,6 +64,9 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
    produceTableMetaData = true,
    tableMetaDataCustomizer = Company.TableMetaDataCustomizer.class,
    childTables = {
+      @ChildTable(childTableEntityClass = Activity.class, joinFieldName = "companyId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Activities", enabled = true, maxRows = 25)),
       @ChildTable(childTableEntityClass = Contact.class, joinFieldName = "companyId",
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Contacts", enabled = true, maxRows = 50)),

@@ -30,7 +30,9 @@ import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.activities.model.Activity;
-import com.kingsrook.qbits.crm.deals.model.DealContact;
+import com.kingsrook.qbits.crm.deals.model.Deal;
+import com.kingsrook.qbits.crm.email.model.EmailMessage;
+import com.kingsrook.qbits.crm.email.model.SequenceEnrollment;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -62,12 +64,24 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
    produceTableMetaData = true,
    tableMetaDataCustomizer = Contact.TableMetaDataCustomizer.class,
    childTables = {
+      @ChildTable(childTableEntityClass = Deal.class, joinFieldName = "primaryContactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Deals", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = EmailListMember.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "List Memberships", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = SequenceEnrollment.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Enrollments", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = EmailMessage.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Email Messages", enabled = true, maxRows = 25)),
+      @ChildTable(childTableEntityClass = FormSubmission.class, joinFieldName = "contactId",
+         childJoin = @ChildJoin(enabled = true),
+         childRecordListWidget = @ChildRecordListWidget(label = "Web Leads", enabled = true, maxRows = 25)),
       @ChildTable(childTableEntityClass = Activity.class, joinFieldName = "contactId",
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Activities", enabled = true, maxRows = 50)),
-      @ChildTable(childTableEntityClass = DealContact.class, joinFieldName = "contactId",
-         childJoin = @ChildJoin(enabled = true),
-         childRecordListWidget = @ChildRecordListWidget(label = "Deals", enabled = true, maxRows = 25)),
       @ChildTable(childTableEntityClass = ConsentRecord.class, joinFieldName = "contactId",
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Consent Records", enabled = true, maxRows = 25))

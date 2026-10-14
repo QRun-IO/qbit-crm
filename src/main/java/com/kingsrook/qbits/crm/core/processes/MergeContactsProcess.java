@@ -125,6 +125,8 @@ public class MergeContactsProcess implements BackendStep, MetaDataProducerInterf
       // Re-link activities from secondary         //
       ///////////////////////////////////////////////
       relinkRecords(Activity.TABLE_NAME, "contactId", secondaryContactId, primaryContactId);
+      relinkRecords("crm_email_message", "contactId", secondaryContactId, primaryContactId);
+      relinkRecords("crm_deal", "primaryContactId", secondaryContactId, primaryContactId);
 
       ///////////////////////////////////////////////
       // Re-link DealContact rows                  //

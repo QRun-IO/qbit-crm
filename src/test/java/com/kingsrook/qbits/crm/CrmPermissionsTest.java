@@ -49,7 +49,7 @@ class CrmPermissionsTest extends BaseTest
       assertThat(PermissionsHelper.hasTablePermission(input, "crm_contact", TablePermissionSubType.EDIT)).isFalse();
       assertThat(PermissionsHelper.hasTablePermission(input, "crm_pipeline", TablePermissionSubType.READ)).isFalse();
       assertThat(PermissionsHelper.hasProcessPermission(input, "crm_gdpr_anonymize_contact")).isFalse();
-      assertThat(PermissionsHelper.hasWidgetPermission(input, "crm_activity_feed")).isFalse();
+      assertThat(PermissionsHelper.hasWidgetPermission(input, "crm_recent_web_leads")).isFalse();
    }
 
 
@@ -62,7 +62,7 @@ class CrmPermissionsTest extends BaseTest
    {
       QueryInput input = new QueryInput("crm_contact");
       QContext.getQSession().setPermissions(Set.of(CrmPermissions.APP_ACCESS, CrmPermissions.MANAGE_READ, CrmPermissions.MANAGE_WRITE, CrmPermissions.MANAGE));
-      assertThat(PermissionsHelper.hasWidgetPermission(input, "crm_activity_feed")).isTrue();
+      assertThat(PermissionsHelper.hasWidgetPermission(input, "crm_recent_web_leads")).isTrue();
       assertThat(PermissionsHelper.hasTablePermission(input, "crm_pipeline", TablePermissionSubType.EDIT)).isTrue();
       assertThat(PermissionsHelper.hasProcessPermission(input, "crm_merge_contacts")).isTrue();
       assertThat(PermissionsHelper.hasTablePermission(input, "crm_currency", TablePermissionSubType.READ)).isTrue();

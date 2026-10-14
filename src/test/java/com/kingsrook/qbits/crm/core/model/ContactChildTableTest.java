@@ -76,14 +76,14 @@ class ContactChildTableTest extends BaseTest
 
 
    /*******************************************************************************
-    ** Verify the join from Contact to DealContact exists in the QInstance.
+    ** Verify the primary-contact join from Contact to Deal exists in the QInstance.
     *******************************************************************************/
    @Test
-   void testContactDealContactJoinExists()
+   void testContactPrimaryDealJoinExists()
    {
-      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, DealContact.TABLE_NAME).replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
+      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, Deal.TABLE_NAME).replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
       QJoinMetaData join = QContext.getQInstance().getJoin(joinName);
-      assertNotNull(join, "Expected join from Contact to DealContact to exist");
+      assertNotNull(join, "Expected join from Contact to Deal to exist");
    }
 
 

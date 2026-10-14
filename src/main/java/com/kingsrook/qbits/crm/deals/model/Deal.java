@@ -33,6 +33,7 @@ import java.util.List;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.model.Company;
+import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.LeadSource;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDealPriority;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -118,7 +119,7 @@ public class Deal extends QRecordEntity
             .withRecordLabelFields("name")
             .withSection(t1Section)
             .withSection(new QFieldSection("details", new QIcon().withName("info"), Tier.T2,
-               List.of("companyId", "ownerUserId", "leadSourceId", "priority",
+               List.of("primaryContactId", "companyId", "ownerUserId", "leadSourceId", "priority",
                   "probabilityOverridePct", "expectedCloseDate", "actualCloseDate",
                   "winLossReasonId", "weightedAmount", "amountInBaseCurrency")))
             .withSection(SectionFactory.defaultT2("description"))
@@ -190,6 +191,9 @@ public class Deal extends QRecordEntity
 
    @QField(possibleValueSourceName = Company.TABLE_NAME)
    private Integer companyId;
+
+   @QField(possibleValueSourceName = Contact.TABLE_NAME)
+   private Integer primaryContactId;
 
    @QField(isRequired = true)
    private String ownerUserId;
@@ -891,6 +895,34 @@ public class Deal extends QRecordEntity
    public Deal withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** The contact primarily responsible for this opportunity.
+    *******************************************************************************/
+   public Integer getPrimaryContactId()
+   {
+      return (primaryContactId);
+   }
+
+
+   /*******************************************************************************
+    ** Set the primary contact.
+    *******************************************************************************/
+   public void setPrimaryContactId(Integer primaryContactId)
+   {
+      this.primaryContactId = primaryContactId;
+   }
+
+
+   /*******************************************************************************
+    ** Set the primary contact fluently.
+    *******************************************************************************/
+   public Deal withPrimaryContactId(Integer primaryContactId)
+   {
+      this.primaryContactId = primaryContactId;
       return (this);
    }
 

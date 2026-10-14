@@ -26,6 +26,7 @@
 package com.kingsrook.qbits.crm;
 
 
+import java.util.List;
 import java.util.Locale;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
@@ -60,7 +61,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaDataProducer;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
 
 
 /*******************************************************************************
@@ -106,12 +109,31 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       for(QWidgetMetaData widget : metaDataProducerMultiOutput.getEach(QWidgetMetaData.class))
       {
          widget.setName(snakeCase(widget.getName()));
-         widget.setPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE));
+         QCodeReference permissionChecker = widget.getPermissionRules() == null ? null : widget.getPermissionRules().getCustomPermissionChecker();
+         widget.setPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE).withCustomPermissionChecker(permissionChecker));
+         widget.setGridColumns(12);
          if(widget.getDefaultValues() != null && widget.getDefaultValues().get("joinName") instanceof String joinName)
          {
-            widget.withDefaultValue("joinName", snakeCase(joinName));
+            String normalizedJoinName = snakeCase(joinName);
+            widget.withDefaultValue("joinName", normalizedJoinName);
+            QJoinMetaData join = metaDataProducerMultiOutput.getEach(QJoinMetaData.class).stream()
+               .filter(candidate -> candidate.getName().equals(normalizedJoinName)).findFirst().orElseThrow();
+            QTableMetaData parent = metaDataProducerMultiOutput.get(QTableMetaData.class, join.getLeftTable());
+            boolean alreadyAttached = parent.getSections() != null && parent.getSections().stream()
+               .anyMatch(section -> section.getWidgetName() != null && snakeCase(section.getWidgetName()).equals(widget.getName()));
+            if(!alreadyAttached)
+            {
+               parent.withSection(new QFieldSection(widget.getName(), widget.getLabel(), new QIcon("list"), Tier.T2, List.of())
+                  .withWidgetName(widget.getName()));
+            }
          }
       }
+
+      metaDataProducerMultiOutput.get(QTableMetaData.class, "crm_form_submission").setLabel("Web Leads");
+      metaDataProducerMultiOutput.get(QTableMetaData.class, "crm_email_list").setLabel("Lists");
+      metaDataProducerMultiOutput.get(QTableMetaData.class, Contact.TABLE_NAME).withSection(
+         new QFieldSection("crm_contact_timeline", "Timeline", new QIcon("history"), Tier.T2, List.of())
+            .withWidgetName("crm_contact_timeline"));
 
       for(QProcessMetaData process : metaDataProducerMultiOutput.getEach(QProcessMetaData.class))
       {
@@ -236,10 +258,7 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
     *******************************************************************************/
    public static QAppSection produceAppSection()
    {
-      return new QAppSection()
-         .withName("crm")
-         .withLabel("CRM")
-         .withIcon(new QIcon().withName("contacts"));
+      return (CrmAppMetaData.mainSection());
    }
 
 
@@ -294,6 +313,10 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       {
          output.add(item instanceof QWidgetMetaData widget
             ? new CrmWidgetMetaData(widget).withSourceQBitName(getQBitMetaData().getName()) : item);
+      }
+      if(!Boolean.FALSE.equals(qBitConfig.getAppEnabled()))
+      {
+         output.add(CrmAppMetaData.build(output, getQBitMetaData().getName()));
       }
       output.add(new QAlertTypeMetaData().withName("crm.lead.received").withLabel("New web lead")
          .withDefaultSeverity(AlertSeverity.INFO).withSourceQBitName(getQBitMetaData().getName()));

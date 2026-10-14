@@ -28,6 +28,7 @@ package com.kingsrook.qbits.crm.email.model;
 
 import java.time.Instant;
 import java.util.List;
+import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
@@ -97,7 +98,7 @@ public class SequenceEnrollment extends QRecordEntity
    @QField(isRequired = true, possibleValueSourceName = EmailSequence.TABLE_NAME)
    private Integer sequenceId;
 
-   @QField(isRequired = true)
+   @QField(isRequired = true, possibleValueSourceName = Contact.TABLE_NAME)
    private Integer contactId;
 
    @QField()

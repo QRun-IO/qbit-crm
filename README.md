@@ -1,6 +1,6 @@
 # QBit CRM
 
-**0.2.0-SNAPSHOT — unreleased, P1 Platform.** CRM tables, processes and widgets for QQQ applications. This phase upgrades the build, names, permissions, audit integration and database schema. It does not complete the later 0.2.0 product phases.
+**0.2.0-SNAPSHOT — unreleased, P1 Platform + P2 App, home and nav.** CRM tables, processes and widgets for QQQ applications. This work upgrades the build, names, permissions, audit integration and database schema, and supplies the CRM app and record navigation. It does not complete the later 0.2.0 product phases.
 
 ## Build and verification
 
@@ -50,7 +50,7 @@ new CrmQBitProducer()
 qInstance.setEnforcePermissionsInCoreActions(true);
 ```
 
-4. Map the host's authenticated roles to the permissions below. Configure the host's core audit storage. Add tables, processes and widgets to the host UI as needed: `produceAppSection()` currently returns an empty CRM section; P1 does not provide an assembled app or home dashboard.
+4. Map the host's authenticated roles to the permissions below. Configure the host's core audit storage. The `crm` app is enabled by default, with main and Settings navigation and a real-data home. Set `withAppEnabled(false)` to embed the tables in the host's own app. `produceAppSection()` returns the same populated main section; processes are record/table actions, never navigation entries.
 
 ## Configuration and access
 
@@ -68,7 +68,7 @@ qInstance.setEnforcePermissionsInCoreActions(true);
 | Merge, bulk assignment, list and sequence management processes | `crm.manage.hasAccess` |
 | GDPR anonymization | `crm.admin.hasAccess` |
 
-Permissions are independent grants. Every CRM-produced table, process and widget has explicit `QPermissionRules` with `DenyBehavior.HIDDEN` and QBit provenance. `security.CrmPermissions.ALL` lists the grants for host administration and tests. The widget provenance adapter supplies core's `SourceQBitAware` interface because RC.6's widget class lacks it.
+Permissions are independent grants. Every CRM-produced table, process and widget has explicit `QPermissionRules` with `DenyBehavior.HIDDEN` and QBit provenance. `security.CrmPermissions.ALL` lists the grants for host administration and tests. The app and widget provenance adapters supply core's `SourceQBitAware` interface because RC.6's app and widget classes lack it.
 
 ## Tables
 
@@ -122,7 +122,9 @@ The QBit produces 25 processes with these names and labels. QQQ may additionally
 
 ## Current behavior and limits
 
-The existing pipeline/stage logic, stage history, product totals, currency conversion, contact/company merge, activity logging, form auto-linking, list subscribe/unsubscribe, scoring and assignment processes remain. Fourteen custom dashboard widget producers remain available for host placement, together with generated child-record widgets.
+The existing pipeline/stage logic, stage history, product totals, currency conversion, contact/company merge, activity logging, form auto-linking, list subscribe/unsubscribe, scoring and assignment processes remain. The CRM home contains Today (five standard statistics), Pipeline by stage, Forecast (current month plus five), Needs attention (ten oldest rotting deals), Recent web leads (latest ten), Goals (up to fifty current goals, hidden when none are visible), and Leaderboard (quarter-to-date won revenue by owner). Reporting boundaries use UTC. Monetary summaries use base currency, with weighted amounts grouped by currency before conversion. Aggregate rows link to their underlying records; stage name and deal count share a column to keep tables to three columns. The pipeline picker appears when multiple active pipelines are visible.
+
+The contact Timeline shows the latest fifty recorded events from activities, email messages, form submissions and consent, newest first by creation date. Native child lists connect all specified parent screens. Deal primary-contact and email-message contact references are included in the fresh-install schema. The trend widgets, redundant recent-deals/activity-count widgets and activity feed have been retired.
 
 Some process names describe unfinished behavior inherited from 0.1.0:
 
@@ -131,7 +133,7 @@ Some process names describe unfinished behavior inherited from 0.1.0:
 - Scoring's date-decay operators remain unimplemented. Import Contacts expects pre-parsed input and does not provide the planned streamed bulk-load workflow.
 - GDPR anonymization scrubs the contact, unenrolls sequences and records withdrawn consent. It does not yet erase all linked PII or core audit details. The P1 schema retains existing PII fields; classification, complete erasure and redesigned tenancy are later work.
 
-The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and full app navigation are not part of this phase.
+The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and the remaining P2 actions/security/integration work are not part of this phase.
 
 ## Source layout
 

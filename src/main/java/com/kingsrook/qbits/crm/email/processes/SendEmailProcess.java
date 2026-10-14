@@ -189,6 +189,7 @@ public class SendEmailProcess implements BackendStep, MetaDataProducerInterface<
 
       EmailMessage emailMessage = new EmailMessage()
          .withActivityId(activityId)
+         .withContactId(contactId)
          .withFromAddress(sessionUserId)
          .withFromName(sessionUserId)
          .withToAddresses(toAddress)

@@ -29,6 +29,7 @@ package com.kingsrook.qbits.crm.email.model;
 import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmBounceType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEmailStatus;
@@ -86,7 +87,7 @@ public class EmailMessage extends QRecordEntity
                List.of("isTracked", "openCount", "clickCount", "firstOpenedDate", "firstClickedDate",
                   "bounceType", "isSpamComplaint")))
             .withSection(new QFieldSection("references", new QIcon("link"), Tier.T2,
-               List.of("activityId", "emailTemplateId", "sequenceEnrollmentId",
+               List.of("contactId", "activityId", "emailTemplateId", "sequenceEnrollmentId",
                   "threadId", "replyToEmailId")))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
@@ -101,6 +102,9 @@ public class EmailMessage extends QRecordEntity
 
    @QField(possibleValueSourceName = Activity.TABLE_NAME)
    private Integer activityId;
+
+   @QField(possibleValueSourceName = Contact.TABLE_NAME)
+   private Integer contactId;
 
    @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String fromAddress;
@@ -996,6 +1000,34 @@ public class EmailMessage extends QRecordEntity
    public EmailMessage withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Contact whose record includes this message.
+    *******************************************************************************/
+   public Integer getContactId()
+   {
+      return (contactId);
+   }
+
+
+   /*******************************************************************************
+    ** Set the message's contact.
+    *******************************************************************************/
+   public void setContactId(Integer contactId)
+   {
+      this.contactId = contactId;
+   }
+
+
+   /*******************************************************************************
+    ** Set the message's contact fluently.
+    *******************************************************************************/
+   public EmailMessage withContactId(Integer contactId)
+   {
+      this.contactId = contactId;
       return (this);
    }
 

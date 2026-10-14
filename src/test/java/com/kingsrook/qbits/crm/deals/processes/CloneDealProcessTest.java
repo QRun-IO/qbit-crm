@@ -104,6 +104,7 @@ class CloneDealProcessTest extends BaseTest
       assertEquals("Big Deal (Copy)", newDeal.getName());
       assertEquals(stage1Id, newDeal.getPipelineStageId()); // reset to first stage
       assertEquals(pipelineId, newDeal.getPipelineId());
+      assertEquals(42, newDeal.getPrimaryContactId());
       assertEquals(0, new BigDecimal("10000").compareTo(newDeal.getAmount()));
 
       /////////////////////////////////////////////
@@ -164,6 +165,7 @@ class CloneDealProcessTest extends BaseTest
          new InsertInput(Deal.TABLE_NAME).withRecordEntity(
             new Deal()
                .withName(name)
+               .withPrimaryContactId(42)
                .withPipelineId(pipelineId)
                .withPipelineStageId(stageId)
                .withAmount(amount)
