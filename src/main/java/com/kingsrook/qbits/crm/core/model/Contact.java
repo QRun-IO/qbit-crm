@@ -101,26 +101,23 @@ public class Contact extends QRecordEntity
       @Override
       public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
       {
-         QFieldSection t1Section = SectionFactory.defaultT1("id", "firstName", "lastName", "email", "phone");
+         QFieldSection t1Section = SectionFactory.defaultT1("firstName", "lastName", "email", "phone");
 
          table
             .withIcon(new QIcon().withName("person"))
-            .withRecordLabelFormat("%s %s")
-            .withRecordLabelFields("firstName", "lastName")
+            .withRecordLabelFormat(null)
+            .withRecordLabelFields(List.of())
             .withSection(t1Section)
             .withSection(new QFieldSection("details", new QIcon().withName("info"), Tier.T2,
                List.of("companyId", "jobTitle", "department", "lifecycleStageId", "leadSourceId",
-                  "ownerUserId", "leadScore", "timezone", "preferredLanguage")))
-            .withSection(new QFieldSection("online", new QIcon().withName("language"), Tier.T2,
-               List.of("secondaryEmail", "mobilePhone", "website", "linkedinUrl")))
-            .withSection(new QFieldSection("address", new QIcon().withName("location_on"), Tier.T2,
-               List.of("addressLine1", "addressLine2", "city", "state", "postalCode", "country")))
-            .withSection(new QFieldSection("communication", new QIcon().withName("settings"), Tier.T2,
-               List.of("doNotEmail", "doNotCall", "unsubscribeDate")))
+                  "ownerUserId", "leadScore", "timezone", "preferredLanguage", "description")))
+            .withSection(new QFieldSection("contactInformation", "Contact Information", new QIcon("contact_mail"), Tier.T2,
+               List.of("secondaryEmail", "mobilePhone", "website", "linkedinUrl", "addressLine1", "addressLine2", "city", "state", "postalCode", "country",
+                  "doNotEmail", "doNotCall", "unsubscribeDate")))
             .withSection(new QFieldSection("attribution", new QIcon().withName("campaign"), Tier.T2,
                List.of("firstTouchUtmSource", "firstTouchUtmMedium", "firstTouchUtmCampaign", "firstTouchUtmContent", "firstTouchUtmTerm", "firstTouchLandingPage", "firstTouchReferrer", "firstTouchDate", "lastTouchUtmSource", "lastTouchUtmMedium", "lastTouchUtmCampaign", "lastTouchUtmContent", "lastTouchUtmTerm", "lastTouchLandingPage", "lastTouchReferrer", "lastTouchDate")).withLabel("Attribution"))
-            .withSection(SectionFactory.defaultT2("description"))
-            .withSection(SectionFactory.defaultT3("lastActivityDate", "lastContactedDate", "createDate", "modifyDate"));
+            .withSection(new QFieldSection("system", "System", new QIcon("settings"), Tier.T3,
+               List.of("id", "lastActivityDate", "lastContactedDate", "createDate", "modifyDate")));
 
 
 
@@ -181,10 +178,10 @@ public class Contact extends QRecordEntity
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
 
-   @QField(isRequired = true, maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstName;
 
-   @QField(isRequired = true, maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastName;
 
    @QField(maxLength = 320, valueTooLongBehavior = ValueTooLongBehavior.ERROR)

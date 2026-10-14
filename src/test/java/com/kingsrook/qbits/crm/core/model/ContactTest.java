@@ -127,7 +127,7 @@ class ContactTest extends BaseTest
       ///////////////////////////////////
       // verify T1 identity section    //
       ///////////////////////////////////
-      assertThat(table.getSections().get(0).getFieldNames()).contains("id", "firstName", "lastName", "email", "phone");
+      assertThat(table.getSections().get(0).getFieldNames()).contains("firstName", "lastName", "email", "phone");
    }
 
 

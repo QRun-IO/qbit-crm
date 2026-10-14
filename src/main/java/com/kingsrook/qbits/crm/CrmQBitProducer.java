@@ -123,13 +123,14 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          widget.setName(snakeCase(widget.getName()));
          QCodeReference permissionChecker = widget.getPermissionRules() == null ? null : widget.getPermissionRules().getCustomPermissionChecker();
          widget.setPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE).withCustomPermissionChecker(permissionChecker));
-         widget.setGridColumns(12);
+         widget.setGridColumns(com.kingsrook.qbits.crm.widgets.CrmHomeWidgets.TODAY.contains(widget.getName()) ? 4 : 12);
          if(widget.getDefaultValues() != null && widget.getDefaultValues().get("joinName") instanceof String joinName)
          {
             String normalizedJoinName = snakeCase(joinName);
             widget.withDefaultValue("joinName", normalizedJoinName);
             QJoinMetaData join = metaDataProducerMultiOutput.getEach(QJoinMetaData.class).stream()
                .filter(candidate -> candidate.getName().equals(normalizedJoinName)).findFirst().orElseThrow();
+            CrmPresentation.configureChildList(widget, join.getRightTable());
             QTableMetaData parent = metaDataProducerMultiOutput.get(QTableMetaData.class, join.getLeftTable());
             boolean alreadyAttached = parent.getSections() != null && parent.getSections().stream()
                .anyMatch(section -> section.getWidgetName() != null && snakeCase(section.getWidgetName()).equals(widget.getName()));
@@ -141,8 +142,6 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          }
       }
 
-      metaDataProducerMultiOutput.get(QTableMetaData.class, "crm_form_submission").setLabel("Web Leads");
-      metaDataProducerMultiOutput.get(QTableMetaData.class, "crm_email_list").setLabel("Lists");
       metaDataProducerMultiOutput.get(QTableMetaData.class, Contact.TABLE_NAME).withSection(
          new QFieldSection("crm_contact_timeline", "Timeline", new QIcon("history"), Tier.T2, List.of())
             .withWidgetName("crm_contact_timeline"));
@@ -165,6 +164,11 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       for(QTableMetaData table : metaDataProducerMultiOutput.getEach(QTableMetaData.class))
       {
          String tableName = table.getName();
+         CrmPresentation.configureTable(table);
+         if(tableName.equals(Contact.TABLE_NAME))
+         {
+            addOrComposeCustomizer(table, TableCustomizers.POST_QUERY_RECORD, new QCodeReference(com.kingsrook.qbits.crm.core.customizers.ContactLabelCustomizer.class));
+         }
          if(tableName.equals(Deal.TABLE_NAME) || tableName.equals(Activity.TABLE_NAME))
          {
             addOrComposeCustomizer(table, TableCustomizers.PRE_INSERT_RECORD, new QCodeReference(CrmRelationshipValidator.class));

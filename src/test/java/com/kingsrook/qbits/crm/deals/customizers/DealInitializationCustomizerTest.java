@@ -119,6 +119,30 @@ class DealInitializationCustomizerTest extends BaseTest
 
 
 
+   /*******************************************************************************
+    ** Lost-stage inserts close immediately while imported dates are preserved.
+    *******************************************************************************/
+   @Test
+   void closedStageDates() throws QException
+   {
+      Integer pipeline = insertPipeline("Closed imports");
+      Integer stage = new InsertAction().execute(new InsertInput(PipelineStage.TABLE_NAME).withRecordEntity(new PipelineStage()
+         .withPipelineId(pipeline).withName("Lost").withSortOrder(1).withProbabilityPct(0).withIsClosedLost(true)))
+         .getRecords().getFirst().getValueInteger("id");
+      Deal lost = new Deal(GetAction.execute(Deal.TABLE_NAME, insertDeal("Lost", pipeline, stage, BigDecimal.TEN)));
+      assertEquals(java.time.LocalDate.now(java.time.ZoneOffset.UTC), lost.getActualCloseDate());
+      assertNotNull(lost.getStageEnteredDate());
+      java.time.LocalDate closeDate = java.time.LocalDate.of(2025, 1, 2);
+      java.time.Instant entered = java.time.Instant.parse("2025-01-01T10:00:00Z");
+      Integer imported = new InsertAction().execute(new InsertInput(Deal.TABLE_NAME).withRecordEntity(new Deal()
+         .withName("Imported").withPipelineId(pipeline).withPipelineStageId(stage).withActualCloseDate(closeDate).withStageEnteredDate(entered)))
+         .getRecords().getFirst().getValueInteger("id");
+      Deal saved = new Deal(GetAction.execute(Deal.TABLE_NAME, imported));
+      assertEquals(closeDate, saved.getActualCloseDate());
+      assertEquals(entered, saved.getStageEnteredDate());
+   }
+
+
    /////////////////////////////////////////////////////////////////////////////
    // Helper methods                                                          //
    /////////////////////////////////////////////////////////////////////////////

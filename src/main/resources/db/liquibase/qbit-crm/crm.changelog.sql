@@ -688,3 +688,9 @@ CREATE TABLE IF NOT EXISTS crm_job_state (
    last_success TIMESTAMP WITHOUT TIME ZONE,
    last_full_pass TIMESTAMP WITHOUT TIME ZONE
 );
+
+--changeset qbit-crm:crm_nullable_intake_names_and_owners
+ALTER TABLE crm_contact ALTER COLUMN first_name DROP NOT NULL;
+ALTER TABLE crm_contact ALTER COLUMN last_name DROP NOT NULL;
+ALTER TABLE crm_contact ALTER COLUMN owner_user_id DROP NOT NULL;
+ALTER TABLE crm_deal ALTER COLUMN owner_user_id DROP NOT NULL;
