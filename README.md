@@ -57,7 +57,14 @@ qInstance.setEnforcePermissionsInCoreActions(true);
 - `defaultBackendNameForTables`: required backend name.
 - `inferBackendNames`: defaults to true; sets snake_case SQL column names while Java/QQQ field names remain camelCase. SQL table names equal the QQQ table names. Set false only for an explicit host column mapping.
 - `tableMetaDataCustomizer`: optional host table customizer.
-- `securityFields` and `recordSecurityLocks`: retained in P1, applied to contact, company and deal. Host-managed schema columns must match these fields. This is not yet tenant isolation across every child table or workflow.
+- `withTenantSecurityKeyType("tenant")`: enables nullable `tenantKey` fields and record locks. It defaults to null (off). `withTenantAllAccessKeyName("allTenants")` names the host's all-access key. Existing host key types are preserved.
+- Tenant-enabled hosts separately include `src/main/resources/db/liquibase/qbit-crm/crm-tenancy.changelog.sql` **after** the base changelog and explicitly select the `crm-tenancy` context. Single-tenant hosts omit that file. Child records use parent join locks; polymorphic external mappings and internal job checkpoints carry direct tenant keys. Hosts must supply tenant keys on new direct-key records.
+- `withApiName(...)` and `withApiVersion(...)`: publish main and settings tables into an existing host API definition. The host supplies `ApiInstanceMetaData` and includes optional `qqq-middleware-api` at runtime. Main tables declare core search fields.
+- `withEsbDestinationName(...)`: reserved but rejected on RC.6. Its ESB event factory copies all values and has no classified-field exclusion; CRM does not publish those payloads.
+- `CrmBulkLoadProfiles.ensure()`: call once in host startup after registering core's `SavedBulkLoadProfileMetaDataProvider`. It seeds three CSV mappings by label without replacing edited profiles. CRM does not register the core profile tables.
+- `CrmHealthChecks.indicators(monitoringSession)`: register the returned indicators with the host health middleware. Include optional `qqq-middleware-health`; the supplied session determines tenant scope and is restored on worker threads. `run()` uses the caller's context. No check adds permissions or tenant keys.
+
+The shipped help bundle and health adapter are temporary core integration adapters; their removal target is RC.9. See [P4B implementation notes](docs/P4B-IMPLEMENTATION.md) for RC.6 limits.
 
 | Scope | Permissions |
 |---|---|
@@ -72,7 +79,7 @@ Permissions are independent grants. Every CRM-produced table, process and widget
 
 ## Tables
 
-All 33 table names and table-backed possible-value sources use `crm_` snake_case. The 23 enum possible-value sources retain their enum names. Relationship columns have indexes; the reference DDL does not impose foreign-key constraints or host-specific tenant columns. Unique constraints match the current QQQ metadata.
+All 34 table names and table-backed possible-value sources use `crm_` snake_case. The 23 enum possible-value sources retain their enum names. Relationship columns have indexes; the reference DDL does not impose foreign-key constraints or host-specific tenant columns. Unique constraints match the current QQQ metadata.
 
 ### Main tables (6)
 

@@ -489,8 +489,8 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
     *******************************************************************************/
    static TableData table(List<Map<String, Object>> rows, String first, String second, String third)
    {
-      return (new TableData(null, List.of(new TableData.Column("html", first, "first", "2fr", "left"),
-         new TableData.Column("html", second, "second", "1fr", "left"), new TableData.Column("html", third, "third", "1fr", "left")), rows)
+      return (new TableData(null, List.of(new TableData.Column("html", first, "first", null, "left"),
+         new TableData.Column("html", second, "second", null, "left"), new TableData.Column("html", third, "third", null, "left")), rows)
          .withRowsPerPage(10).withHidePaginationDropdown(true));
    }
 }

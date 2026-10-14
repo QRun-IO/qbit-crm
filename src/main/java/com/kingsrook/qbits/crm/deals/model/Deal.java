@@ -30,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
@@ -52,13 +51,10 @@ import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.Child
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildRecordListWidget;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.ChildTable;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.annotations.QMetaDataProducingEntity;
-import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitProductionContext;
-import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
-import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 
 
 /*******************************************************************************
@@ -125,36 +121,16 @@ public class Deal extends QRecordEntity
             .withSection(SectionFactory.defaultT2("description"))
             .withSection(SectionFactory.defaultT3("stageEnteredDate", "lastActivityDate", "createDate", "modifyDate"));
 
-         ///////////////////////////////////////////////////////////////
-         // inject security fields and locks from CrmQBitConfig      //
-         ///////////////////////////////////////////////////////////////
-         CrmQBitConfig config = (CrmQBitConfig) QBitProductionContext.peekQBitConfig();
-         if(config != null)
-         {
-            if(config.getSecurityFields() != null)
-            {
-               t1Section.setFieldNames(new MutableList<>(t1Section.getFieldNames()));
-               for(QFieldMetaData fieldMetaData : config.getSecurityFields())
-               {
-                  table.addField(fieldMetaData.clone());
-                  t1Section.getFieldNames().add(fieldMetaData.getName());
-               }
-            }
 
-            if(config.getRecordSecurityLocks() != null)
-            {
-               for(RecordSecurityLock lock : config.getRecordSecurityLocks())
-               {
-                  table.withRecordSecurityLock(lock);
-               }
-            }
-         }
 
          ///////////////////////////////////////////////////////////
          // Only offer stages belonging to the selected pipeline. //
          ///////////////////////////////////////////////////////////
          table.getField("pipelineStageId").withPossibleValueSourceFilter(new QQueryFilter(
             new QFilterCriteria("pipelineId", QCriteriaOperator.EQUALS, "${input.pipelineId}")));
+
+         table.getField("primaryContactId").withPossibleValueSourceFilter(new QQueryFilter(
+            new QFilterCriteria("companyId", QCriteriaOperator.EQUALS, "${input.companyId}")));
 
          return (table);
       }

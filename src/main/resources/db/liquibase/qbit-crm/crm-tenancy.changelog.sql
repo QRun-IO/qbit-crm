@@ -1,0 +1,50 @@
+--liquibase formatted sql
+-- Optional: include after crm.changelog.sql ONLY for tenant-enabled installations.
+-- Run with context crm-tenancy. Omit this file entirely when tenancy is off.
+--changeset qbit-crm:020-crm-tenancy context:@crm-tenancy
+ALTER TABLE crm_contact ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_contact_tenant ON crm_contact (tenant_key);
+ALTER TABLE crm_company ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_company_tenant ON crm_company (tenant_key);
+ALTER TABLE crm_deal ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_deal_tenant ON crm_deal (tenant_key);
+ALTER TABLE crm_activity ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_activity_tenant ON crm_activity (tenant_key);
+ALTER TABLE crm_form_submission ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_form_submission_tenant ON crm_form_submission (tenant_key);
+ALTER TABLE crm_email_list ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_email_list_tenant ON crm_email_list (tenant_key);
+ALTER TABLE crm_pipeline ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_pipeline_tenant ON crm_pipeline (tenant_key);
+ALTER TABLE crm_product ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_product_tenant ON crm_product (tenant_key);
+ALTER TABLE crm_email_template ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_email_template_tenant ON crm_email_template (tenant_key);
+ALTER TABLE crm_email_sequence ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_email_sequence_tenant ON crm_email_sequence (tenant_key);
+ALTER TABLE crm_external_mapping ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_external_mapping_tenant ON crm_external_mapping (tenant_key);
+ALTER TABLE crm_lead_score_rule ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_lead_score_rule_tenant ON crm_lead_score_rule (tenant_key);
+ALTER TABLE crm_assignment_rule ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_assignment_rule_tenant ON crm_assignment_rule (tenant_key);
+ALTER TABLE crm_sales_goal ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_sales_goal_tenant ON crm_sales_goal (tenant_key);
+ALTER TABLE crm_currency ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_currency_tenant ON crm_currency (tenant_key);
+ALTER TABLE crm_lifecycle_stage ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_lifecycle_stage_tenant ON crm_lifecycle_stage (tenant_key);
+ALTER TABLE crm_lead_source ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_lead_source_tenant ON crm_lead_source (tenant_key);
+ALTER TABLE crm_industry ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_industry_tenant ON crm_industry (tenant_key);
+ALTER TABLE crm_activity_type ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_activity_type_tenant ON crm_activity_type (tenant_key);
+ALTER TABLE crm_activity_outcome ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_activity_outcome_tenant ON crm_activity_outcome (tenant_key);
+ALTER TABLE crm_contact_role ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_contact_role_tenant ON crm_contact_role (tenant_key);
+ALTER TABLE crm_win_loss_reason ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_win_loss_reason_tenant ON crm_win_loss_reason (tenant_key);
+ALTER TABLE crm_job_state ADD COLUMN tenant_key VARCHAR(250);
+CREATE INDEX idx_crm_job_state_tenant ON crm_job_state (tenant_key);

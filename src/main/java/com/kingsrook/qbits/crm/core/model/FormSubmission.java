@@ -129,7 +129,7 @@ public class FormSubmission extends QRecordEntity
    @QField(isRequired = true, possibleValueSourceName = CrmFormType.NAME)
    private Integer formType;
 
-   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(isRequired = true, maxLength = 320, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String email;
 
    @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
@@ -150,19 +150,19 @@ public class FormSubmission extends QRecordEntity
    @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String sourceUrl;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String utmSource;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String utmMedium;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String utmCampaign;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String utmTerm;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String utmContent;
 
    @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)

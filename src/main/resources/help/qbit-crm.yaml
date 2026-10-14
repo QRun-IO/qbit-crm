@@ -1,0 +1,1568 @@
+bundle: qbit-crm
+version: 1
+layer: QBIT
+entries:
+  - key: app:crm;slot:help
+    summary: "Manage relationships, sales opportunities and consent."
+    content: |
+      Use **Contacts**, **Companies**, **Deals**, **Activities**, **Web Leads** and **Lists** for daily work. Configure pipelines, outcomes and outreach in Settings. Marketing email requires recorded consent and a ready email transport.
+  - key: table:crm_job_state;slot:help
+    summary: "Internal maintenance checkpoints."
+    content: |
+      Internal maintenance checkpoints. Health checks use the last successful lead-score run.
+  - key: table:crm_external_mapping;slot:help
+    summary: "Links between CRM records and identifiers in external systems."
+    content: |
+      Links between CRM records and identifiers in external systems. Keep each system mapping unique.
+  - key: table:crm_assignment_rule;slot:help
+    summary: "Rules for selecting the owner of a new contact or deal."
+    content: |
+      Rules for selecting the owner of a new contact or deal.
+  - key: table:crm_assignment_rule_member;slot:help
+    summary: "Users eligible for a group assignment rule."
+    content: |
+      Users eligible for a group assignment rule. Membership determines who can receive assigned work.
+  - key: table:crm_lead_score_rule;slot:help
+    summary: "Conditions that add or subtract lead-score points."
+    content: |
+      Conditions that add or subtract lead-score points. Review rule order and decay behavior.
+  - key: table:crm_sales_goal;slot:help
+    summary: "Revenue targets for a user and period, optionally limited to a pipeline."
+    content: |
+      Revenue targets for a user and period, optionally limited to a pipeline.
+  - key: table:crm_email_message;slot:help
+    summary: "Delivery information and content for an email associated with a contact or activity."
+    content: |
+      Delivery information and content for an email associated with a contact or activity.
+  - key: table:crm_email_sequence;slot:help
+    summary: "Ordered outreach steps."
+    content: |
+      Ordered outreach steps. Activate only after reviewing the steps, timing and email consent requirements.
+  - key: table:crm_email_template;slot:help
+    summary: "Reusable email subject and content."
+    content: |
+      Reusable email subject and content. Review merged content before sending to recipients.
+  - key: table:crm_sequence_enrollment;slot:help
+    summary: "A contact enrolled in a sequence, with progress, status and next scheduled step."
+    content: |
+      A contact enrolled in a sequence, with progress, status and next scheduled step.
+  - key: table:crm_sequence_step;slot:help
+    summary: "One timed action in an outreach sequence."
+    content: |
+      One timed action in an outreach sequence. Email steps require a usable template and transport.
+  - key: table:crm_contact_role;slot:help
+    summary: "Roles a contact can play in a deal or relationship."
+    content: |
+      Roles a contact can play in a deal or relationship.
+  - key: table:crm_deal;slot:help
+    summary: "Sales opportunities tracked through a pipeline."
+    content: |
+      Sales opportunities tracked through a pipeline. Select a pipeline before choosing its stage.
+  - key: table:crm_deal;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_deal;field:name
+    summary: "The display name shown in lists and record links."
+    content: |
+      The display name shown in lists and record links. Choose a name that is easy to recognize.
+  - key: table:crm_deal;field:pipelineId
+    summary: "The sales pipeline for this record."
+    content: |
+      The sales pipeline for this record. Its stages determine the available stage choices.
+  - key: table:crm_deal;field:pipelineStageId
+    summary: "The current stage within the chosen pipeline."
+    content: |
+      The current stage within the chosen pipeline. A stage from another pipeline is rejected.
+  - key: table:crm_deal;field:amount
+    summary: "The deal amount in the selected currency."
+    content: |
+      The deal amount in the selected currency. Product changes can recalculate this amount.
+  - key: table:crm_deal;field:currencyCode
+    summary: "Currency of the deal amount."
+    content: |
+      Currency of the deal amount. Choose a configured currency code.
+  - key: table:crm_deal;field:amountInBaseCurrency
+    summary: "The deal amount converted to the configured base currency for reporting."
+    content: |
+      The deal amount converted to the configured base currency for reporting.
+  - key: table:crm_deal;field:probabilityOverridePct
+    summary: "Optional closing probability percentage that overrides the stage probability."
+    content: |
+      Optional closing probability percentage that overrides the stage probability.
+  - key: table:crm_deal;field:weightedAmount
+    summary: "The deal amount weighted by its probability of closing."
+    content: |
+      The deal amount weighted by its probability of closing.
+  - key: table:crm_deal;field:companyId
+    summary: "The linked company."
+    content: |
+      The linked company. Select an existing company so contacts and deals share the same organization.
+  - key: table:crm_deal;field:primaryContactId
+    summary: "The main contact for this deal."
+    content: |
+      The main contact for this deal. Choose the company first to narrow the choices.
+  - key: table:crm_deal;field:ownerUserId
+    summary: "The user responsible for following up on this record."
+    content: |
+      The user responsible for following up on this record.
+  - key: table:crm_deal;field:leadSourceId
+    summary: "The source that brought this contact or deal to your organization."
+    content: |
+      The source that brought this contact or deal to your organization.
+  - key: table:crm_deal;field:expectedCloseDate
+    summary: "The date you expect the opportunity to close."
+    content: |
+      The date you expect the opportunity to close. Keep it current for forecasts.
+  - key: table:crm_deal;field:actualCloseDate
+    summary: "When the deal was won or lost."
+    content: |
+      When the deal was won or lost. Reopening clears the closed state.
+  - key: table:crm_deal;field:winLossReasonId
+    summary: "Why the deal was won or lost."
+    content: |
+      Why the deal was won or lost. Select the reason that best explains the outcome.
+  - key: table:crm_deal;field:stageEnteredDate
+    summary: "When the deal entered its current stage, used to identify deals that have stalled."
+    content: |
+      When the deal entered its current stage, used to identify deals that have stalled.
+  - key: table:crm_deal;field:description
+    summary: "Additional context for this record."
+    content: |
+      Additional context for this record. Include only information needed for the relationship.
+  - key: table:crm_deal;field:priority
+    summary: "Relative urgency used to organize work."
+    content: |
+      Relative urgency used to organize work.
+  - key: table:crm_deal;field:lastActivityDate
+    summary: "The latest logged interaction date maintained by the CRM."
+    content: |
+      The latest logged interaction date maintained by the CRM.
+  - key: table:crm_deal;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_deal;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_deal;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_deal_contact;slot:help
+    summary: "Contacts involved in a deal, with their relationship or role."
+    content: |
+      Contacts involved in a deal, with their relationship or role.
+  - key: table:crm_deal_product;slot:help
+    summary: "Product quantities and prices on a deal."
+    content: |
+      Product quantities and prices on a deal. Changes recalculate the deal total.
+  - key: table:crm_deal_stage_history;slot:help
+    summary: "The history of a deal moving between pipeline stages."
+    content: |
+      The history of a deal moving between pipeline stages.
+  - key: table:crm_pipeline;slot:help
+    summary: "Sales pipelines that group stages."
+    content: |
+      Sales pipelines that group stages. Give each pipeline a clear purpose and ordered stages.
+  - key: table:crm_pipeline_stage;slot:help
+    summary: "Ordered stages within a pipeline, with probability, required fields and won or lost outcomes."
+    content: |
+      Ordered stages within a pipeline, with probability, required fields and won or lost outcomes.
+  - key: table:crm_product;slot:help
+    summary: "Products and services available as deal line items."
+    content: |
+      Products and services available as deal line items. Check price and currency before adding to a deal.
+  - key: table:crm_win_loss_reason;slot:help
+    summary: "Reasons for winning or losing a deal."
+    content: |
+      Reasons for winning or losing a deal. Use these to improve pipeline reporting.
+  - key: table:crm_company;slot:help
+    summary: "Organizations linked to contacts and deals."
+    content: |
+      Organizations linked to contacts and deals. Use domain to distinguish similarly named companies.
+  - key: table:crm_company;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_company;field:name
+    summary: "The display name shown in lists and record links."
+    content: |
+      The display name shown in lists and record links. Choose a name that is easy to recognize.
+  - key: table:crm_company;field:domain
+    summary: "The company's internet domain, for example example.com."
+    content: |
+      The company's internet domain, for example example.com. Use it to distinguish organizations.
+  - key: table:crm_company;field:companyType
+    summary: "The company's relationship to your organization, such as customer or prospect."
+    content: |
+      The company's relationship to your organization, such as customer or prospect.
+  - key: table:crm_company;field:industryId
+    summary: "The industry that best describes the company's business."
+    content: |
+      The industry that best describes the company's business.
+  - key: table:crm_company;field:employeeCount
+    summary: "The approximate number of people employed by the company."
+    content: |
+      The approximate number of people employed by the company.
+  - key: table:crm_company;field:annualRevenue
+    summary: "The company's approximate annual revenue in its revenue currency."
+    content: |
+      The company's approximate annual revenue in its revenue currency.
+  - key: table:crm_company;field:annualRevenueCurrencyCode
+    summary: "Currency used for the annual revenue estimate."
+    content: |
+      Currency used for the annual revenue estimate.
+  - key: table:crm_company;field:phone
+    summary: "A telephone number including country code where needed."
+    content: |
+      A telephone number including country code where needed. Respect the contact's calling preferences.
+  - key: table:crm_company;field:website
+    summary: "The public website URL for this person or organization."
+    content: |
+      The public website URL for this person or organization.
+  - key: table:crm_company;field:addressLine1
+    summary: "The first line of the postal address, such as street and building number."
+    content: |
+      The first line of the postal address, such as street and building number.
+  - key: table:crm_company;field:addressLine2
+    summary: "Additional address details, such as apartment or suite."
+    content: |
+      Additional address details, such as apartment or suite.
+  - key: table:crm_company;field:city
+    summary: "City or locality in the postal address."
+    content: |
+      City or locality in the postal address.
+  - key: table:crm_company;field:state
+    summary: "State, province or region in the postal address."
+    content: |
+      State, province or region in the postal address.
+  - key: table:crm_company;field:postalCode
+    summary: "Postal or ZIP code in the address."
+    content: |
+      Postal or ZIP code in the address.
+  - key: table:crm_company;field:country
+    summary: "Country in the postal address."
+    content: |
+      Country in the postal address.
+  - key: table:crm_company;field:ownerUserId
+    summary: "The user responsible for following up on this record."
+    content: |
+      The user responsible for following up on this record.
+  - key: table:crm_company;field:parentCompanyId
+    summary: "The parent organization, if this company is part of a larger group."
+    content: |
+      The parent organization, if this company is part of a larger group.
+  - key: table:crm_company;field:description
+    summary: "Additional context for this record."
+    content: |
+      Additional context for this record. Include only information needed for the relationship.
+  - key: table:crm_company;field:lastActivityDate
+    summary: "The latest logged interaction date maintained by the CRM."
+    content: |
+      The latest logged interaction date maintained by the CRM.
+  - key: table:crm_company;field:lastContactedDate
+    summary: "Last contacted date for this company."
+    content: |
+      Last contacted date for this company. Review this value when updating the record.
+  - key: table:crm_company;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_company;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_company;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_consent_record;slot:help
+    summary: "Immutable evidence of a consent decision."
+    content: |
+      Immutable evidence of a consent decision. Record withdrawals as new records; erasure redacts evidence text.
+  - key: table:crm_contact;slot:help
+    summary: "People and their relationship with your organization."
+    content: |
+      People and their relationship with your organization. Check consent before sending marketing email.
+  - key: table:crm_contact;field:firstTouchUtmSource
+    summary: "First-touch campaign attribution: first touch utm source."
+    content: |
+      First-touch campaign attribution: first touch utm source. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:firstTouchUtmMedium
+    summary: "First-touch campaign attribution: first touch utm medium."
+    content: |
+      First-touch campaign attribution: first touch utm medium. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:firstTouchUtmCampaign
+    summary: "First-touch campaign attribution: first touch utm campaign."
+    content: |
+      First-touch campaign attribution: first touch utm campaign. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:firstTouchUtmContent
+    summary: "First-touch campaign attribution: first touch utm content."
+    content: |
+      First-touch campaign attribution: first touch utm content. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:firstTouchUtmTerm
+    summary: "First-touch campaign attribution: first touch utm term."
+    content: |
+      First-touch campaign attribution: first touch utm term. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:firstTouchLandingPage
+    summary: "First touch landing page."
+    content: |
+      First touch landing page. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:firstTouchReferrer
+    summary: "First touch referrer."
+    content: |
+      First touch referrer. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:firstTouchDate
+    summary: "First touch date."
+    content: |
+      First touch date. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:lastTouchUtmSource
+    summary: "Latest-touch campaign attribution: last touch utm source."
+    content: |
+      Latest-touch campaign attribution: last touch utm source. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:lastTouchUtmMedium
+    summary: "Latest-touch campaign attribution: last touch utm medium."
+    content: |
+      Latest-touch campaign attribution: last touch utm medium. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:lastTouchUtmCampaign
+    summary: "Latest-touch campaign attribution: last touch utm campaign."
+    content: |
+      Latest-touch campaign attribution: last touch utm campaign. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:lastTouchUtmContent
+    summary: "Latest-touch campaign attribution: last touch utm content."
+    content: |
+      Latest-touch campaign attribution: last touch utm content. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:lastTouchUtmTerm
+    summary: "Latest-touch campaign attribution: last touch utm term."
+    content: |
+      Latest-touch campaign attribution: last touch utm term. Supplied by the host from the visitor journey.
+  - key: table:crm_contact;field:lastTouchLandingPage
+    summary: "Last touch landing page."
+    content: |
+      Last touch landing page. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:lastTouchReferrer
+    summary: "Last touch referrer."
+    content: |
+      Last touch referrer. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:lastTouchDate
+    summary: "Last touch date."
+    content: |
+      Last touch date. Captured from the visitor journey for attribution reporting.
+  - key: table:crm_contact;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_contact;field:firstName
+    summary: "The person's given name."
+    content: |
+      The person's given name. This is personal data and is removed by Erase Personal Data.
+  - key: table:crm_contact;field:lastName
+    summary: "The person's family name."
+    content: |
+      The person's family name. This is personal data and is removed by Erase Personal Data.
+  - key: table:crm_contact;field:email
+    summary: "Email address used to identify or contact the person."
+    content: |
+      Email address used to identify or contact the person. Marketing still requires valid, unsuppressed consent.
+  - key: table:crm_contact;field:secondaryEmail
+    summary: "An alternate email address for the contact."
+    content: |
+      An alternate email address for the contact. It is included in personal-data erasure.
+  - key: table:crm_contact;field:phone
+    summary: "A telephone number including country code where needed."
+    content: |
+      A telephone number including country code where needed. Respect the contact's calling preferences.
+  - key: table:crm_contact;field:mobilePhone
+    summary: "The contact's mobile telephone number."
+    content: |
+      The contact's mobile telephone number. Respect the contact's calling preferences.
+  - key: table:crm_contact;field:jobTitle
+    summary: "The contact's job title at their organization."
+    content: |
+      The contact's job title at their organization.
+  - key: table:crm_contact;field:department
+    summary: "The department or team where the contact works."
+    content: |
+      The department or team where the contact works.
+  - key: table:crm_contact;field:companyId
+    summary: "The linked company."
+    content: |
+      The linked company. Select an existing company so contacts and deals share the same organization.
+  - key: table:crm_contact;field:lifecycleStageId
+    summary: "The contact's current relationship stage, such as lead or customer."
+    content: |
+      The contact's current relationship stage, such as lead or customer.
+  - key: table:crm_contact;field:leadSourceId
+    summary: "The source that brought this contact or deal to your organization."
+    content: |
+      The source that brought this contact or deal to your organization.
+  - key: table:crm_contact;field:ownerUserId
+    summary: "The user responsible for following up on this record."
+    content: |
+      The user responsible for following up on this record.
+  - key: table:crm_contact;field:addressLine1
+    summary: "The first line of the postal address, such as street and building number."
+    content: |
+      The first line of the postal address, such as street and building number.
+  - key: table:crm_contact;field:addressLine2
+    summary: "Additional address details, such as apartment or suite."
+    content: |
+      Additional address details, such as apartment or suite.
+  - key: table:crm_contact;field:city
+    summary: "City or locality in the postal address."
+    content: |
+      City or locality in the postal address.
+  - key: table:crm_contact;field:state
+    summary: "State, province or region in the postal address."
+    content: |
+      State, province or region in the postal address.
+  - key: table:crm_contact;field:postalCode
+    summary: "Postal or ZIP code in the address."
+    content: |
+      Postal or ZIP code in the address.
+  - key: table:crm_contact;field:country
+    summary: "Country in the postal address."
+    content: |
+      Country in the postal address.
+  - key: table:crm_contact;field:timezone
+    summary: "The contact's time-zone identifier, such as America/Chicago, used when scheduling sequence steps."
+    content: |
+      The contact's time-zone identifier, such as America/Chicago, used when scheduling sequence steps.
+  - key: table:crm_contact;field:preferredLanguage
+    summary: "The contact's preferred language for communication."
+    content: |
+      The contact's preferred language for communication.
+  - key: table:crm_contact;field:website
+    summary: "The public website URL for this person or organization."
+    content: |
+      The public website URL for this person or organization.
+  - key: table:crm_contact;field:linkedinUrl
+    summary: "The contact's LinkedIn profile URL."
+    content: |
+      The contact's LinkedIn profile URL. This is classified as personal data.
+  - key: table:crm_contact;field:description
+    summary: "Additional context for this record."
+    content: |
+      Additional context for this record. Include only information needed for the relationship.
+  - key: table:crm_contact;field:leadScore
+    summary: "The latest calculated score from the enabled lead-score rules."
+    content: |
+      The latest calculated score from the enabled lead-score rules.
+  - key: table:crm_contact;field:doNotEmail
+    summary: "Suppress email to this contact even when a marketing consent record exists."
+    content: |
+      Suppress email to this contact even when a marketing consent record exists.
+  - key: table:crm_contact;field:doNotCall
+    summary: "Indicates that this contact should not receive telephone calls."
+    content: |
+      Indicates that this contact should not receive telephone calls.
+  - key: table:crm_contact;field:unsubscribeDate
+    summary: "When the contact unsubscribed."
+    content: |
+      When the contact unsubscribed. This suppresses marketing email.
+  - key: table:crm_contact;field:lastActivityDate
+    summary: "The latest logged interaction date maintained by the CRM."
+    content: |
+      The latest logged interaction date maintained by the CRM.
+  - key: table:crm_contact;field:lastContactedDate
+    summary: "Last contacted date for this contact."
+    content: |
+      Last contacted date for this contact. Review this value when updating the record.
+  - key: table:crm_contact;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_contact;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_contact;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_currency;slot:help
+    summary: "Currency codes and exchange rates used to report deal values in a base currency."
+    content: |
+      Currency codes and exchange rates used to report deal values in a base currency.
+  - key: table:crm_email_list;slot:help
+    summary: "Mailing lists and opt-in settings."
+    content: |
+      Mailing lists and opt-in settings. List membership alone does not grant permission to send marketing email.
+  - key: table:crm_email_list;field:listKey
+    summary: "A stable integration key used by hosts to subscribe people to this list."
+    content: |
+      A stable integration key used by hosts to subscribe people to this list.
+  - key: table:crm_email_list;field:requireDoubleOptIn
+    summary: "Require double opt in for this email list."
+    content: |
+      Require double opt in for this email list. Review this value when updating the record.
+  - key: table:crm_email_list;field:consentText
+    summary: "The exact wording shown when consent was requested."
+    content: |
+      The exact wording shown when consent was requested. Treat this as personal evidence.
+  - key: table:crm_email_list;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_email_list;field:name
+    summary: "The display name shown in lists and record links."
+    content: |
+      The display name shown in lists and record links. Choose a name that is easy to recognize.
+  - key: table:crm_email_list;field:slug
+    summary: "A short machine-friendly name for this list."
+    content: |
+      A short machine-friendly name for this list.
+  - key: table:crm_email_list;field:description
+    summary: "Additional context for this record."
+    content: |
+      Additional context for this record. Include only information needed for the relationship.
+  - key: table:crm_email_list;field:isActive
+    summary: "Whether this record is available for new work."
+    content: |
+      Whether this record is available for new work.
+  - key: table:crm_email_list;field:isPublic
+    summary: "Is public for this email list."
+    content: |
+      Is public for this email list. Review this value when updating the record.
+  - key: table:crm_email_list;field:sortOrder
+    summary: "Sort order for this email list."
+    content: |
+      Sort order for this email list. Review this value when updating the record.
+  - key: table:crm_email_list;field:memberCount
+    summary: "Member count for this email list."
+    content: |
+      Member count for this email list. Review this value when updating the record.
+  - key: table:crm_email_list;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_email_list;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_email_list;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_email_list_member;slot:help
+    summary: "A contact or email address in a list, including opt-in state and confirmation evidence."
+    content: |
+      A contact or email address in a list, including opt-in state and confirmation evidence.
+  - key: table:crm_form_submission;slot:help
+    summary: "Web leads captured from forms, including consent evidence and attribution."
+    content: |
+      Web leads captured from forms, including consent evidence and attribution. Convert a lead to link a contact.
+  - key: table:crm_form_submission;field:formKey
+    summary: "The stable host-defined identifier for the form that captured this submission."
+    content: |
+      The stable host-defined identifier for the form that captured this submission.
+  - key: table:crm_form_submission;field:marketingConsent
+    summary: "Marketing consent for this form submission."
+    content: |
+      Marketing consent for this form submission. Review this value when updating the record.
+  - key: table:crm_form_submission;field:consentText
+    summary: "The exact wording shown when consent was requested."
+    content: |
+      The exact wording shown when consent was requested. Treat this as personal evidence.
+  - key: table:crm_form_submission;field:landingPage
+    summary: "The landing page associated with this submission."
+    content: |
+      The landing page associated with this submission.
+  - key: table:crm_form_submission;field:visitorKey
+    summary: "A hashed visitor identifier, stored only when the host has the required visitor-identity consent."
+    content: |
+      A hashed visitor identifier, stored only when the host has the required visitor-identity consent.
+  - key: table:crm_form_submission;field:clientHash
+    summary: "A salted client identifier supplied by the host."
+    content: |
+      A salted client identifier supplied by the host. Never put a raw IP address here.
+  - key: table:crm_form_submission;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_form_submission;field:formType
+    summary: "The purpose of the submitted form."
+    content: |
+      The purpose of the submitted form. A contact form does not automatically grant marketing consent.
+  - key: table:crm_form_submission;field:email
+    summary: "Email address used to identify or contact the person."
+    content: |
+      Email address used to identify or contact the person. Marketing still requires valid, unsuppressed consent.
+  - key: table:crm_form_submission;field:firstName
+    summary: "The person's given name."
+    content: |
+      The person's given name. This is personal data and is removed by Erase Personal Data.
+  - key: table:crm_form_submission;field:lastName
+    summary: "The person's family name."
+    content: |
+      The person's family name. This is personal data and is removed by Erase Personal Data.
+  - key: table:crm_form_submission;field:company
+    summary: "The company name as submitted on the form; review it before linking to an existing organization."
+    content: |
+      The company name as submitted on the form; review it before linking to an existing organization.
+  - key: table:crm_form_submission;field:phone
+    summary: "A telephone number including country code where needed."
+    content: |
+      A telephone number including country code where needed. Respect the contact's calling preferences.
+  - key: table:crm_form_submission;field:message
+    summary: "The message submitted by the person."
+    content: |
+      The message submitted by the person. Avoid copying sensitive information into unrelated records.
+  - key: table:crm_form_submission;field:sourceUrl
+    summary: "The page URL where the form was submitted."
+    content: |
+      The page URL where the form was submitted.
+  - key: table:crm_form_submission;field:utmSource
+    summary: "Captured campaign attribution: utm source."
+    content: |
+      Captured campaign attribution: utm source. Supplied by the host from the visitor journey.
+  - key: table:crm_form_submission;field:utmMedium
+    summary: "Captured campaign attribution: utm medium."
+    content: |
+      Captured campaign attribution: utm medium. Supplied by the host from the visitor journey.
+  - key: table:crm_form_submission;field:utmCampaign
+    summary: "Captured campaign attribution: utm campaign."
+    content: |
+      Captured campaign attribution: utm campaign. Supplied by the host from the visitor journey.
+  - key: table:crm_form_submission;field:utmTerm
+    summary: "Captured campaign attribution: utm term."
+    content: |
+      Captured campaign attribution: utm term. Supplied by the host from the visitor journey.
+  - key: table:crm_form_submission;field:utmContent
+    summary: "Captured campaign attribution: utm content."
+    content: |
+      Captured campaign attribution: utm content. Supplied by the host from the visitor journey.
+  - key: table:crm_form_submission;field:referrer
+    summary: "The referring page captured by the host."
+    content: |
+      The referring page captured by the host.
+  - key: table:crm_form_submission;field:contactId
+    summary: "The linked contact."
+    content: |
+      The linked contact. This connects the record with that person's history and consent.
+  - key: table:crm_form_submission;field:conversionStatus
+    summary: "Whether this web lead has been converted or linked to a contact."
+    content: |
+      Whether this web lead has been converted or linked to a contact.
+  - key: table:crm_form_submission;field:convertedDate
+    summary: "When the submission was converted to a contact."
+    content: |
+      When the submission was converted to a contact.
+  - key: table:crm_form_submission;field:convertedByUserId
+    summary: "The user who converted the submission to a contact."
+    content: |
+      The user who converted the submission to a contact.
+  - key: table:crm_form_submission;field:metadata
+    summary: "Additional host-supplied form details."
+    content: |
+      Additional host-supplied form details. Do not store credentials or raw IP addresses.
+  - key: table:crm_form_submission;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_form_submission;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_form_submission;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_industry;slot:help
+    summary: "Industry categories for companies."
+    content: |
+      Industry categories for companies. Choose one that describes the primary business.
+  - key: table:crm_lead_source;slot:help
+    summary: "Where a contact or deal originated."
+    content: |
+      Where a contact or deal originated. Use consistent categories for attribution reports.
+  - key: table:crm_lifecycle_stage;slot:help
+    summary: "Lifecycle categories for contacts, such as lead and customer."
+    content: |
+      Lifecycle categories for contacts, such as lead and customer.
+  - key: table:crm_activity;slot:help
+    summary: "Past interactions with contacts, companies and deals."
+    content: |
+      Past interactions with contacts, companies and deals. Use collaboration tasks for future work.
+  - key: table:crm_activity;field:id
+    summary: "System-assigned record identifier."
+    content: |
+      System-assigned record identifier. Use this value when linking records or investigating an import.
+  - key: table:crm_activity;field:activityTypeId
+    summary: "The kind of interaction."
+    content: |
+      The kind of interaction. Choose this before selecting an outcome.
+  - key: table:crm_activity;field:subject
+    summary: "A short description of the interaction."
+    content: |
+      A short description of the interaction. Avoid unnecessary personal information.
+  - key: table:crm_activity;field:description
+    summary: "Additional context for this record."
+    content: |
+      Additional context for this record. Include only information needed for the relationship.
+  - key: table:crm_activity;field:contactId
+    summary: "The linked contact."
+    content: |
+      The linked contact. This connects the record with that person's history and consent.
+  - key: table:crm_activity;field:companyId
+    summary: "The linked company."
+    content: |
+      The linked company. Select an existing company so contacts and deals share the same organization.
+  - key: table:crm_activity;field:dealId
+    summary: "The related sales opportunity."
+    content: |
+      The related sales opportunity. Link the deal to include this interaction in its history.
+  - key: table:crm_activity;field:ownerUserId
+    summary: "The user responsible for following up on this record."
+    content: |
+      The user responsible for following up on this record.
+  - key: table:crm_activity;field:assignedToUserId
+    summary: "The user assigned to handle this activity."
+    content: |
+      The user assigned to handle this activity.
+  - key: table:crm_activity;field:startDate
+    summary: "When the interaction started."
+    content: |
+      When the interaction started.
+  - key: table:crm_activity;field:endDate
+    summary: "When the interaction ended."
+    content: |
+      When the interaction ended.
+  - key: table:crm_activity;field:dueDate
+    summary: "The due date recorded on the activity."
+    content: |
+      The due date recorded on the activity. Use collaboration tasks to manage future to-dos.
+  - key: table:crm_activity;field:completedDate
+    summary: "When this activity was completed."
+    content: |
+      When this activity was completed.
+  - key: table:crm_activity;field:isCompleted
+    summary: "Whether this activity is complete."
+    content: |
+      Whether this activity is complete.
+  - key: table:crm_activity;field:priority
+    summary: "Relative urgency used to organize work."
+    content: |
+      Relative urgency used to organize work.
+  - key: table:crm_activity;field:durationMinutes
+    summary: "Duration of the interaction in minutes."
+    content: |
+      Duration of the interaction in minutes.
+  - key: table:crm_activity;field:outcomeId
+    summary: "The result of the interaction."
+    content: |
+      The result of the interaction. It must belong to the selected activity type.
+  - key: table:crm_activity;field:location
+    summary: "Where the interaction took place."
+    content: |
+      Where the interaction took place.
+  - key: table:crm_activity;field:conferenceLink
+    summary: "Meeting link associated with the interaction."
+    content: |
+      Meeting link associated with the interaction.
+  - key: table:crm_activity;field:direction
+    summary: "Whether the interaction was inbound or outbound."
+    content: |
+      Whether the interaction was inbound or outbound.
+  - key: table:crm_activity;field:isReminderSet
+    summary: "Legacy activity reminder state."
+    content: |
+      Legacy activity reminder state. Use collaboration tasks for current reminder workflows.
+  - key: table:crm_activity;field:reminderDate
+    summary: "Legacy activity reminder time."
+    content: |
+      Legacy activity reminder time. Use collaboration tasks for current reminder workflows.
+  - key: table:crm_activity;field:externalCalendarId
+    summary: "Identifier of the related event in the host calendar system."
+    content: |
+      Identifier of the related event in the host calendar system.
+  - key: table:crm_activity;field:createDate
+    summary: "When this record was created."
+    content: |
+      When this record was created. The system maintains this timestamp.
+  - key: table:crm_activity;field:modifyDate
+    summary: "When this record was last changed."
+    content: |
+      When this record was last changed. The system maintains this timestamp.
+  - key: table:crm_activity;field:tenantKey
+    summary: "The tenant that owns this record."
+    content: |
+      Available only when the host enables CRM tenancy. The session must hold the matching tenant key; changing this value changes who can access the record.
+  - key: table:crm_activity_outcome;slot:help
+    summary: "The result of an activity."
+    content: |
+      The result of an activity. Only outcomes belonging to the selected activity type are offered.
+  - key: table:crm_activity_participant;slot:help
+    summary: "People participating in a recorded activity and their roles."
+    content: |
+      People participating in a recorded activity and their roles.
+  - key: table:crm_activity_type;slot:help
+    summary: "Types of interaction such as calls, meetings and notes."
+    content: |
+      Types of interaction such as calls, meetings and notes. Outcomes are scoped to a type.
+  - key: possibleValueSource:CrmActivityPriority;slot:help
+    summary: "Available activity priority values."
+    content: |
+      Choose the value that describes the record. Options: Low, Medium, High.
+  - key: possibleValueSource:CrmAssignableEntity;slot:help
+    summary: "Available assignable entity values."
+    content: |
+      Choose the value that describes the record. Options: Contact, Deal.
+  - key: possibleValueSource:CrmAssignStrategy;slot:help
+    summary: "Available assign strategy values."
+    content: |
+      Choose the value that describes the record. Options: Specific User, Round Robin, Least Active.
+  - key: possibleValueSource:CrmBounceType;slot:help
+    summary: "Available bounce type values."
+    content: |
+      Choose the value that describes the record. Options: Hard, Soft.
+  - key: possibleValueSource:CrmCompanyType;slot:help
+    summary: "Available company type values."
+    content: |
+      Choose the value that describes the record. Options: Prospect, Customer, Partner, Competitor, Other.
+  - key: possibleValueSource:CrmConsentStatus;slot:help
+    summary: "Available consent status values."
+    content: |
+      Choose the value that describes the record. Options: Granted, Withdrawn.
+  - key: possibleValueSource:CrmConsentType;slot:help
+    summary: "Available consent type values."
+    content: |
+      Choose the value that describes the record. Options: Email, Call, SMS, Data Processing, Reply to inquiry.
+  - key: possibleValueSource:CrmDealPriority;slot:help
+    summary: "Available deal priority values."
+    content: |
+      Choose the value that describes the record. Options: Low, Medium, High, Critical.
+  - key: possibleValueSource:CrmDirection;slot:help
+    summary: "Available direction values."
+    content: |
+      Choose the value that describes the record. Options: Inbound, Outbound.
+  - key: possibleValueSource:CrmEmailStatus;slot:help
+    summary: "Available email status values."
+    content: |
+      Choose the value that describes the record. Options: Draft, Sent, Delivered, Failed, Queued, Bounced, Complained, Opened, Clicked, Suppressed.
+  - key: possibleValueSource:CrmEnrollmentStatus;slot:help
+    summary: "Available enrollment status values."
+    content: |
+      Choose the value that describes the record. Options: Active, Paused, Completed, Bounced, Replied, Unenrolled, Failed.
+  - key: possibleValueSource:CrmEntityType;slot:help
+    summary: "Available entity type values."
+    content: |
+      Choose the value that describes the record. Options: Contact, Company, Deal, Activity.
+  - key: possibleValueSource:CrmFormConversionStatus;slot:help
+    summary: "Available form conversion status values."
+    content: |
+      Choose the value that describes the record. Options: New, Converted to Contact, Spam, Ignored.
+  - key: possibleValueSource:CrmFormType;slot:help
+    summary: "Available form type values."
+    content: |
+      Choose the value that describes the record. Options: Contact, Demo Request, Newsletter, Notify Me, General.
+  - key: possibleValueSource:CrmGoalPeriod;slot:help
+    summary: "Available goal period values."
+    content: |
+      Choose the value that describes the record. Options: Monthly, Quarterly, Annual.
+  - key: possibleValueSource:CrmLegalBasis;slot:help
+    summary: "Available legal basis values."
+    content: |
+      Choose the value that describes the record. Options: Consent, Legitimate Interest, Contract, Legal Obligation.
+  - key: possibleValueSource:CrmListMemberStatus;slot:help
+    summary: "Available list member status values."
+    content: |
+      Choose the value that describes the record. Options: Subscribed, Unsubscribed, Bounced, Cleaned, Pending confirmation.
+  - key: possibleValueSource:CrmParticipantRole;slot:help
+    summary: "Available participant role values."
+    content: |
+      Choose the value that describes the record. Options: Organizer, Attendee, Optional.
+  - key: possibleValueSource:CrmScorableEntity;slot:help
+    summary: "Available scorable entity values."
+    content: |
+      Choose the value that describes the record. Options: Contact.
+  - key: possibleValueSource:CrmScoreOperator;slot:help
+    summary: "Available score operator values."
+    content: |
+      Choose the value that describes the record. Options: Equals, Not Equals, Contains, Greater Than, Less Than, Is Set, Is Not Set, Days Ago Greater Than, Days Ago Less Than.
+  - key: possibleValueSource:CrmSequenceStepType;slot:help
+    summary: "Available sequence step type values."
+    content: |
+      Choose the value that describes the record. Options: Email, Call, Task, Wait.
+  - key: possibleValueSource:CrmSyncStatus;slot:help
+    summary: "Available sync status values."
+    content: |
+      Choose the value that describes the record. Options: Synced, Pending, Error.
+  - key: possibleValueSource:CrmWinLossType;slot:help
+    summary: "Available win loss type values."
+    content: |
+      Choose the value that describes the record. Options: Win, Loss.
+  - key: process:crm_bulk_assign_owner;slot:help
+    summary: "Assign Owner for selected contact records."
+    content: |
+      Choose the user who will own the selected records. The review step shows the intended work before it runs.
+  - key: process:crm_auto_assign;slot:help
+    summary: "Auto-Assign for selected contact records."
+    content: |
+      Apply the configured assignment rules to the selected contacts. The review step shows the intended work before it runs.
+  - key: process:crm_subscribe_to_list;slot:help
+    summary: "Add to List for selected contact records."
+    content: |
+      Choose a list and review consent. Double opt-in lists require confirmation before membership becomes subscribed. The review step shows the intended work before it runs.
+  - key: process:crm_unsubscribe_from_list;slot:help
+    summary: "Remove from List for selected contact records."
+    content: |
+      Withdraw list membership for the selected contacts. This records the unsubscribe. The review step shows the intended work before it runs.
+  - key: process:crm_enroll_in_sequence;slot:help
+    summary: "Enroll in Sequence for selected contact records."
+    content: |
+      Enroll the selected contacts in a sequence after checking eligibility and timing. The review step shows the intended work before it runs.
+  - key: process:crm_unenroll_from_sequence;slot:help
+    summary: "Unenroll from Sequence for selected contact records."
+    content: |
+      Stop sequence progression for the selected contacts. The review step shows the intended work before it runs.
+  - key: process:crm_log_activity;slot:help
+    summary: "Log Activity for selected contact records."
+    content: |
+      Record an interaction for the selected records. Select an activity type and matching outcome. The review step shows the intended work before it runs.
+  - key: process:crm_recalculate_score;slot:help
+    summary: "Recalculate Score for selected contact records."
+    content: |
+      Recalculate scores from the configured lead-score rules. The review step shows the intended work before it runs.
+  - key: process:crm_merge_contacts;slot:help
+    summary: "Merge Contacts for selected contact records."
+    content: |
+      Select exactly two records and choose the survivor. Related records move to the survivor; review carefully before confirming. The review step shows the intended work before it runs.
+  - key: process:crm_detect_duplicates;slot:help
+    summary: "Find Duplicates for selected contact records."
+    content: |
+      Find potential duplicates for review. This action does not decide which record should survive a merge. The review step shows the intended work before it runs.
+  - key: process:crm_convert_lead;slot:help
+    summary: "Create Deal for selected contact records."
+    content: |
+      Create a sales opportunity from the selected contact, with a pipeline and stage. The review step shows the intended work before it runs.
+  - key: process:crm_gdpr_anonymize_contact;slot:help
+    summary: "Erase Personal Data for selected contact records."
+    content: |
+      Permanently anonymize the selected contacts and related personal data, redact audit details and stop sequences. This requires CRM admin access. Review the selection before confirming. The review step shows the intended work before it runs.
+  - key: process:crm_send_email;slot:help
+    summary: "Send Email for selected contact records."
+    content: |
+      Send a message through the configured transport. Review the recipient, subject and content; marketing consent is enforced. The review step shows the intended work before it runs.
+  - key: process:crm_assign_company_owner;slot:help
+    summary: "Assign Owner for selected company records."
+    content: |
+      Choose the user who will own the selected records. The review step shows the intended work before it runs.
+  - key: process:crm_merge_companies;slot:help
+    summary: "Merge Companies for selected company records."
+    content: |
+      Select exactly two records and choose the survivor. Related records move to the survivor; review carefully before confirming. The review step shows the intended work before it runs.
+  - key: process:crm_find_duplicate_companies;slot:help
+    summary: "Find Duplicates for selected company records."
+    content: |
+      Find potential duplicates for review. This action does not decide which record should survive a merge. The review step shows the intended work before it runs.
+  - key: process:crm_log_company_activity;slot:help
+    summary: "Log Activity for selected company records."
+    content: |
+      Record an interaction for the selected records. Select an activity type and matching outcome. The review step shows the intended work before it runs.
+  - key: process:crm_move_deal_stage;slot:help
+    summary: "Move Stage for selected deal records."
+    content: |
+      Choose a stage in the current pipeline. Required fields and stage membership are validated. The review step shows the intended work before it runs.
+  - key: process:crm_mark_deal_won;slot:help
+    summary: "Mark Won for selected deal records."
+    content: |
+      Move the selected deals to a won stage and record the close date. The review step shows the intended work before it runs.
+  - key: process:crm_mark_deal_lost;slot:help
+    summary: "Mark Lost for selected deal records."
+    content: |
+      Move the selected deals to a lost stage and record why they were lost. The review step shows the intended work before it runs.
+  - key: process:crm_reopen_deal;slot:help
+    summary: "Reopen for selected deal records."
+    content: |
+      Return closed deals to an open stage and clear the close date. The review step shows the intended work before it runs.
+  - key: process:crm_clone_deal;slot:help
+    summary: "Clone for selected deal records."
+    content: |
+      Create a new opportunity from an existing deal. Review the copied values before using the new record. The review step shows the intended work before it runs.
+  - key: process:crm_transfer_ownership;slot:help
+    summary: "Assign Owner for selected deal records."
+    content: |
+      Choose the user who will own the selected records. The review step shows the intended work before it runs.
+  - key: process:crm_manage_contact_on_deal;slot:help
+    summary: "Add Contact for selected deal records."
+    content: |
+      Link an existing contact to the selected deal and identify their role. The review step shows the intended work before it runs.
+  - key: process:crm_log_deal_activity;slot:help
+    summary: "Log Activity for selected deal records."
+    content: |
+      Record an interaction for the selected records. Select an activity type and matching outcome. The review step shows the intended work before it runs.
+  - key: process:crm_convert_form_to_contact;slot:help
+    summary: "Convert to Contact for selected form submission records."
+    content: |
+      Link a web lead to a contact or create a new contact. Review the submitted email and consent evidence. The review step shows the intended work before it runs.
+  - key: process:crm_activate_sequence;slot:help
+    summary: "Activate for selected email sequence records."
+    content: |
+      Make a reviewed sequence available to run. Confirm the steps and email transport are ready. The review step shows the intended work before it runs.
+  - key: process:crm_pause_sequence;slot:help
+    summary: "Pause for selected email sequence records."
+    content: |
+      Pause sequence execution while retaining enrollments and progress. The review step shows the intended work before it runs.
+  - key: process:crm_process_sequence_steps;slot:help
+    summary: "Advance due active sequence enrollments."
+    content: |
+      Advance due active sequence enrollments. Email steps require consent and a ready transport.
+  - key: process:crm_calculate_lead_scores;slot:help
+    summary: "Refresh contact and company lead scores from enabled rules and save the successful-run checkpoint."
+    content: |
+      Refresh contact and company lead scores from enabled rules and save the successful-run checkpoint.
+  - key: process:crm_sync_email_delivery;slot:help
+    summary: "Refresh CRM delivery states from the configured email provider."
+    content: |
+      Refresh CRM delivery states from the configured email provider.
+  - key: process:crm_expire_consents;slot:help
+    summary: "Record expired consent so marketing eligibility reflects the current state."
+    content: |
+      Record expired consent so marketing eligibility reflects the current state.
+  - key: process:crm_job_state.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_job_state.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_job_state.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_job_state.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_external_mapping.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_external_mapping.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_external_mapping.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_external_mapping.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_assignment_rule.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_assignment_rule.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_assignment_rule.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_assignment_rule.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_assignment_rule_member.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_assignment_rule_member.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_assignment_rule_member.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_assignment_rule_member.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_lead_score_rule.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_lead_score_rule.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_lead_score_rule.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_lead_score_rule.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_sales_goal.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_sales_goal.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_sales_goal.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_sales_goal.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_email_message.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_email_message.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_email_message.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_email_message.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_email_sequence.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_email_sequence.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_email_sequence.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_email_sequence.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_email_template.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_email_template.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_email_template.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_email_template.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_sequence_enrollment.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_sequence_enrollment.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_sequence_enrollment.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_sequence_enrollment.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_sequence_step.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_sequence_step.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_sequence_step.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_sequence_step.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_contact_role.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_contact_role.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_contact_role.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_contact_role.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_deal.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_deal.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_deal.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_deal.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_deal_contact.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_deal_contact.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_deal_contact.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_deal_contact.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_deal_product.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_deal_product.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_deal_product.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_deal_product.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_deal_stage_history.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_deal_stage_history.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_deal_stage_history.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_deal_stage_history.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_pipeline.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_pipeline.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_pipeline.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_pipeline.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_pipeline_stage.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_pipeline_stage.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_pipeline_stage.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_pipeline_stage.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_product.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_product.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_product.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_product.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_win_loss_reason.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_win_loss_reason.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_win_loss_reason.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_win_loss_reason.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_company.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_company.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_company.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_company.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_consent_record.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_consent_record.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_consent_record.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_consent_record.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_contact.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_contact.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_contact.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_contact.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_currency.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_currency.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_currency.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_currency.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_email_list.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_email_list.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_email_list.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_email_list.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_email_list_member.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_email_list_member.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_email_list_member.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_email_list_member.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_form_submission.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_form_submission.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_form_submission.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_form_submission.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_industry.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_industry.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_industry.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_industry.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_lead_source.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_lead_source.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_lead_source.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_lead_source.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_lifecycle_stage.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_lifecycle_stage.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_lifecycle_stage.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_lifecycle_stage.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_activity.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_activity.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_activity.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_activity.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_activity_outcome.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_activity_outcome.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_activity_outcome.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_activity_outcome.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_activity_participant.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_activity_participant.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_activity_participant.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_activity_participant.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.
+  - key: process:crm_activity_type.bulkInsert;slot:help
+    summary: "Import new records from a file."
+    content: |
+      Upload a file, select or create a mapping, and review validation results before inserting records. Use the CRM starter profiles for contacts, companies and deals when available. Imports use the same permissions and tenant locks as record screens.
+  - key: process:crm_activity_type.bulkEdit;slot:help
+    summary: "Apply a change to selected records."
+    content: |
+      Select the records to change, set the intended field values and review the result before confirming. Relationship validation, consent immutability and tenant locks still apply.
+  - key: process:crm_activity_type.bulkEditWithFile;slot:help
+    summary: "Update existing records using a file."
+    content: |
+      Upload the changes and choose fields that identify existing records. Review matches and validation errors before confirming. Only records accessible to your session can be changed.
+  - key: process:crm_activity_type.bulkDelete;slot:help
+    summary: "Delete the selected records."
+    content: |
+      Review the selected records before confirming deletion. Deletion is not a substitute for Erase Personal Data on contacts, which also redacts related personal copies and audit details. Consent records cannot be deleted.

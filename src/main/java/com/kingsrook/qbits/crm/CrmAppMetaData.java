@@ -30,17 +30,14 @@ import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.qbits.SourceQBitAware;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 
 
 /*******************************************************************************
  ** The CRM home and the two navigation sections. Child tables stay on records.
  *******************************************************************************/
-public final class CrmAppMetaData extends QAppMetaData implements SourceQBitAware
+public final class CrmAppMetaData
 {
-   private String sourceQBitName;
-
    public static final List<String> MAIN_TABLES = List.of("crm_contact", "crm_company", "crm_deal", "crm_activity", "crm_form_submission", "crm_email_list");
    public static final List<String> SETTINGS_TABLES = List.of("crm_pipeline", "crm_product", "crm_email_template", "crm_email_sequence",
       "crm_lead_score_rule", "crm_assignment_rule", "crm_sales_goal", "crm_currency", "crm_lifecycle_stage", "crm_lead_source",
@@ -70,7 +67,7 @@ public final class CrmAppMetaData extends QAppMetaData implements SourceQBitAwar
     *******************************************************************************/
    public static QAppMetaData build(MetaDataProducerMultiOutput output, String source)
    {
-      QAppMetaData app = new CrmAppMetaData().withSourceQBitName(source).withName("crm").withLabel("CRM").withIcon(new QIcon("contacts"))
+      QAppMetaData app = new QAppMetaData().withName("crm").withLabel("CRM").withIcon(new QIcon("contacts"))
          .withPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE))
          .withWidgets(new ArrayList<>(CrmHomeWidgets.HOME))
          .withSection(mainSection())
@@ -83,35 +80,5 @@ public final class CrmAppMetaData extends QAppMetaData implements SourceQBitAwar
          app.withChild(output.get(QTableMetaData.class, name));
       }
       return (app);
-   }
-
-   /*******************************************************************************
-    ** QBit provenance, until core apps implement SourceQBitAware.
-    *******************************************************************************/
-   @Override
-   public String getSourceQBitName()
-   {
-      return (sourceQBitName);
-   }
-
-
-   /*******************************************************************************
-    ** QBit provenance, until core apps implement SourceQBitAware.
-    *******************************************************************************/
-   @Override
-   public void setSourceQBitName(String sourceQBitName)
-   {
-      this.sourceQBitName = sourceQBitName;
-   }
-
-
-   /*******************************************************************************
-    ** QBit provenance, until core apps implement SourceQBitAware.
-    *******************************************************************************/
-   @Override
-   public CrmAppMetaData withSourceQBitName(String sourceQBitName)
-   {
-      setSourceQBitName(sourceQBitName);
-      return (this);
    }
 }

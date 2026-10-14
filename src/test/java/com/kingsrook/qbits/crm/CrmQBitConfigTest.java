@@ -29,10 +29,7 @@ package com.kingsrook.qbits.crm;
 import java.util.ArrayList;
 import java.util.List;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,26 +47,20 @@ class CrmQBitConfigTest
    @Test
    void testFluentSettersAndGetters()
    {
-      List<QFieldMetaData> securityFields = List.of(
-         new QFieldMetaData("tenantId", QFieldType.INTEGER));
-
-      List<RecordSecurityLock> locks = List.of(
-         new RecordSecurityLock().withFieldName("tenantId"));
-
       MetaDataCustomizerInterface<QTableMetaData> customizer = (qInstance, table) -> table;
 
       CrmQBitConfig config = new CrmQBitConfig()
          .withDefaultBackendNameForTables("myBackend")
          .withInferBackendNames(false)
          .withTableMetaDataCustomizer(customizer)
-         .withSecurityFields(securityFields)
-         .withRecordSecurityLocks(locks);
+         .withTenantSecurityKeyType("tenant")
+         .withTenantAllAccessKeyName("allTenants");
 
       assertThat(config.getDefaultBackendNameForTables()).isEqualTo("myBackend");
       assertThat(config.getInferBackendNames()).isFalse();
       assertThat(config.getTableMetaDataCustomizer()).isSameAs(customizer);
-      assertThat(config.getSecurityFields()).isSameAs(securityFields);
-      assertThat(config.getRecordSecurityLocks()).isSameAs(locks);
+      assertThat(config.getTenantSecurityKeyType()).isEqualTo("tenant");
+      assertThat(config.getTenantAllAccessKeyName()).isEqualTo("allTenants");
    }
 
 
