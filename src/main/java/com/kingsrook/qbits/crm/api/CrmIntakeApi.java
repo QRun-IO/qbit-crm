@@ -323,7 +323,7 @@ public class CrmIntakeApi
       }
       update.withValue("lastTouchDate", Instant.now());
       store.update("crm_contact", update);
-      if(contacts.isEmpty() && isUnassigned(contact.getValueString("ownerUserId")))
+      if(contacts.isEmpty() && isUnassigned(store.get("crm_contact", contact.getValueInteger("id")).getValueString("ownerUserId")))
       {
          CrmAutoAssign.assign(CrmAssignableEntity.CONTACT, contact.getValueInteger("id"));
       }

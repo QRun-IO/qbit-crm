@@ -46,6 +46,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.SectionFactory;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
+import com.kingsrook.qqq.backend.core.model.metadata.tables.UniqueKey;
 
 
 /*******************************************************************************
@@ -75,6 +76,7 @@ public class EmailMessage extends QRecordEntity
       public QTableMetaData customizeMetaData(QInstance qInstance, QTableMetaData table) throws QException
       {
          table
+            .withUniqueKey(new UniqueKey("idempotencyKey"))
             .withIcon(new QIcon().withName("email"))
             .withRecordLabelFormat("%s")
             .withRecordLabelFields("subject")
@@ -85,10 +87,10 @@ public class EmailMessage extends QRecordEntity
                List.of("bodyHtml", "bodyText")))
             .withSection(new QFieldSection("tracking", new QIcon("visibility"), Tier.T2,
                List.of("isTracked", "openCount", "clickCount", "firstOpenedDate", "firstClickedDate",
-                  "bounceType", "isSpamComplaint")))
+                  "bounceType", "isSpamComplaint", "deliveredDate", "bouncedDate")))
             .withSection(new QFieldSection("references", new QIcon("link"), Tier.T2,
                List.of("contactId", "activityId", "emailTemplateId", "sequenceEnrollmentId",
-                  "threadId", "replyToEmailId")))
+                  "threadId", "replyToEmailId", "idempotencyKey", "emailMessageId")))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
          return (table);
@@ -106,7 +108,7 @@ public class EmailMessage extends QRecordEntity
    @QField(possibleValueSourceName = Contact.TABLE_NAME)
    private Integer contactId;
 
-   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String fromAddress;
 
    @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
@@ -171,6 +173,18 @@ public class EmailMessage extends QRecordEntity
 
    @QField()
    private Integer replyToEmailId;
+
+   @QField(maxLength = 250)
+   private String idempotencyKey;
+
+   @QField(maxLength = 100)
+   private String emailMessageId;
+
+   @QField()
+   private Instant deliveredDate;
+
+   @QField()
+   private Instant bouncedDate;
 
    @QField(isEditable = false)
    private Instant createDate;
@@ -1031,4 +1045,103 @@ public class EmailMessage extends QRecordEntity
       return (this);
    }
 
+   /*******************************************************************************
+    ** Get idempotencyKey.
+    *******************************************************************************/
+   public String getIdempotencyKey()
+   {
+      return (idempotencyKey);
+   }
+
+   /*******************************************************************************
+    ** Set idempotencyKey.
+    *******************************************************************************/
+   public EmailMessage withIdempotencyKey(String idempotencyKey)
+   {
+      this.idempotencyKey = idempotencyKey;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Get emailMessageId.
+    *******************************************************************************/
+   public String getEmailMessageId()
+   {
+      return (emailMessageId);
+   }
+
+   /*******************************************************************************
+    ** Set emailMessageId.
+    *******************************************************************************/
+   public EmailMessage withEmailMessageId(String emailMessageId)
+   {
+      this.emailMessageId = emailMessageId;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Get deliveredDate.
+    *******************************************************************************/
+   public Instant getDeliveredDate()
+   {
+      return (deliveredDate);
+   }
+
+   /*******************************************************************************
+    ** Set deliveredDate.
+    *******************************************************************************/
+   public EmailMessage withDeliveredDate(Instant deliveredDate)
+   {
+      this.deliveredDate = deliveredDate;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Get bouncedDate.
+    *******************************************************************************/
+   public Instant getBouncedDate()
+   {
+      return (bouncedDate);
+   }
+
+   /*******************************************************************************
+    ** Set bouncedDate.
+    *******************************************************************************/
+   public EmailMessage withBouncedDate(Instant bouncedDate)
+   {
+      this.bouncedDate = bouncedDate;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Set idempotencyKey for entity mapping.
+    *******************************************************************************/
+   public void setIdempotencyKey(String idempotencyKey)
+   {
+      this.idempotencyKey = idempotencyKey;
+   }
+
+   /*******************************************************************************
+    ** Set emailMessageId for entity mapping.
+    *******************************************************************************/
+   public void setEmailMessageId(String emailMessageId)
+   {
+      this.emailMessageId = emailMessageId;
+   }
+
+   /*******************************************************************************
+    ** Set deliveredDate for entity mapping.
+    *******************************************************************************/
+   public void setDeliveredDate(Instant deliveredDate)
+   {
+      this.deliveredDate = deliveredDate;
+   }
+
+   /*******************************************************************************
+    ** Set bouncedDate for entity mapping.
+    *******************************************************************************/
+   public void setBouncedDate(Instant bouncedDate)
+   {
+      this.bouncedDate = bouncedDate;
+   }
 }

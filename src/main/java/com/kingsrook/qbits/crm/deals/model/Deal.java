@@ -195,7 +195,7 @@ public class Deal extends QRecordEntity
    @QField(possibleValueSourceName = Contact.TABLE_NAME)
    private Integer primaryContactId;
 
-   @QField(isRequired = true)
+   @QField()
    private String ownerUserId;
 
    @QField(possibleValueSourceName = LeadSource.TABLE_NAME)

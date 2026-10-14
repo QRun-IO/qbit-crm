@@ -226,7 +226,7 @@ class CrmRdbmsTest
    @Test
    void testSchemaMatchesMetadata() throws Exception
    {
-      assertThat(qInstance.getTables()).hasSize(33);
+      assertThat(qInstance.getTables()).hasSize(34);
       for(QTableMetaData table : qInstance.getTables().values())
       {
          Set<String> columns = new HashSet<>();
@@ -278,7 +278,7 @@ class CrmRdbmsTest
       String ddl = Files.readString(Path.of("docs/ddl/postgres.sql"));
       String changelog = Files.readString(Path.of("src/main/resources/db/liquibase/qbit-crm/crm.changelog.sql"));
       assertThat(changelog).startsWith("--liquibase formatted sql");
-      assertThat(changelog.lines().filter(line -> line.startsWith("--changeset qbit-crm:")).count()).isEqualTo(33);
+      assertThat(changelog.lines().filter(line -> line.startsWith("--changeset qbit-crm:")).count()).isEqualTo(34);
       assertThat(stripComments(changelog)).isEqualTo(stripComments(ddl));
    }
 

@@ -51,6 +51,9 @@ import com.kingsrook.qbits.crm.sync.CrmCurrencyUtils;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreUpdateCustomizer;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.alerts.NotificationAudience;
+import com.kingsrook.qqq.backend.core.alerts.NotificationSignal;
+import com.kingsrook.qqq.backend.core.alerts.QAlerts;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
@@ -192,6 +195,14 @@ public class DealStageChangeCustomizer extends AbstractPreUpdateCustomizer
       // insert DealStageHistory row           //
       ///////////////////////////////////////////
       insertStageHistoryRow(record, oldRecord, oldStageId, newStageId, now);
+      String owner = record.getValues().containsKey("ownerUserId") ? record.getValueString("ownerUserId") : oldRecord.getValueString("ownerUserId");
+      if(Boolean.TRUE.equals(newStage.getIsClosedWon()) && owner != null)
+      {
+         QAlerts.notify(new NotificationSignal("Deal won").withSourceName("crm.deal.won")
+            .withSourceKey("deal:" + record.getValue("id") + ":stage:" + newStageId + ":" + now)
+            .withSourceTableName(Deal.TABLE_NAME).withSourceRecordId(record.getValueString("id"))
+            .withAudience(NotificationAudience.user(owner)), updateInput == null ? null : updateInput.getTransaction());
+      }
    }
 
 

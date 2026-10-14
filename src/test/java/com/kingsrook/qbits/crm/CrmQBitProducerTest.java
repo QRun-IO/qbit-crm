@@ -142,7 +142,7 @@ class CrmQBitProducerTest extends BaseTest
       {
          assertThat(QContext.getQInstance().getTable(tableName).getAuditRules().getAuditLevel()).isEqualTo(AuditLevel.FIELD);
       }
-      assertThat(QContext.getQInstance().getTables()).hasSize(33)
+      assertThat(QContext.getQInstance().getTables()).hasSize(34)
          .doesNotContainKeys("crm_tag", "crm_contact_tag", "crm_company_tag", "crm_deal_tag", "crm_attachment", "crm_audit_log");
       assertThat(QContext.getQInstance().getProcesses()).doesNotContainKeys("crm_bulk_add_tag", "crm_bulk_remove_tag");
    }

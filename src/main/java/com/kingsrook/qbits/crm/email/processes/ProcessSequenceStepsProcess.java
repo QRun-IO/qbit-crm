@@ -34,9 +34,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
+import com.kingsrook.qbits.crm.api.CrmApi;
+import com.kingsrook.qbits.crm.api.CrmMarketingApi;
+import com.kingsrook.qbits.crm.api.CrmReadiness;
+import com.kingsrook.qbits.crm.core.CrmRecords;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmSequenceStepType;
+import com.kingsrook.qbits.crm.email.CrmEmailTransport;
+import com.kingsrook.qbits.crm.email.CrmEmails;
 import com.kingsrook.qbits.crm.email.model.EmailSequence;
 import com.kingsrook.qbits.crm.email.model.SequenceEnrollment;
 import com.kingsrook.qbits.crm.email.model.SequenceStep;
@@ -45,6 +51,8 @@ import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.alerts.AlertSignal;
+import com.kingsrook.qqq.backend.core.alerts.QAlerts;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
@@ -79,6 +87,15 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
    private static final int MAX_FAILURES = 3;
 
+   /*******************************************************************************
+    ** Resolve the host transport; tests may supply a fake.
+    *******************************************************************************/
+   protected CrmEmailTransport emailTransport() throws QException
+   {
+      return (new CrmEmailTransport(CrmApi.config()));
+   }
+
+
 
 
    /*******************************************************************************
@@ -92,7 +109,6 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
          .withIsHidden(true)
          .withLabel("Process Sequence Steps")
          .withIcon(new QIcon().withName("play_circle"))
-         // Scheduling is configured by the host application via ScheduledJob records
          .withStepList(List.of(
             new QBackendStepMetaData()
                .withName("execute")
@@ -111,6 +127,18 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       ///////////////////////////////////////////////////////////
       // query enrollments where status=ACTIVE and due now     //
       ///////////////////////////////////////////////////////////
+      CrmEmailTransport transport = emailTransport();
+      boolean ready = transport.readiness() != CrmReadiness.NOT_CONFIGURED;
+      boolean activeSequences = !new QueryAction().execute(new QueryInput(EmailSequence.TABLE_NAME)
+         .withFilter(new QQueryFilter(new QFilterCriteria("isActive", QCriteriaOperator.EQUALS, true)).withLimit(1))).getRecords().isEmpty();
+      if(!ready && activeSequences)
+      {
+         QAlerts.raise(new AlertSignal("crm.email.unavailable").withDedupKey("transport").withTitle("CRM email is unavailable"));
+      }
+      else if(ready)
+      {
+         QAlerts.resolve("crm.email.unavailable", "transport", "Email transport is ready");
+      }
       int processedCount = 0;
       Integer lastId = null;
       Instant dueThrough = Instant.now();
@@ -130,7 +158,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
             SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentRecord);
             try
             {
-               processEnrollment(enrollment);
+               processEnrollment(enrollment, transport);
                processedCount++;
             }
             catch(Exception e)
@@ -154,7 +182,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
     ** Process a single enrollment: load the next step and execute it.
     ** Respects businessDaysOnly and sendWindow settings on the sequence.
     ***************************************************************************/
-   private void processEnrollment(SequenceEnrollment enrollment) throws QException
+   private void processEnrollment(SequenceEnrollment enrollment, CrmEmailTransport transport) throws QException
    {
       Integer nextStepNumber = enrollment.getCurrentStepNumber() + 1;
 
@@ -166,6 +194,11 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
 
       EmailSequence sequence = sequenceGet.getRecord() != null
          ? new EmailSequence(sequenceGet.getRecord()) : null;
+
+      if(sequence == null || !Boolean.TRUE.equals(sequence.getIsActive()))
+      {
+         return;
+      }
 
       /////////////////////////////////////////////
       // load the contact for timezone           //
@@ -237,7 +270,27 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       {
          switch(stepType)
          {
-            case EMAIL -> executeEmailStep(enrollment, step);
+            case EMAIL ->
+            {
+               var eligibility = new CrmMarketingApi().checkEmailEligibility(enrollment.getContactId());
+               if(!eligibility.eligible())
+               {
+                  CrmRecords.update(SequenceEnrollment.TABLE_NAME, new QRecord().withValue("id", enrollment.getId())
+                     .withValue("status", CrmEnrollmentStatus.PAUSED.getId()).withValue("lastFailureMessage", eligibility.reason())
+                     .withValue("nextStepDate", null));
+                  return;
+               }
+               if(transport.readiness() == CrmReadiness.NOT_CONFIGURED)
+               {
+                  return;
+               }
+               if(step.getEmailTemplateId() == null)
+               {
+                  throw (new QException("Sequence email template is required"));
+               }
+               CrmEmails.send(transport, contactGet.getRecord(), step.getEmailTemplateId(), null, null,
+                  "seq", enrollment.getId() + ":" + step.getId(), enrollment.getId());
+            }
             case CALL -> executeCallStep(enrollment, step);
             case TASK -> executeTaskStep(enrollment, step);
             case WAIT ->
@@ -253,50 +306,6 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       /////////////////////////////////////////////
       boolean businessDaysOnly = sequence != null && Boolean.TRUE.equals(sequence.getBusinessDaysOnly());
       advanceEnrollment(enrollment, nextStepNumber, sequence, businessDaysOnly, contactTimezone);
-   }
-
-
-
-   /***************************************************************************
-    ** Execute an EMAIL step: verify doNotEmail, create an activity record.
-    ***************************************************************************/
-   private void executeEmailStep(SequenceEnrollment enrollment, SequenceStep step) throws QException
-   {
-      ///////////////////////////////////////////////
-      // check doNotEmail                          //
-      ///////////////////////////////////////////////
-      GetOutput contactGet = new GetAction().execute(
-         new GetInput(Contact.TABLE_NAME).withPrimaryKey(enrollment.getContactId()));
-
-      if(contactGet.getRecord() != null)
-      {
-         Contact contact = new Contact(contactGet.getRecord());
-         if(Boolean.TRUE.equals(contact.getDoNotEmail()))
-         {
-            throw (new QException("Contact has opted out of email"));
-         }
-      }
-
-      ///////////////////////////////////////////////
-      // create activity for the email             //
-      ///////////////////////////////////////////////
-      String subject = "Sequence email: step " + step.getStepNumber();
-      if(step.getEmailTemplateId() != null)
-      {
-         subject += " (template #" + step.getEmailTemplateId() + ")";
-      }
-
-      Integer activityTypeId = lookupActivityTypeByName("Email");
-
-      new InsertAction().execute(
-         new InsertInput(Activity.TABLE_NAME).withRecordEntity(
-            new Activity()
-               .withActivityTypeId(activityTypeId)
-               .withContactId(enrollment.getContactId())
-               .withDealId(enrollment.getDealId())
-               .withSubject(subject)
-               .withOwnerUserId("system")
-               .withIsCompleted(true)));
    }
 
 
@@ -524,6 +533,8 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       {
          updateRecord.withValue("status", CrmEnrollmentStatus.FAILED.getPossibleValueId());
          updateRecord.withValue("nextStepDate", null);
+         QAlerts.raise(new AlertSignal("crm.sequence.failing").withDedupKey("enrollment:" + enrollment.getId())
+            .withTitle("Sequence enrollment failed three times"));
       }
 
       new UpdateAction().execute(
