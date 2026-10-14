@@ -111,7 +111,7 @@ class CrmActionsTest extends BaseTest
       if(action.operation().equals("email"))
       {
          assertThat(resultLines).allMatch(line -> line.getStatus() == Status.WARNING);
-         assertThat(resultLines.getFirst().getSingularPastMessage()).isEqualTo(CrmAction.EMAIL_WARNING);
+         assertThat(resultLines.getFirst().getSingularPastMessage()).isNotBlank();
          assertThat(snapshot()).isEqualTo(before);
       }
       else

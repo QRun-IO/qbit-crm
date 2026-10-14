@@ -48,7 +48,7 @@ class FormSubmissionCoverageTest extends BaseTest
 
       FormSubmission form = new FormSubmission()
          .withId(1)
-         .withFormType(1)
+         .withFormKey("test-form").withFormType(1)
          .withEmail("lead@example.com")
          .withFirstName("Lead")
          .withLastName("User")
@@ -66,8 +66,6 @@ class FormSubmissionCoverageTest extends BaseTest
          .withConversionStatus(2)
          .withConvertedDate(now)
          .withConvertedByUserId("user-001")
-         .withIpAddress("192.168.1.1")
-         .withUserAgent("Mozilla/5.0")
          .withMetadata("{\"key\":\"value\"}")
          .withCreateDate(now)
          .withModifyDate(now);
@@ -91,8 +89,6 @@ class FormSubmissionCoverageTest extends BaseTest
       assertThat(form.getConversionStatus()).isEqualTo(2);
       assertThat(form.getConvertedDate()).isEqualTo(now);
       assertThat(form.getConvertedByUserId()).isEqualTo("user-001");
-      assertThat(form.getIpAddress()).isEqualTo("192.168.1.1");
-      assertThat(form.getUserAgent()).isEqualTo("Mozilla/5.0");
       assertThat(form.getMetadata()).isEqualTo("{\"key\":\"value\"}");
       assertThat(form.getCreateDate()).isEqualTo(now);
       assertThat(form.getModifyDate()).isEqualTo(now);
@@ -128,8 +124,6 @@ class FormSubmissionCoverageTest extends BaseTest
       form.setConversionStatus(3);
       form.setConvertedDate(now);
       form.setConvertedByUserId("user-002");
-      form.setIpAddress("10.0.0.1");
-      form.setUserAgent("Chrome/99");
       form.setMetadata("{\"foo\":\"bar\"}");
       form.setCreateDate(now);
       form.setModifyDate(now);
@@ -153,8 +147,6 @@ class FormSubmissionCoverageTest extends BaseTest
       assertThat(form.getConversionStatus()).isEqualTo(3);
       assertThat(form.getConvertedDate()).isEqualTo(now);
       assertThat(form.getConvertedByUserId()).isEqualTo("user-002");
-      assertThat(form.getIpAddress()).isEqualTo("10.0.0.1");
-      assertThat(form.getUserAgent()).isEqualTo("Chrome/99");
       assertThat(form.getMetadata()).isEqualTo("{\"foo\":\"bar\"}");
       assertThat(form.getCreateDate()).isEqualTo(now);
       assertThat(form.getModifyDate()).isEqualTo(now);

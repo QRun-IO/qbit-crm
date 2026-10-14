@@ -162,3 +162,82 @@ The later intake APIs, public subscription routes, collaboration integration, re
 `CrmQBitProducer` discovers entity, process and widget producers. `core/` holds contacts, companies, forms, lists and consent; `deals/`, `activities/`, `email/` and `scoring/` hold their respective metadata and behavior. `actions/` defines the streamed record actions and their inputs/summaries. `security/` defines permissions, `sync/` holds external mappings and currency utilities, and `widgets/` contains widget producers/renderers. SQL is shipped under `src/main/resources/db/liquibase/qbit-crm/`.
 
 Licensed under [Apache License 2.0](LICENSE).
+
+## Integrating: intake and marketing APIs
+
+Use `com.kingsrook.qbits.crm.api` from a host with an initialized `QContext`.
+The API enforces the current session's CRM permissions and record locks; it does
+not elevate website callers. The host supplies authentication, tenant scope and
+abuse protection before invoking intake. First use initializes the six activity
+codes through normal table actions and needs CRM settings write access.
+
+Configure the signing secret from your secret store and the externally reachable
+base URL. Never put the secret in source control:
+
+```java
+CrmQBitConfig config = new CrmQBitConfig()
+   .withDefaultBackendNameForTables("main")
+   .withTokenSecret(secretFromHost)
+   .withPublicBaseUrl("https://example.com")
+   .withMessagingProviderName("email"); // core fallback when qbit-email is absent
+```
+
+`CrmApi.isInstalled(instance)` checks installation. `CrmApi.readiness()` returns
+`NOT_CONFIGURED`, `QBIT_EMAIL` or `CORE_MESSAGING`. qbit-email 0.1.0-RC.3 is an
+optional dependency, preferred when installed; its own readiness and suppression
+rules apply. Core fallback uses the named host messaging provider. The core path
+has no durable send deduplication; qbit-email uses `sendOnce` with
+`crm:<purpose>:<id>`. A refreshed confirmation uses a new token hash in that id.
+
+```java
+CrmIntakeApi intake = new CrmIntakeApi();
+CrmFormResult lead = intake.submitForm(new CrmFormRequest(
+   "contact", FormType.CONTACT, "Ada", "Lovelace", "ada@example.com",
+   null, "Example", "Please contact me", false, "Reply to my inquiry",
+   "search", "organic", "launch", null, null,
+   "https://example.com/contact", null, null, null));
+
+CrmSubscribeResult signup = intake.subscribe(new CrmSubscribeRequest(
+   "newsletter", "ada@example.com", "Ada", "Lovelace",
+   "Send me the monthly newsletter", "Website",
+   "search", "organic", "launch", null, null, null, null));
+```
+
+Create an active `crm_email_list` with its required unique `listKey` before
+subscribing. Double opt-in defaults to true. Pending members receive a signed
+confirmation link and become eligible only after confirmation. Requests retain
+the exact consent wording and submission evidence. Contact forms without an
+explicit opt-in record **Reply to inquiry / Legitimate interest**, never Email
+consent. Optional visitor/client identifiers must be precomputed SHA-256 hex
+hashes; salt the client hash in the host. Raw IPs and user-agent strings have no
+storage fields. Missing subscriber names use the label "Not provided" because
+the CRM contact model requires both names.
+
+```java
+CrmMarketingApi marketing = new CrmMarketingApi();
+List<RecipientScopeOption> scopes = marketing.recipientScopeOptions();
+List<CrmRecipient> recipients = marketing.resolveRecipients("crm-list:1");
+Eligibility eligibility = marketing.checkEmailEligibility(lead.contactId());
+marketing.recordActivity(lead.contactId(), ActivityKind.NOTE, "Qualified lead", "Requested a demo");
+String unsubscribeUrl = marketing.buildUnsubscribeUrl(lead.contactId(), null);
+marketing.recordUnsubscribe(lead.contactId(), null, "Customer request");
+```
+
+Recipient scopes are `crm-list:<id>` and `crm-contact:<id>`. Addresses are returned
+only when eligible. The latest Email consent must be granted and unexpired;
+`doNotEmail`, a global unsubscribe date, or any non-subscribed membership
+suppresses delivery. List-level withdrawal also appends a contact-level Email
+withdrawal, so it suppresses marketing until subsequent explicit consent; it
+does not set the contact's global unsubscribe date. The API never silently clears
+that global suppression. `listFormSubmissions(campaign, since)` returns submission
+and contact IDs plus timestamps, without form contents.
+
+When Javalin is present, CRM registers GET and POST under
+`/qqq/hooks/crm/confirm/{token}` and `/qqq/hooks/crm/unsubscribe/{token}`.
+GET displays an accessible confirmation button; POST performs the operation.
+Links expire after 90 days. Confirmation tokens are stored only as SHA-256 hashes;
+refreshing or withdrawing a pending subscription invalidates its previous token.
+The signed route uses a system session solely for the IDs authorized by that link.
+Direct callers can also use `confirm(token)`, `unsubscribe(token)` and
+`unsubscribeByContact(contactId, listIdOrNull, source)`. Pages contain no personal
+data and responses disable caching and referrer forwarding.

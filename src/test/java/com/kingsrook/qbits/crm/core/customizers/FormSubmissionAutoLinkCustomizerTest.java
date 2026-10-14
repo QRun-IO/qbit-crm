@@ -124,7 +124,7 @@ class FormSubmissionAutoLinkCustomizerTest extends BaseTest
    {
       FormSubmission form = new FormSubmission()
          .withEmail(email)
-         .withFormType(CrmFormType.CONTACT.getPossibleValueId());
+         .withFormKey("test-form").withFormType(CrmFormType.CONTACT.getPossibleValueId());
 
       if(contactId != null)
       {

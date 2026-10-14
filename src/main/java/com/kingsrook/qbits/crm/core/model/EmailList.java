@@ -82,8 +82,9 @@ public class EmailList extends QRecordEntity
             .withRecordLabelFields("name")
             .withUniqueKey(new UniqueKey("name"))
             .withUniqueKey(new UniqueKey("slug"))
-            .withSection(SectionFactory.defaultT1("id", "name", "slug", "isActive", "isPublic", "sortOrder"))
-            .withSection(SectionFactory.defaultT2("description", "memberCount"))
+            .withUniqueKey(new UniqueKey("listKey"))
+            .withSection(SectionFactory.defaultT1("id", "name", "listKey", "slug", "isActive", "isPublic", "sortOrder"))
+            .withSection(SectionFactory.defaultT2("description", "memberCount", "requireDoubleOptIn", "consentText"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
          return (table);
@@ -91,6 +92,15 @@ public class EmailList extends QRecordEntity
    }
 
 
+
+   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String listKey;
+
+   @QField(isRequired = true, defaultValue = "true")
+   private Boolean requireDoubleOptIn;
+
+   @QField()
+   private String consentText;
 
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
@@ -448,6 +458,91 @@ public class EmailList extends QRecordEntity
    public EmailList withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for listKey
+    *******************************************************************************/
+   public String getListKey()
+   {
+      return (this.listKey);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for listKey
+    *******************************************************************************/
+   public void setListKey(String listKey)
+   {
+      this.listKey = listKey;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for listKey
+    *******************************************************************************/
+   public EmailList withListKey(String listKey)
+   {
+      this.listKey = listKey;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for requireDoubleOptIn
+    *******************************************************************************/
+   public Boolean getRequireDoubleOptIn()
+   {
+      return (this.requireDoubleOptIn);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for requireDoubleOptIn
+    *******************************************************************************/
+   public void setRequireDoubleOptIn(Boolean requireDoubleOptIn)
+   {
+      this.requireDoubleOptIn = requireDoubleOptIn;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for requireDoubleOptIn
+    *******************************************************************************/
+   public EmailList withRequireDoubleOptIn(Boolean requireDoubleOptIn)
+   {
+      this.requireDoubleOptIn = requireDoubleOptIn;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for consentText
+    *******************************************************************************/
+   public String getConsentText()
+   {
+      return (this.consentText);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for consentText
+    *******************************************************************************/
+   public void setConsentText(String consentText)
+   {
+      this.consentText = consentText;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentText
+    *******************************************************************************/
+   public EmailList withConsentText(String consentText)
+   {
+      this.consentText = consentText;
       return (this);
    }
 

@@ -88,8 +88,8 @@ class FormSubmissionTest extends BaseTest
       ///////////////////////////
       // technical fields      //
       ///////////////////////////
-      assertThat(table.getFields()).containsKey("ipAddress");
-      assertThat(table.getFields()).containsKey("userAgent");
+      assertThat(table.getFields()).doesNotContainKey("ipAddress");
+      assertThat(table.getFields()).doesNotContainKey("userAgent");
       assertThat(table.getFields()).containsKey("metadata");
 
       assertThat(table.getIcon().getName()).isEqualTo("dynamic_form");
@@ -106,7 +106,7 @@ class FormSubmissionTest extends BaseTest
       InsertInput insertInput = new InsertInput();
       insertInput.setTableName(FormSubmission.TABLE_NAME);
       insertInput.setRecords(List.of(new FormSubmission()
-         .withFormType(CrmFormType.DEMO_REQUEST.getId())
+         .withFormKey("test-form").withFormType(CrmFormType.DEMO_REQUEST.getId())
          .withEmail("test@example.com")
          .withFirstName("Jane")
          .withLastName("Smith")
@@ -115,7 +115,6 @@ class FormSubmissionTest extends BaseTest
          .withUtmMedium("cpc")
          .withUtmCampaign("spring2026")
          .withConversionStatus(CrmFormConversionStatus.NEW.getId())
-         .withIpAddress("192.168.1.1")
          .toQRecord()));
       InsertOutput insertOutput = new InsertAction().execute(insertInput);
       assertThat(insertOutput.getRecords()).hasSize(1);
@@ -133,7 +132,6 @@ class FormSubmissionTest extends BaseTest
       assertThat(fetched.getUtmSource()).isEqualTo("google");
       assertThat(fetched.getUtmMedium()).isEqualTo("cpc");
       assertThat(fetched.getUtmCampaign()).isEqualTo("spring2026");
-      assertThat(fetched.getIpAddress()).isEqualTo("192.168.1.1");
    }
 
 }
