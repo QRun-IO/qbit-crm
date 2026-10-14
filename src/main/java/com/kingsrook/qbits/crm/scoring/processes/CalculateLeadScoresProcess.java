@@ -26,22 +26,29 @@
 package com.kingsrook.qbits.crm.scoring.processes;
 
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import com.kingsrook.qbits.crm.core.CrmRecords;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmScoreOperator;
+import com.kingsrook.qbits.crm.deals.CrmDealNotifications;
+import com.kingsrook.qbits.crm.scoring.JobState;
 import com.kingsrook.qbits.crm.scoring.model.LeadScoreRule;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
-import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
@@ -83,7 +90,6 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
          .withIsHidden(true)
          .withLabel("Calculate Lead Scores")
          .withIcon(new QIcon().withName("score"))
-         // Scheduling is configured by the host application via ScheduledJob records
          .withStepList(List.of(
             new QBackendStepMetaData()
                .withName("execute")
@@ -99,6 +105,14 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
    @Override
    public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
    {
+      Instant startedAt = Instant.now();
+      List<QRecord> states = new QueryAction().execute(new QueryInput(JobState.TABLE_NAME)
+         .withFilter(new QQueryFilter(new QFilterCriteria("name", QCriteriaOperator.EQUALS, NAME)))).getRecords();
+      QRecord state = states.isEmpty() ? new QRecord().withValue("name", NAME) : states.getFirst();
+      Instant lastSuccess = state.getValueInstant("lastSuccess");
+      Instant lastFullPass = state.getValueInstant("lastFullPass");
+      boolean full = Boolean.TRUE.equals(input.getValueBoolean("fullRecalc")) || lastSuccess == null || lastFullPass == null
+         || !lastFullPass.isAfter(startedAt.minus(24, ChronoUnit.HOURS));
       ///////////////////////////////////////////////
       // load all active rules ordered by sort     //
       ///////////////////////////////////////////////
@@ -131,6 +145,10 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
             filter.withCriteria(new QFilterCriteria("id", QCriteriaOperator.GREATER_THAN, lastId));
          }
 
+         if(!full)
+         {
+            filter.withCriteria(new QFilterCriteria("modifyDate", QCriteriaOperator.GREATER_THAN_OR_EQUALS, lastSuccess));
+         }
          QueryOutput contactsQuery = new QueryAction().execute(
             new QueryInput(Contact.TABLE_NAME).withFilter(filter));
 
@@ -139,15 +157,20 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
             break;
          }
 
+         Map<Integer, QRecord> companies = loadCompanies(contactsQuery.getRecords());
+         List<QRecord> changes = new ArrayList<>();
          for(QRecord contactRecord : contactsQuery.getRecords())
          {
             totalContacts++;
-            if(recalculate(contactRecord, rules))
+            QRecord change = calculateChange(contactRecord, rules, companies);
+            if(change != null)
             {
-               updatedCount++;
+               changes.add(change);
             }
             lastId = contactRecord.getValueInteger("id");
          }
+         writeScores(changes);
+         updatedCount += changes.size();
 
          /////////////////////////////////////////////
          // if page was not full, we are done       //
@@ -158,6 +181,21 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
          }
       }
 
+      CrmDealNotifications.checkRotting();
+      state.withValue("lastSuccess", startedAt);
+      if(full)
+      {
+         state.withValue("lastFullPass", startedAt);
+      }
+      if(states.isEmpty())
+      {
+         CrmRecords.insert(JobState.TABLE_NAME, state);
+      }
+      else
+      {
+         CrmRecords.update(JobState.TABLE_NAME, state);
+      }
+      output.addValue("fullRecalc", full);
       output.addValue("updatedCount", updatedCount);
       output.addValue("totalContacts", totalContacts);
       output.addValue("totalRules", rules.size());
@@ -173,18 +211,19 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       List<LeadScoreRule> rules = new QueryAction().execute(new QueryInput(LeadScoreRule.TABLE_NAME)
          .withFilter(new QQueryFilter(new QFilterCriteria("isActive", QCriteriaOperator.EQUALS, true))
             .withOrderBy(new QFilterOrderBy("sortOrder")))).getRecords().stream().map(LeadScoreRule::new).toList();
-      recalculate(contact, rules);
+      QRecord change = calculateChange(contact, rules, loadCompanies(List.of(contact)));
+      writeScores(change == null ? List.of() : List.of(change));
    }
 
    /*******************************************************************************
-    ** Write only changed scores; return whether a write was needed.
+    ** Compute a score update only when the result changed.
     *******************************************************************************/
-   private boolean recalculate(QRecord contact, List<LeadScoreRule> rules) throws QException
+   private QRecord calculateChange(QRecord contact, List<LeadScoreRule> rules, Map<Integer, QRecord> companies) throws QException
    {
       int score = 0;
       for(LeadScoreRule rule : rules)
       {
-         if(evaluateRule(rule, contact))
+         if(evaluateRule(rule, contact, companies))
          {
             score += rule.getScoreAdjustment();
          }
@@ -192,11 +231,27 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       Integer current = contact.getValueInteger("leadScore");
       if(Objects.equals(current == null ? 0 : current, score))
       {
-         return (false);
+         return (null);
       }
-      new UpdateAction().execute(new UpdateInput(Contact.TABLE_NAME)
-         .withRecord(new QRecord().withValue("id", contact.getValue("id")).withValue("leadScore", score)));
-      return (true);
+      return (new QRecord().withValue("id", contact.getValue("id")).withValue("leadScore", score));
+   }
+
+   /*******************************************************************************
+    ** Batch score writes so core audit label resolution also operates per page.
+    *******************************************************************************/
+   private void writeScores(List<QRecord> changes) throws QException
+   {
+      if(changes.isEmpty())
+      {
+         return;
+      }
+      UpdateInput update = new UpdateInput(Contact.TABLE_NAME).withOmitModifyDateUpdate(true);
+      update.setRecords(changes);
+      var updated = new UpdateAction().execute(update).getRecords();
+      if(updated.isEmpty() || updated.stream().anyMatch(row -> row.getErrors() != null && !row.getErrors().isEmpty()))
+      {
+         throw (new QException("Lead score update was rejected"));
+      }
    }
 
 
@@ -204,7 +259,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
     ** Evaluate a single rule against a contact record. Supports dot-notation
     ** field paths for related entities (e.g., "company.industry").
     ***************************************************************************/
-   private boolean evaluateRule(LeadScoreRule rule, QRecord contactRecord)
+   private boolean evaluateRule(LeadScoreRule rule, QRecord contactRecord, Map<Integer, QRecord> companies)
    {
       CrmScoreOperator operator = CrmScoreOperator.getById(rule.getOperator());
       if(operator == null)
@@ -213,7 +268,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       }
 
       String fieldPath = rule.getFieldPath();
-      String actualValue = resolveFieldValue(fieldPath, contactRecord);
+      String actualValue = resolveFieldValue(fieldPath, contactRecord, companies);
       String expectedValue = rule.getFieldValue();
 
       switch(operator)
@@ -232,6 +287,10 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
 
          case LT:
             return (compareNumeric(actualValue, expectedValue) < 0);
+
+         case DAYS_AGO_GT:
+         case DAYS_AGO_LT:
+            return (compareAge(actualValue, expectedValue, operator));
 
          case IS_SET:
             return (StringUtils.hasContent(actualValue));
@@ -272,48 +331,54 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
     ** for related entity fields (e.g., "company.industry" loads the contact's
     ** company record and returns its "industry" field).
     ***************************************************************************/
-   private String resolveFieldValue(String fieldPath, QRecord contactRecord)
+   private String resolveFieldValue(String fieldPath, QRecord contactRecord, Map<Integer, QRecord> companies)
    {
       if(fieldPath == null || !fieldPath.contains("."))
       {
          return (contactRecord.getValueString(fieldPath));
       }
-
       String[] parts = fieldPath.split("\\.", 2);
-      String prefix    = parts[0];
-      String fieldName = parts[1];
-
-      try
+      if("company".equalsIgnoreCase(parts[0]))
       {
-         if("company".equalsIgnoreCase(prefix))
-         {
-            Integer companyId = contactRecord.getValueInteger("companyId");
-            if(companyId == null)
-            {
-               return (null);
-            }
-
-            GetOutput companyOutput = new GetAction().execute(
-               new GetInput(Company.TABLE_NAME).withPrimaryKey(companyId));
-
-            if(companyOutput.getRecord() == null)
-            {
-               return (null);
-            }
-
-            return (companyOutput.getRecord().getValueString(fieldName));
-         }
-         else
-         {
-            LOG.warn("Unsupported dot-notation prefix in lead score rule fieldPath: " + prefix);
-            return (null);
-         }
+         QRecord company = companies.get(contactRecord.getValueInteger("companyId"));
+         return (company == null ? null : company.getValueString(parts[1]));
       }
-      catch(Exception e)
-      {
-         LOG.warn("Error resolving dot-notation field [" + fieldPath + "] for contact", e);
-         return (null);
-      }
+      LOG.warn("Unsupported dot-notation prefix in lead score rule fieldPath: " + parts[0]);
+      return (null);
    }
 
+   /*******************************************************************************
+    ** One company query per page, shared by every rule and contact in that page.
+    *******************************************************************************/
+   private Map<Integer, QRecord> loadCompanies(List<QRecord> contacts) throws QException
+   {
+      List<Integer> ids = contacts.stream().map(row -> row.getValueInteger("companyId")).filter(Objects::nonNull).distinct().toList();
+      Map<Integer, QRecord> companies = new HashMap<>();
+      if(!ids.isEmpty())
+      {
+         for(QRecord company : new QueryAction().execute(new QueryInput(Company.TABLE_NAME)
+            .withFilter(new QQueryFilter(new QFilterCriteria("id", QCriteriaOperator.IN, ids)))).getRecords())
+         {
+            companies.put(company.getValueInteger("id"), company);
+         }
+      }
+      return (companies);
+   }
+
+   /*******************************************************************************
+    ** Compare instants or UTC calendar dates with the strict N-days-ago boundary.
+    *******************************************************************************/
+   private boolean compareAge(String actual, String expected, CrmScoreOperator operator)
+   {
+      try
+      {
+         Instant date = actual.length() == 10 ? LocalDate.parse(actual).atStartOfDay(ZoneOffset.UTC).toInstant() : Instant.parse(actual);
+         Instant threshold = Instant.now().minus(Long.parseLong(expected), ChronoUnit.DAYS);
+         return (operator == CrmScoreOperator.DAYS_AGO_GT ? date.isBefore(threshold) : date.isAfter(threshold));
+      }
+      catch(RuntimeException e)
+      {
+         return (false);
+      }
+   }
 }

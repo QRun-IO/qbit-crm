@@ -241,7 +241,7 @@ public class Contact extends QRecordEntity
    @QField(possibleValueSourceName = LeadSource.TABLE_NAME)
    private Integer leadSourceId;
 
-   @QField(isRequired = true)
+   @QField()
    private String ownerUserId;
 
    @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
