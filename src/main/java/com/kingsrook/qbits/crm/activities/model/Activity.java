@@ -13,6 +13,9 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.email.model.EmailMessage;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
@@ -86,6 +89,12 @@ public class Activity extends QRecordEntity
                List.of("isCompleted", "completedDate", "isReminderSet", "reminderDate")))
             .withSection(SectionFactory.customT2("participants", new QIcon("group")).withWidgetName(participantChildJoinName))
             .withSection(SectionFactory.defaultT3("externalCalendarId", "createDate", "modifyDate"));
+
+         //////////////////////////////////////////////////////////////////
+         // Only offer outcomes belonging to the selected activity type. //
+         //////////////////////////////////////////////////////////////////
+         table.getField("outcomeId").withPossibleValueSourceFilter(new QQueryFilter(
+            new QFilterCriteria("activityTypeId", QCriteriaOperator.EQUALS, "${input.activityTypeId}")));
 
          return (table);
       }
