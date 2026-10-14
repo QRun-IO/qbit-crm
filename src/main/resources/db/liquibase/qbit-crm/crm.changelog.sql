@@ -6,7 +6,8 @@
 -- Unique constraints match QQQ metadata. Relationship columns are indexed;
 -- foreign-key constraints are deliberately not imposed (the QQQ/host layer owns
 -- validation and deletion policy, including polymorphic and optional references).
--- Optional host-configured securityFields require matching host-managed columns.
+-- Optional tenancy: separately include crm-tenancy.changelog.sql with context crm-tenancy.
+-- With tenancy off, do not include it; this base schema has no tenant_key columns.
 
 --changeset qbit-crm:020-crm_activity
 CREATE TABLE IF NOT EXISTS crm_activity (

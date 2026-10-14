@@ -370,4 +370,31 @@ class CrmRdbmsTest
       assertThat(leaders.getRows().getFirst().get("first").toString()).endsWith(">Ada</a>");
    }
 
+
+   /*******************************************************************************
+    ** The base schema stays unchanged; only the explicit tenant migration adds keys.
+    *******************************************************************************/
+   @Test
+   void testOptionalTenantSchemaMatchesMetadata() throws Exception
+   {
+      try(var columns = connection.getMetaData().getColumns(null, null, "crm_contact", "tenant_key"))
+      {
+         assertThat(columns.next()).isFalse();
+      }
+      executeSql(Files.readString(Path.of("src/main/resources/db/liquibase/qbit-crm/crm-tenancy.changelog.sql")));
+      QInstance tenantInstance = new QInstance();
+      tenantInstance.addBackend(qInstance.getBackend("rdbms"));
+      tenantInstance.withInstanceDefaultAuthentication(new QAuthenticationMetaData().withName("anonymous").withType(QAuthenticationType.FULLY_ANONYMOUS));
+      new CrmQBitProducer().withQBitConfig(new CrmQBitConfig().withDefaultBackendNameForTables("rdbms")
+         .withTenantSecurityKeyType("tenant")).produce(tenantInstance).addSelfToInstance(tenantInstance);
+      new QInstanceValidator().validate(tenantInstance);
+      for(var table : tenantInstance.getTables().values())
+      {
+         try(var columns = connection.getMetaData().getColumns(null, null, table.getName(), "tenant_key"))
+         {
+            assertThat(columns.next()).as(table.getName()).isEqualTo(table.getFields().containsKey("tenantKey"));
+         }
+      }
+   }
+
 }

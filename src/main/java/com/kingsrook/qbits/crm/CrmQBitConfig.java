@@ -27,10 +27,8 @@ package com.kingsrook.qbits.crm;
 
 
 import java.util.List;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.producers.MetaDataCustomizerInterface;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitConfig;
-import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
 
@@ -42,6 +40,12 @@ import com.kingsrook.qqq.backend.core.utils.StringUtils;
 public class CrmQBitConfig implements QBitConfig
 {
    public static final CrmQBitConfig DEFAULT_CONFIG = new CrmQBitConfig();
+
+   private String tenantSecurityKeyType;
+   private String tenantAllAccessKeyName;
+   private String apiName;
+   private String apiVersion;
+   private String esbDestinationName;
 
    private String schedulerName;
    private Boolean schedulesEnabled = true;
@@ -56,8 +60,6 @@ public class CrmQBitConfig implements QBitConfig
    private Boolean                                     inferBackendNames = true;
    private Boolean                                     appEnabled = true;
    private MetaDataCustomizerInterface<QTableMetaData>  tableMetaDataCustomizer;
-   private List<QFieldMetaData>                         securityFields;
-   private List<RecordSecurityLock>                     recordSecurityLocks;
 
 
 
@@ -132,48 +134,6 @@ public class CrmQBitConfig implements QBitConfig
    public CrmQBitConfig withTableMetaDataCustomizer(MetaDataCustomizerInterface<QTableMetaData> tableMetaDataCustomizer)
    {
       this.tableMetaDataCustomizer = tableMetaDataCustomizer;
-      return (this);
-   }
-
-
-
-   /*******************************************************************************
-    ** Getter for securityFields
-    *******************************************************************************/
-   public List<QFieldMetaData> getSecurityFields()
-   {
-      return (this.securityFields);
-   }
-
-
-
-   /*******************************************************************************
-    ** Fluent setter for securityFields
-    *******************************************************************************/
-   public CrmQBitConfig withSecurityFields(List<QFieldMetaData> securityFields)
-   {
-      this.securityFields = securityFields;
-      return (this);
-   }
-
-
-
-   /*******************************************************************************
-    ** Getter for recordSecurityLocks
-    *******************************************************************************/
-   public List<RecordSecurityLock> getRecordSecurityLocks()
-   {
-      return (this.recordSecurityLocks);
-   }
-
-
-
-   /*******************************************************************************
-    ** Fluent setter for recordSecurityLocks
-    *******************************************************************************/
-   public CrmQBitConfig withRecordSecurityLocks(List<RecordSecurityLock> recordSecurityLocks)
-   {
-      this.recordSecurityLocks = recordSecurityLocks;
       return (this);
    }
 
@@ -307,5 +267,100 @@ public class CrmQBitConfig implements QBitConfig
       this.schedulesEnabled = schedulesEnabled;
       return (this);
    }
+
+   /*******************************************************************************
+    ** Getter for tenantSecurityKeyType.
+    *******************************************************************************/
+   public String getTenantSecurityKeyType()
+   {
+      return (tenantSecurityKeyType);
+   }
+
+
+   /*******************************************************************************
+    ** Configure tenantSecurityKeyType; null disables the optional integration.
+    *******************************************************************************/
+   public CrmQBitConfig withTenantSecurityKeyType(String tenantSecurityKeyType)
+   {
+      this.tenantSecurityKeyType = tenantSecurityKeyType;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for tenantAllAccessKeyName.
+    *******************************************************************************/
+   public String getTenantAllAccessKeyName()
+   {
+      return (tenantAllAccessKeyName);
+   }
+
+
+   /*******************************************************************************
+    ** Configure tenantAllAccessKeyName; null disables the optional integration.
+    *******************************************************************************/
+   public CrmQBitConfig withTenantAllAccessKeyName(String tenantAllAccessKeyName)
+   {
+      this.tenantAllAccessKeyName = tenantAllAccessKeyName;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for apiName.
+    *******************************************************************************/
+   public String getApiName()
+   {
+      return (apiName);
+   }
+
+
+   /*******************************************************************************
+    ** Configure apiName; null disables the optional integration.
+    *******************************************************************************/
+   public CrmQBitConfig withApiName(String apiName)
+   {
+      this.apiName = apiName;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for apiVersion.
+    *******************************************************************************/
+   public String getApiVersion()
+   {
+      return (apiVersion);
+   }
+
+
+   /*******************************************************************************
+    ** Configure apiVersion; null disables the optional integration.
+    *******************************************************************************/
+   public CrmQBitConfig withApiVersion(String apiVersion)
+   {
+      this.apiVersion = apiVersion;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for esbDestinationName.
+    *******************************************************************************/
+   public String getEsbDestinationName()
+   {
+      return (esbDestinationName);
+   }
+
+
+   /*******************************************************************************
+    ** Configure esbDestinationName; null disables the optional integration.
+    *******************************************************************************/
+   public CrmQBitConfig withEsbDestinationName(String esbDestinationName)
+   {
+      this.esbDestinationName = esbDestinationName;
+      return (this);
+   }
+
 
 }

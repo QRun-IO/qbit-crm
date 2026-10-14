@@ -41,8 +41,11 @@ import com.kingsrook.qbits.crm.deals.customizers.DealStageChangeCustomizer;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
 import com.kingsrook.qbits.crm.email.CrmEmailProcessIdentity;
+import com.kingsrook.qbits.crm.help.CrmHelpBundleStandIn;
 import com.kingsrook.qbits.crm.scoring.AutoAssignCustomizer;
+import com.kingsrook.qbits.crm.security.CrmDataPolicy;
 import com.kingsrook.qbits.crm.security.CrmPermissions;
+import com.kingsrook.qbits.crm.security.CrmRelationshipValidator;
 import com.kingsrook.qbits.crm.widgets.CrmWidgetMetaData;
 import com.kingsrook.qqq.backend.core.actions.customizers.MultiCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
@@ -113,6 +116,8 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       {
          join.setName(snakeCase(join.getName()));
       }
+      CrmDataPolicy.apply(metaDataProducerMultiOutput, qInstance, qBitConfig);
+      CrmIntegrations.apply(metaDataProducerMultiOutput, qBitConfig);
       for(QWidgetMetaData widget : metaDataProducerMultiOutput.getEach(QWidgetMetaData.class))
       {
          widget.setName(snakeCase(widget.getName()));
@@ -160,6 +165,11 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       for(QTableMetaData table : metaDataProducerMultiOutput.getEach(QTableMetaData.class))
       {
          String tableName = table.getName();
+         if(tableName.equals(Deal.TABLE_NAME) || tableName.equals(Activity.TABLE_NAME))
+         {
+            addOrComposeCustomizer(table, TableCustomizers.PRE_INSERT_RECORD, new QCodeReference(CrmRelationshipValidator.class));
+            addOrComposeCustomizer(table, TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(CrmRelationshipValidator.class));
+         }
          table.setPermissionRules(CrmPermissions.tableRules(tableName));
          table.setSourceQBitName(getQBitMetaData().getName());
          if(table.getSections() != null)
@@ -359,6 +369,7 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       }
       qInstance.withProcessLifecycleListener(new QCodeReference(CrmEmailProcessIdentity.class));
       registerHooks(qInstance);
+      CrmHelpBundleStandIn.apply(output);
       return (output);
    }
 

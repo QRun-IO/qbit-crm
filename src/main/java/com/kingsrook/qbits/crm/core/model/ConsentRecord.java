@@ -28,9 +28,11 @@ package com.kingsrook.qbits.crm.core.model;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmLegalBasis;
+import com.kingsrook.qbits.crm.privacy.CrmPersonalData.ErasureFlag;
 import com.kingsrook.qqq.backend.core.actions.ai.AiFieldMetaData;
 import com.kingsrook.qqq.backend.core.actions.ai.DataClassification;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
@@ -111,6 +113,12 @@ public class ConsentRecord extends QRecordEntity
       @Override
       public List<QRecord> apply(List<QRecord> records) throws QException
       {
+         if(updateInput != null && updateInput.hasFlag(ErasureFlag.REDACT_CONSENT)
+            && records.stream().allMatch(row -> Set.of("id", "consentText").containsAll(row.getValues().keySet())
+               && "erased".equals(row.getValueString("consentText"))))
+         {
+            return (records);
+         }
          throw new QUserFacingException("Consent records cannot be modified or deleted");
       }
    }
