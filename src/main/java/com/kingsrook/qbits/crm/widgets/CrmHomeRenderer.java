@@ -92,6 +92,8 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
       {
          case "crm_today":
             return (new RenderWidgetOutput(new ParentWidgetData().withChildWidgetNameList(CrmHomeWidgets.TODAY).withLabel("Today")));
+         case "crm_setup":
+            return (new RenderWidgetOutput(setup()));
          case "crm_open_pipeline":
             return (new RenderWidgetOutput(statistic(sum(DEAL, dealStatus(false), AMOUNT), true)));
          case "crm_won_month":
@@ -244,6 +246,22 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
                "label", Objects.toString(pipeline.getValue("name"), "Pipeline " + pipeline.getValueString("id")))).toList()));
       }
       return (data);
+   }
+
+
+   /*******************************************************************************
+    ** The Setup card: each piece of configuration the CRM needs, its state and the
+    ** next step, every cell linking to the table that fixes it.
+    *******************************************************************************/
+   private TableData setup() throws QException
+   {
+      List<Map<String, Object>> rows = new ArrayList<>();
+      for(CrmSetupStatus.Item item : CrmSetupStatus.load())
+      {
+         rows.add(row(AiLinkBuilder.filteredTableHref(item.tableName(), new QQueryFilter()), item.label(),
+            item.state().getLabel() + ": " + item.detail(), item.nextStep() == null ? "Nothing to do" : item.nextStep()));
+      }
+      return (table(rows, "Setup", "Status", "Next step"));
    }
 
 

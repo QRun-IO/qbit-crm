@@ -140,7 +140,7 @@ class CrmHomeWidgetsTest extends BaseTest
       {
          assertStatistic(name, "0");
       }
-      for(String name : CrmHomeWidgets.HOME.subList(1, CrmHomeWidgets.HOME.size()))
+      for(String name : CrmHomeWidgets.HOME.subList(1, CrmHomeWidgets.HOME.size()).stream().filter(name -> !name.equals("crm_setup")).toList())
       {
          TableData data = (TableData) render(name);
          assertThat(data.getRows()).hasSize(name.equals("crm_deal_forecast") ? 6 : 0);

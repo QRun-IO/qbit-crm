@@ -77,6 +77,16 @@ The shipped help bundle and health adapter are temporary core integration adapte
 
 Permissions are independent grants. Every CRM-produced table, process and widget has explicit `QPermissionRules` with `DenyBehavior.HIDDEN` and QBit provenance. `security.CrmPermissions.ALL` lists the grants for host administration and tests. The app and widget provenance adapters supply core's `SourceQBitAware` interface because RC.6's app and widget classes lack it.
 
+## Starter defaults
+
+Include `db/liquibase/qbit-crm/crm-defaults.changelog.sql` in the host changelog after the CRM schema:
+
+```yaml
+- include: { file: db/liquibase/qbit-crm/crm-defaults.changelog.sql }
+```
+
+It seeds, insert-only: the activity types and call/meeting outcomes; the default `Sales Pipeline` (Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100%, Closed Lost 0%); lifecycle stages (the code looks up `Lead` and `Opportunity` by name); lead sources (`Website` is the web-form default); industries; win and loss reasons (prefixed `Won:` / `Lost:` because names are unique); contact roles; and a USD base currency. Lists are seeded only while empty, so a configured host is unchanged. Tenant-enabled hosts seed per tenant (the changelog skips tenant-keyed tables). The Setup card on the CRM home shows what is still missing.
+
 ## Tables
 
 All 34 table names and table-backed possible-value sources use `crm_` snake_case. The 23 enum possible-value sources retain their enum names. Relationship columns have indexes; the reference DDL does not impose foreign-key constraints or host-specific tenant columns. Unique constraints match the current QQQ metadata.

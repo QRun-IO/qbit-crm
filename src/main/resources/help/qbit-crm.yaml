@@ -5,59 +5,85 @@ entries:
   - key: app:crm;slot:help
     summary: "Manage relationships, sales opportunities and consent."
     content: |
-      Use **Contacts**, **Companies**, **Deals**, **Activities**, **Web Leads** and **Lists** for daily work. Configure pipelines, outcomes and outreach in Settings. Marketing email requires recorded consent and a ready email transport.
+      Use **Contacts**, **Companies**, **Deals**, **Activities**, **Web Leads** and **Lists** for daily work. The Setup card on this page shows what still needs configuring: the default pipeline and its stages, lifecycle stages, the base currency and email delivery. A new installation starts with a Sales Pipeline, lifecycle stages, lead sources, industries, win and loss reasons, contact roles, activity outcomes and a USD base currency. Configure pipelines, outcomes and outreach in Settings. Marketing email requires recorded consent and a ready email transport.
   - key: table:crm_job_state;slot:help
     summary: "Internal maintenance checkpoints."
     content: |
       Internal maintenance checkpoints. Health checks use the last successful lead-score run.
+
+      **How rows get created:** the CRM writes it: each scheduled maintenance run (lead scoring, deal notifications) saves its checkpoint here. You never add rows; leave them alone, as the health checks read them.
   - key: table:crm_external_mapping;slot:help
     summary: "Links between CRM records and identifiers in external systems."
     content: |
-      Links between CRM records and identifiers in external systems. Keep each system mapping unique.
+      Links between CRM records and identifiers in external systems. Keep each record and system pair unique.
+
+      **How rows get created:** not used yet: nothing in the CRM writes these rows, no sync reads them, and the table is not in the navigation. It is a reserved place for a host integration to record which external id a contact, company or deal has (one row per record and system). Erasing a contact deletes its mappings.
   - key: table:crm_assignment_rule;slot:help
     summary: "Rules for selecting the owner of a new contact or deal."
     content: |
       Rules for selecting the owner of a new contact or deal.
+
+      **How rows get created:** an administrator adds a rule with New (what it applies to, the criteria and a strategy: Specific User, Round Robin or Least Active); the users who may receive work go under Members. Without a rule, new contacts and deals keep the owner they were created with. The qbit seeds none because the users are yours.
   - key: table:crm_assignment_rule_member;slot:help
     summary: "Users eligible for a group assignment rule."
     content: |
       Users eligible for a group assignment rule. Membership determines who can receive assigned work.
+
+      **How rows get created:** an administrator adds the users who can receive work under a rule, from the rule's record. A rule with no members assigns nothing.
   - key: table:crm_lead_score_rule;slot:help
     summary: "Conditions that add or subtract lead-score points."
     content: |
       Conditions that add or subtract lead-score points. Review rule order and decay behavior.
+
+      **How rows get created:** an administrator adds each rule with New (entity, the field to test, an operator, a value and the score adjustment, positive or negative). Calculate lead scores applies them on its schedule, and Recalculate Score on a contact applies them now. The qbit seeds none because good scoring depends on your business.
   - key: table:crm_sales_goal;slot:help
     summary: "Revenue targets for a user and period, optionally limited to a pipeline."
     content: |
       Revenue targets for a user and period, optionally limited to a pipeline.
+
+      **How rows get created:** an administrator adds a target for a user and period with New, optionally for one pipeline. The Goals card on the home compares each target with the deals won in that period. The qbit seeds none because targets are yours.
   - key: table:crm_email_message;slot:help
     summary: "Delivery information and content for an email associated with a contact or activity."
     content: |
       Delivery information and content for an email associated with a contact or activity.
+
+      **How rows get created:** the CRM writes it: every email it sends or receives for a contact (sequence steps, list mail, replies) is stored here with its delivery status, and shows on the contact's timeline. You do not add rows by hand.
   - key: table:crm_email_sequence;slot:help
     summary: "Ordered outreach steps."
     content: |
       Ordered outreach steps. Activate only after reviewing the steps, timing and email consent requirements.
+
+      **How rows get created:** an administrator creates a sequence with New, then adds its steps. Contacts join it with the Enroll in Sequence action. Activate it only after the steps, timing and templates are reviewed. The qbit seeds none because the copy is yours.
   - key: table:crm_email_template;slot:help
     summary: "Reusable email subject and content."
     content: |
       Reusable email subject and content. Review merged content before sending to recipients.
+
+      **How rows get created:** an administrator writes each template with New (name, subject and body, with merge fields). Sequence steps and sends pick templates from here. The qbit seeds none because the wording is yours.
   - key: table:crm_sequence_enrollment;slot:help
     summary: "A contact enrolled in a sequence, with progress, status and next scheduled step."
     content: |
       A contact enrolled in a sequence, with progress, status and next scheduled step.
+
+      **How rows get created:** the Enroll in Sequence action creates a row for each contact, and the scheduled Process sequence steps job advances it. Unenroll from Sequence and erasing the contact end it. You do not add rows by hand.
   - key: table:crm_sequence_step;slot:help
     summary: "One timed action in an outreach sequence."
     content: |
       One timed action in an outreach sequence. Email steps require a usable template and transport.
+
+      **How rows get created:** an administrator adds steps from the sequence record: a type (Email, Call, Task or Wait), a delay and, for email steps, a template. Steps run in order for each enrolled contact.
   - key: table:crm_contact_role;slot:help
     summary: "Roles a contact can play in a deal or relationship."
     content: |
       Roles a contact can play in a deal or relationship.
+
+      **How rows get created:** the qbit seeds six roles (Decision Maker, Champion, Influencer, Economic Buyer, Technical Evaluator, End User). Add or retire your own with New. They are offered when you attach a contact to a deal.
   - key: table:crm_deal;slot:help
     summary: "Sales opportunities tracked through a pipeline."
     content: |
       Sales opportunities tracked through a pipeline. Select a pipeline before choosing its stage.
+
+      **How rows get created:** a person adds one with New (pick the pipeline first, then its stage), or Create Deal on a contact (Convert lead) creates one in the default pipeline. Move Stage, Mark Won, Mark Lost and Reopen are actions on the deal. Amounts convert to the base currency.
   - key: table:crm_deal;field:id
     summary: "System-assigned record identifier."
     content: |
@@ -154,34 +180,50 @@ entries:
     summary: "Contacts involved in a deal, with their relationship or role."
     content: |
       Contacts involved in a deal, with their relationship or role.
+
+      **How rows get created:** a person attaches a contact to a deal with the Add Contact action on the deal, choosing a role. Create Deal (Convert lead) and Clone also create rows. Merging contacts re-points them.
   - key: table:crm_deal_product;slot:help
     summary: "Product quantities and prices on a deal."
     content: |
       Product quantities and prices on a deal. Changes recalculate the deal total.
+
+      **How rows get created:** a person adds a product line from the deal's record. Changing a line recalculates the deal's amount. Clone copies the lines.
   - key: table:crm_deal_stage_history;slot:help
     summary: "The history of a deal moving between pipeline stages."
     content: |
       The history of a deal moving between pipeline stages.
+
+      **How rows get created:** the CRM writes it: a row is added when a deal is created and every time it changes stage (including won, lost and reopen), with the time spent in the previous stage. You do not add rows by hand.
   - key: table:crm_pipeline;slot:help
     summary: "Sales pipelines that group stages."
     content: |
       Sales pipelines that group stages. Give each pipeline a clear purpose and ordered stages.
+
+      **How rows get created:** the qbit seeds one default pipeline, Sales Pipeline, when you have none. Add more with New and tick Default on the one new deals and converted leads should use. Create Deal (Convert lead) fails without a default pipeline that has stages.
   - key: table:crm_pipeline_stage;slot:help
     summary: "Ordered stages within a pipeline, with probability, required fields and won or lost outcomes."
     content: |
       Ordered stages within a pipeline, with probability, required fields and won or lost outcomes.
+
+      **How rows get created:** the qbit seeds six stages for Sales Pipeline: Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100% and Closed Lost 0%. Add the stages of other pipelines from the pipeline's record. Tick Closed Won and Closed Lost on the stages that end a deal: the home, goals and forecasts count from them.
   - key: table:crm_product;slot:help
     summary: "Products and services available as deal line items."
     content: |
       Products and services available as deal line items. Check price and currency before adding to a deal.
+
+      **How rows get created:** an administrator adds each product or service with New (name, price, currency). Deal product lines pick from this catalogue. The qbit seeds none because the catalogue is yours.
   - key: table:crm_win_loss_reason;slot:help
     summary: "Reasons for winning or losing a deal."
     content: |
       Reasons for winning or losing a deal. Use these to improve pipeline reporting.
+
+      **How rows get created:** the qbit seeds three won reasons (Price, Product fit, Relationship) and five lost ones (Price, Competitor, No budget, No decision, Timing), each prefixed Won: or Lost:. Add your own with New. A user picks one when marking a deal won or lost.
   - key: table:crm_company;slot:help
     summary: "Organizations linked to contacts and deals."
     content: |
       Organizations linked to contacts and deals. Use domain to distinguish similarly named companies.
+
+      **How rows get created:** a person adds one with New, an import creates them, or Merge Companies keeps one. Contacts and deals link to it by company.
   - key: table:crm_company;field:id
     summary: "System-assigned record identifier."
     content: |
@@ -282,10 +324,14 @@ entries:
     summary: "Immutable evidence of a consent decision."
     content: |
       Immutable evidence of a consent decision. Record withdrawals as new records; erasure redacts evidence text.
+
+      **How rows get created:** the CRM writes it: subscribing to a list, a web form with consent, an unsubscribe or a withdrawal each add a row of evidence. Records are never edited. You do not add rows by hand.
   - key: table:crm_contact;slot:help
     summary: "People and their relationship with your organization."
     content: |
       People and their relationship with your organization. Check consent before sending marketing email.
+
+      **How rows get created:** a person adds one with New, an import or bulk load creates them, a web form creates one when you convert a web lead, and Merge Contacts keeps one. Set the lifecycle stage and lead source from the lists in Settings.
   - key: table:crm_contact;field:firstTouchUtmSource
     summary: "First-touch campaign attribution: first touch utm source."
     content: |
@@ -486,10 +532,14 @@ entries:
     summary: "Currency codes and exchange rates used to report deal values in a base currency."
     content: |
       Currency codes and exchange rates used to report deal values in a base currency.
+
+      **How rows get created:** the qbit seeds US Dollar as the base currency (rate 1) when you have none. Add other currencies with New and a rate to the base; changing a rate stamps Rate last updated. Change the base before your first deal if you do not report in USD. Without a base currency, amounts have no prefix and conversion does nothing.
   - key: table:crm_email_list;slot:help
     summary: "Mailing lists and opt-in settings."
     content: |
       Mailing lists and opt-in settings. List membership alone does not grant permission to send marketing email.
+
+      **How rows get created:** an administrator creates a list with New (name, and whether joining needs confirmation). Members join through the Add to List action or a web form. Joining a list is not consent to marketing email on its own.
   - key: table:crm_email_list;field:listKey
     summary: "A stable integration key used by hosts to subscribe people to this list."
     content: |
@@ -550,10 +600,14 @@ entries:
     summary: "A contact or email address in a list, including opt-in state and confirmation evidence."
     content: |
       A contact or email address in a list, including opt-in state and confirmation evidence.
+
+      **How rows get created:** the Add to List and Remove from List actions, web forms and the public subscribe call write it, one row per contact or address and list. Merging contacts and expiring consent update it. You do not add rows by hand.
   - key: table:crm_form_submission;slot:help
     summary: "Web leads captured from forms, including consent evidence and attribution."
     content: |
       Web leads captured from forms, including consent evidence and attribution. Convert a lead to link a contact.
+
+      **How rows get created:** the host's public intake call writes one for each web form that arrives (contact us, sign-up, demo request). Convert to Contact turns it into a contact and links it. You do not add rows by hand.
   - key: table:crm_form_submission;field:formKey
     summary: "The stable host-defined identifier for the form that captured this submission."
     content: |
@@ -674,18 +728,26 @@ entries:
     summary: "Industry categories for companies."
     content: |
       Industry categories for companies. Choose one that describes the primary business.
+
+      **How rows get created:** the qbit seeds ten generic industries (Technology, Healthcare and so on). Add or retire your own with New. A company picks one.
   - key: table:crm_lead_source;slot:help
     summary: "Where a contact or deal originated."
     content: |
       Where a contact or deal originated. Use consistent categories for attribution reports.
+
+      **How rows get created:** the qbit seeds eight sources: Website (the one web forms use), Referral, Event, Email Campaign, Social, Partner, Cold Outreach and Other. Add your own with New. Contacts and deals pick one for attribution reports.
   - key: table:crm_lifecycle_stage;slot:help
     summary: "Lifecycle categories for contacts, such as lead and customer."
     content: |
       Lifecycle categories for contacts, such as lead and customer.
+
+      **How rows get created:** the qbit seeds eight stages: Subscriber, Lead, Marketing Qualified Lead, Sales Qualified Lead, Opportunity, Customer, Evangelist and Other. Keep the names Lead and Opportunity exactly: new web leads get Lead, and Create Deal (Convert lead) moves the contact to Opportunity. A missing one is skipped silently.
   - key: table:crm_activity;slot:help
     summary: "Past interactions with contacts, companies and deals."
     content: |
       Past interactions with contacts, companies and deals. Use collaboration tasks for future work.
+
+      **How rows get created:** a person logs a call, meeting, email or note with the Log Activity action on a contact, company or deal, or New. Web forms and sequence steps also write them. Logging one updates the last-activity dates of what it links to.
   - key: table:crm_activity;field:id
     summary: "System-assigned record identifier."
     content: |
@@ -794,14 +856,20 @@ entries:
     summary: "The result of an activity."
     content: |
       The result of an activity. Only outcomes belonging to the selected activity type are offered.
+
+      **How rows get created:** the qbit seeds Connected, Left voicemail and No answer for calls and Meeting held and Meeting no-show for meetings. Add your own with New, choosing the activity type it belongs to.
   - key: table:crm_activity_participant;slot:help
     summary: "People participating in a recorded activity and their roles."
     content: |
       People participating in a recorded activity and their roles.
+
+      **How rows get created:** a person adds the people on an activity from the activity's record. The CRM does not add them for you, so it stays empty until someone does.
   - key: table:crm_activity_type;slot:help
     summary: "Types of interaction such as calls, meetings and notes."
     content: |
       Types of interaction such as calls, meetings and notes. Outcomes are scoped to a type.
+
+      **How rows get created:** the qbit seeds Note, Email, Call, Meeting, Form submission and Sequence step, and the CRM adds any that are missing the first time it needs them. Add your own with New.
   - key: possibleValueSource:CrmActivityPriority;slot:help
     summary: "Available activity priority values."
     content: |
