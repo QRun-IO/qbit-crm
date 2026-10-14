@@ -1,0 +1,128 @@
+[
+  {
+    "label": "CRM Contacts - Generic CSV",
+    "tableName": "crm_contact",
+    "mapping": {
+      "version": "1",
+      "layout": "FLAT",
+      "hasHeaderRow": true,
+      "isBulkEdit": false,
+      "fieldList": [
+        {
+          "fieldName": "firstName",
+          "headerName": "First Name",
+          "columnIndex": 0
+        },
+        {
+          "fieldName": "lastName",
+          "headerName": "Last Name",
+          "columnIndex": 1
+        },
+        {
+          "fieldName": "email",
+          "headerName": "Email",
+          "columnIndex": 2
+        },
+        {
+          "fieldName": "phone",
+          "headerName": "Phone",
+          "columnIndex": 3
+        },
+        {
+          "fieldName": "companyId",
+          "headerName": "Company",
+          "columnIndex": 4
+        },
+        {
+          "fieldName": "jobTitle",
+          "headerName": "Job Title",
+          "columnIndex": 5
+        }
+      ]
+    }
+  },
+  {
+    "label": "CRM Companies - Generic CSV",
+    "tableName": "crm_company",
+    "mapping": {
+      "version": "1",
+      "layout": "FLAT",
+      "hasHeaderRow": true,
+      "isBulkEdit": false,
+      "fieldList": [
+        {
+          "fieldName": "name",
+          "headerName": "Company",
+          "columnIndex": 0
+        },
+        {
+          "fieldName": "domain",
+          "headerName": "Domain",
+          "columnIndex": 1
+        },
+        {
+          "fieldName": "phone",
+          "headerName": "Phone",
+          "columnIndex": 2
+        },
+        {
+          "fieldName": "addressLine1",
+          "headerName": "Address",
+          "columnIndex": 3
+        },
+        {
+          "fieldName": "city",
+          "headerName": "City",
+          "columnIndex": 4
+        },
+        {
+          "fieldName": "postalCode",
+          "headerName": "Postal Code",
+          "columnIndex": 5
+        }
+      ]
+    }
+  },
+  {
+    "label": "CRM Deals - Generic CSV",
+    "tableName": "crm_deal",
+    "mapping": {
+      "version": "1",
+      "layout": "FLAT",
+      "hasHeaderRow": true,
+      "isBulkEdit": false,
+      "fieldList": [
+        {
+          "fieldName": "name",
+          "headerName": "Deal",
+          "columnIndex": 0
+        },
+        {
+          "fieldName": "companyId",
+          "headerName": "Company",
+          "columnIndex": 1
+        },
+        {
+          "fieldName": "pipelineId",
+          "headerName": "Pipeline",
+          "columnIndex": 2
+        },
+        {
+          "fieldName": "pipelineStageId",
+          "headerName": "Stage",
+          "columnIndex": 3
+        },
+        {
+          "fieldName": "amount",
+          "headerName": "Amount",
+          "columnIndex": 4
+        },
+        {
+          "fieldName": "currencyCode",
+          "headerName": "Currency",
+          "columnIndex": 5
+        }
+      ]
+    }
+  }
+]
