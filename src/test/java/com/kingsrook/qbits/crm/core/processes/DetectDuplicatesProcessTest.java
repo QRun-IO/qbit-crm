@@ -29,11 +29,10 @@ package com.kingsrook.qbits.crm.core.processes;
 import com.kingsrook.qbits.crm.BaseTest;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,11 +61,11 @@ class DetectDuplicatesProcessTest extends BaseTest
       ////////////////////////////////////
       // run detect duplicates          //
       ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(DetectDuplicatesProcess.NAME);
       processInput.addValue("entityType", "CONTACT");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals(1, processOutput.getValues().get("duplicateGroupCount"));
       assertEquals(1, processOutput.getRecords().size());
@@ -85,11 +84,11 @@ class DetectDuplicatesProcessTest extends BaseTest
       insertCompany("Corp B", "dupe.com");
       insertCompany("Corp C", "unique.com");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(DetectDuplicatesProcess.NAME);
       processInput.addValue("entityType", "COMPANY");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals(1, processOutput.getValues().get("duplicateGroupCount"));
    }
@@ -105,11 +104,11 @@ class DetectDuplicatesProcessTest extends BaseTest
       insertContact("one@example.com", "One", "User");
       insertContact("two@example.com", "Two", "User");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(DetectDuplicatesProcess.NAME);
       processInput.addValue("entityType", "CONTACT");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals(0, processOutput.getValues().get("duplicateGroupCount"));
       assertTrue(processOutput.getRecords().isEmpty());

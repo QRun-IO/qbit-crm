@@ -32,12 +32,11 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmAssignStrategy;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAssignableEntity;
 import com.kingsrook.qbits.crm.scoring.model.AssignmentRule;
 import com.kingsrook.qbits.crm.scoring.model.AssignmentRuleMember;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
@@ -80,7 +79,7 @@ class AutoAssignProcessTest extends BaseTest
       /////////////////////////////////////////////
       // run auto-assign                         //
       /////////////////////////////////////////////
-      RunProcessOutput processOutput = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput processOutput = runAutoAssign("CONTACT", contactId);
 
       assertEquals("ASSIGNED", processOutput.getValues().get("action"));
       assertEquals("sales-lead-001", processOutput.getValues().get("assignedUserId"));
@@ -136,7 +135,7 @@ class AutoAssignProcessTest extends BaseTest
       // first contact should go to user-A       //
       /////////////////////////////////////////////
       Integer contactId1 = insertContact("Bob", "First");
-      RunProcessOutput output1 = runAutoAssign("CONTACT", contactId1);
+      RunBackendStepOutput output1 = runAutoAssign("CONTACT", contactId1);
       assertEquals("ASSIGNED", output1.getValues().get("action"));
       assertEquals("user-A", output1.getValues().get("assignedUserId"));
 
@@ -144,7 +143,7 @@ class AutoAssignProcessTest extends BaseTest
       // second contact should go to user-B      //
       /////////////////////////////////////////////
       Integer contactId2 = insertContact("Carol", "Second");
-      RunProcessOutput output2 = runAutoAssign("CONTACT", contactId2);
+      RunBackendStepOutput output2 = runAutoAssign("CONTACT", contactId2);
       assertEquals("ASSIGNED", output2.getValues().get("action"));
       assertEquals("user-B", output2.getValues().get("assignedUserId"));
    }
@@ -159,7 +158,7 @@ class AutoAssignProcessTest extends BaseTest
    {
       Integer contactId = insertContact("Eve", "NoRule");
 
-      RunProcessOutput processOutput = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput processOutput = runAutoAssign("CONTACT", contactId);
 
       assertEquals("NO_MATCH", processOutput.getValues().get("action"));
 
@@ -194,13 +193,13 @@ class AutoAssignProcessTest extends BaseTest
    /***************************************************************************
     ** Helper: run the auto-assign process.
     ***************************************************************************/
-   private RunProcessOutput runAutoAssign(String entityType, Integer recordId) throws QException
+   private RunBackendStepOutput runAutoAssign(String entityType, Integer recordId) throws QException
    {
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(AutoAssignProcess.NAME);
       processInput.addValue("entityType", entityType);
       processInput.addValue("recordId", recordId);
-      return (new RunProcessAction().execute(processInput));
+      return (runBusinessStep(processInput));
    }
 
 }

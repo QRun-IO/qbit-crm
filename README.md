@@ -90,35 +90,56 @@ Contact, company, deal and activity declare core FIELD-level audit rules. The be
 
 ## Processes
 
-The QBit produces 25 processes with these names and labels. QQQ may additionally generate standard table actions such as `<table>.bulkInsert`; those retain core's naming conventions. CRM processes are available to host wiring and are not registered as scheduled jobs.
+The QBit produces 28 table-bound record actions. Every action uses the standard
+streamed ETL Review and Result screens with linked summary lines. Required inputs
+are collected before Review. Processes never appear in app navigation. Find
+Duplicates scans the selected records (select all matching records to scan the
+table); each duplicate group links to its members. Merges require exactly two
+selected records and a choice of which record to keep.
 
-| Process name | Label |
-|---|---|
-| `crm_auto_assign` | Auto Assign |
-| `crm_bulk_assign_owner` | Bulk Assign Owner |
-| `crm_calculate_lead_scores` | Calculate Lead Scores |
-| `crm_clone_deal` | Clone Deal |
-| `crm_convert_form_to_contact` | Convert Form to Contact |
-| `crm_convert_lead` | Convert Lead |
-| `crm_detect_duplicates` | Detect Duplicates |
-| `crm_enroll_in_sequence` | Enroll in Sequence |
-| `crm_fire_reminders` | Fire Reminders |
-| `crm_gdpr_anonymize_contact` | GDPR Anonymize Contact |
-| `crm_import_contacts` | Import Contacts |
-| `crm_log_activity` | Log Activity |
-| `crm_manage_contact_on_deal` | Manage Contact on Deal |
-| `crm_merge_companies` | Merge Companies |
-| `crm_merge_contacts` | Merge Contacts |
-| `crm_move_deal_stage` | Move Deal Stage |
-| `crm_process_overdue_tasks` | Process Overdue Tasks |
-| `crm_process_sequence_steps` | Process Sequence Steps |
-| `crm_reopen_deal` | Reopen Deal |
-| `crm_send_email` | Send Email |
-| `crm_subscribe_to_list` | Subscribe to List |
-| `crm_track_email_event` | Track Email Event |
-| `crm_transfer_ownership` | Transfer Ownership |
-| `crm_unenroll_from_sequence` | Unenroll from Sequence |
-| `crm_unsubscribe_from_list` | Unsubscribe from List |
+| Table | Process name | Label |
+|---|---|---|
+| `crm_contact` | `crm_bulk_assign_owner` | Assign Owner |
+| `crm_contact` | `crm_auto_assign` | Auto-Assign |
+| `crm_contact` | `crm_subscribe_to_list` | Add to List |
+| `crm_contact` | `crm_unsubscribe_from_list` | Remove from List |
+| `crm_contact` | `crm_enroll_in_sequence` | Enroll in Sequence |
+| `crm_contact` | `crm_unenroll_from_sequence` | Unenroll from Sequence |
+| `crm_contact` | `crm_log_activity` | Log Activity |
+| `crm_contact` | `crm_recalculate_score` | Recalculate Score |
+| `crm_contact` | `crm_merge_contacts` | Merge Contacts |
+| `crm_contact` | `crm_detect_duplicates` | Find Duplicates |
+| `crm_contact` | `crm_convert_lead` | Create Deal |
+| `crm_contact` | `crm_gdpr_anonymize_contact` | Erase Personal Data |
+| `crm_contact` | `crm_send_email` | Send Email |
+| `crm_company` | `crm_assign_company_owner` | Assign Owner |
+| `crm_company` | `crm_merge_companies` | Merge Companies |
+| `crm_company` | `crm_find_duplicate_companies` | Find Duplicates |
+| `crm_company` | `crm_log_company_activity` | Log Activity |
+| `crm_deal` | `crm_move_deal_stage` | Move Stage |
+| `crm_deal` | `crm_mark_deal_won` | Mark Won |
+| `crm_deal` | `crm_mark_deal_lost` | Mark Lost |
+| `crm_deal` | `crm_reopen_deal` | Reopen |
+| `crm_deal` | `crm_clone_deal` | Clone |
+| `crm_deal` | `crm_transfer_ownership` | Assign Owner |
+| `crm_deal` | `crm_manage_contact_on_deal` | Add Contact |
+| `crm_deal` | `crm_log_deal_activity` | Log Activity |
+| `crm_form_submission` | `crm_convert_form_to_contact` | Convert to Contact |
+| `crm_email_sequence` | `crm_activate_sequence` | Activate |
+| `crm_email_sequence` | `crm_pause_sequence` | Pause |
+
+Move Stage and Reopen choose a stage from the selected deals' pipeline. Select
+one pipeline at a time for those actions. Mark Won and Mark Lost require a
+win/loss reason and resolve the terminal stage within each deal's pipeline.
+
+Two hidden background processes have no table binding: `crm_process_sequence_steps`
+and `crm_calculate_lead_scores`. Both use id keyset pages of 200. They have no
+shipped schedules yet; the host can invoke them. QQQ also generates standard
+bulk-load and bulk-edit actions such as `<table>.bulkInsert`.
+
+Fire Reminders and Process Overdue Tasks were removed in favor of collaboration
+tasks and alerts. Import Contacts was removed in favor of core bulk load. Track
+Email Event was removed in favor of the later delivery sync.
 
 ## Current behavior and limits
 
@@ -126,17 +147,18 @@ The existing pipeline/stage logic, stage history, product totals, currency conve
 
 The contact Timeline shows the latest fifty recorded events from activities, email messages, form submissions and consent, newest first by creation date. Native child lists connect all specified parent screens. Deal primary-contact and email-message contact references are included in the fresh-install schema. The trend widgets, redundant recent-deals/activity-count widgets and activity feed have been retired.
 
-Some process names describe unfinished behavior inherited from 0.1.0:
+Later phases complete the following behavior:
 
-- Send Email and sequence email steps record CRM activity/message state; they do not deliver email. Template merging and live delivery tracking are not implemented here.
-- Sequence execution, lead scoring and overdue-task work require host invocation. No schedules are shipped. Assignment is a process, not an automatic insert hook; reminders do not deliver notifications.
-- Scoring's date-decay operators remain unimplemented. Import Contacts expects pre-parsed input and does not provide the planned streamed bulk-load workflow.
+- Send Email is a non-sending action shell. It checks for `CrmEmailTransport` with `Class.forName` and reports **Email sending arrives with the email transport** when absent. It never writes a fake sent message or activity. If the class is present, the shell reports that action integration is still pending. Sequence email steps retain the existing activity-only behavior until transport integration.
+- Sequence execution and lead scoring require host invocation. No schedules are shipped. Assignment remains an action; automatic insert hooks, collaboration and alert integration arrive later.
+- Activate/Pause update the sequence active flag. The existing sequence runner's business logic is preserved in P2B and does not yet consult that flag; enforcing it during execution is a follow-up.
+- Scoring's date-decay operators remain unimplemented. Core bulk load is the import path; saved CRM import profiles arrive later.
 - GDPR anonymization scrubs the contact, unenrolls sequences and records withdrawn consent. It does not yet erase all linked PII or core audit details. The P1 schema retains existing PII fields; classification, complete erasure and redesigned tenancy are later work.
 
-The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and the remaining P2 actions/security/integration work are not part of this phase.
+The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and the remaining P2 security/integration work are not part of this phase.
 
 ## Source layout
 
-`CrmQBitProducer` discovers entity, process and widget producers. `core/` holds contacts, companies, forms, lists and consent; `deals/`, `activities/`, `email/` and `scoring/` hold their respective metadata and behavior. `security/` defines permissions, `sync/` holds external mappings and currency utilities, and `widgets/` contains widget producers/renderers. SQL is shipped under `src/main/resources/db/liquibase/qbit-crm/`.
+`CrmQBitProducer` discovers entity, process and widget producers. `core/` holds contacts, companies, forms, lists and consent; `deals/`, `activities/`, `email/` and `scoring/` hold their respective metadata and behavior. `actions/` defines the streamed record actions and their inputs/summaries. `security/` defines permissions, `sync/` holds external mappings and currency utilities, and `widgets/` contains widget producers/renderers. SQL is shipped under `src/main/resources/db/liquibase/qbit-crm/`.
 
 Licensed under [Apache License 2.0](LICENSE).

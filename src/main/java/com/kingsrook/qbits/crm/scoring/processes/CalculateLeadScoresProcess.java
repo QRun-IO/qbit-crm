@@ -80,6 +80,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
    {
       return new QProcessMetaData()
          .withName(NAME)
+         .withIsHidden(true)
          .withLabel("Calculate Lead Scores")
          .withIcon(new QIcon().withName("score"))
          // Scheduling is configured by the host application via ScheduledJob records
@@ -114,7 +115,7 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       ///////////////////////////////////////////////////////////////
       // paginate through all contacts to avoid OOM on large CRMs //
       ///////////////////////////////////////////////////////////////
-      int pageSize     = 500;
+      int pageSize     = 200;
       int updatedCount = 0;
       int totalContacts = 0;
       Integer lastId   = null;
@@ -140,38 +141,12 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
 
          for(QRecord contactRecord : contactsQuery.getRecords())
          {
-            Contact contact = new Contact(contactRecord);
             totalContacts++;
-            int newScore = 0;
-
-            ///////////////////////////////////////////////
-            // evaluate each rule against the contact    //
-            ///////////////////////////////////////////////
-            for(LeadScoreRule rule : rules)
+            if(recalculate(contactRecord, rules))
             {
-               if(evaluateRule(rule, contactRecord))
-               {
-                  newScore += rule.getScoreAdjustment();
-               }
-            }
-
-            ///////////////////////////////////////////////
-            // update only if score changed              //
-            ///////////////////////////////////////////////
-            Integer currentScore = contact.getLeadScore() != null ? contact.getLeadScore() : 0;
-            if(!Objects.equals(currentScore, newScore))
-            {
-               QRecord updateRecord = new QRecord()
-                  .withValue("id", contact.getId())
-                  .withValue("leadScore", newScore);
-
-               new UpdateAction().execute(
-                  new UpdateInput(Contact.TABLE_NAME).withRecord(updateRecord));
-
                updatedCount++;
             }
-
-            lastId = contact.getId();
+            lastId = contactRecord.getValueInteger("id");
          }
 
          /////////////////////////////////////////////
@@ -188,6 +163,41 @@ public class CalculateLeadScoresProcess implements BackendStep, MetaDataProducer
       output.addValue("totalRules", rules.size());
    }
 
+
+
+   /*******************************************************************************
+    ** Recalculate only the selected contact using the same rules as the job.
+    *******************************************************************************/
+   public void recalculate(QRecord contact) throws QException
+   {
+      List<LeadScoreRule> rules = new QueryAction().execute(new QueryInput(LeadScoreRule.TABLE_NAME)
+         .withFilter(new QQueryFilter(new QFilterCriteria("isActive", QCriteriaOperator.EQUALS, true))
+            .withOrderBy(new QFilterOrderBy("sortOrder")))).getRecords().stream().map(LeadScoreRule::new).toList();
+      recalculate(contact, rules);
+   }
+
+   /*******************************************************************************
+    ** Write only changed scores; return whether a write was needed.
+    *******************************************************************************/
+   private boolean recalculate(QRecord contact, List<LeadScoreRule> rules) throws QException
+   {
+      int score = 0;
+      for(LeadScoreRule rule : rules)
+      {
+         if(evaluateRule(rule, contact))
+         {
+            score += rule.getScoreAdjustment();
+         }
+      }
+      Integer current = contact.getValueInteger("leadScore");
+      if(Objects.equals(current == null ? 0 : current, score))
+      {
+         return (false);
+      }
+      new UpdateAction().execute(new UpdateInput(Contact.TABLE_NAME)
+         .withRecord(new QRecord().withValue("id", contact.getValue("id")).withValue("leadScore", score)));
+      return (true);
+   }
 
 
    /***************************************************************************

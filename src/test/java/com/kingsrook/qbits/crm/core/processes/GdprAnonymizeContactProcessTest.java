@@ -31,13 +31,12 @@ import com.kingsrook.qbits.crm.core.model.ConsentRecord;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
@@ -69,11 +68,11 @@ class GdprAnonymizeContactProcessTest extends BaseTest
       ////////////////////////////////////
       // run the anonymize process      //
       ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(GdprAnonymizeContactProcess.NAME);
       processInput.addValue("contactId", contactId);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertTrue((Boolean) processOutput.getValues().get("anonymized"));
 

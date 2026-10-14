@@ -33,11 +33,10 @@ import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import org.junit.jupiter.api.Test;
@@ -69,12 +68,12 @@ class TransferOwnershipProcessTest extends BaseTest
       ////////////////////////////////////
       // run transfer process           //
       ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(TransferOwnershipProcess.NAME);
       processInput.addValue("fromUserId", "user-old");
       processInput.addValue("toUserId", "user-new");
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       /////////////////////////////////////////////
       // verify contact updated                  //

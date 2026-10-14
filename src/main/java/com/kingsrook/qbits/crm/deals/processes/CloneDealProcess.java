@@ -29,7 +29,6 @@ package com.kingsrook.qbits.crm.deals.processes;
 
 
 import java.time.Instant;
-import java.util.List;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
@@ -50,46 +49,14 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for cloning a deal and its child records.
+ ** Backend operation used by the streamed CRM actions for cloning a deal and its child records.
  *******************************************************************************/
-public class CloneDealProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class CloneDealProcess implements BackendStep
 {
    public static final String NAME = "crm_clone_deal";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Clone Deal")
-         .withTableName(Deal.TABLE_NAME)
-         .withIcon(new QIcon().withName("content_copy"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(CloneDealProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("dealId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

@@ -34,13 +34,12 @@ import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -83,13 +82,13 @@ class ConvertLeadProcessTest extends BaseTest
       ///////////////////////////////////////////
       // run the conversion process            //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ConvertLeadProcess.NAME);
       processInput.addValue("contactId", contactId);
       processInput.addValue("dealName", "Jane's Opportunity");
       processInput.addValue("dealAmount", new BigDecimal("25000"));
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       Integer dealId = processOutput.getValueInteger("dealId");
       assertNotNull(dealId);
@@ -143,13 +142,13 @@ class ConvertLeadProcessTest extends BaseTest
 
       Integer contactId = insertContact("Bob", "Lead", "bob@example.com", null);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ConvertLeadProcess.NAME);
       processInput.addValue("contactId", contactId);
       processInput.addValue("pipelineId", customPipelineId);
       processInput.addValue("dealName", "Bob's Custom Deal");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       Integer dealId = processOutput.getValueInteger("dealId");
       Deal deal = new Deal(GetAction.execute(Deal.TABLE_NAME, dealId));
@@ -171,12 +170,12 @@ class ConvertLeadProcessTest extends BaseTest
 
       Integer contactId = insertContact("Alice", "NoAmount", "alice@example.com", null);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ConvertLeadProcess.NAME);
       processInput.addValue("contactId", contactId);
       processInput.addValue("dealName", "Alice Deal");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       Integer dealId = processOutput.getValueInteger("dealId");
       Deal deal = new Deal(GetAction.execute(Deal.TABLE_NAME, dealId));

@@ -50,52 +50,19 @@ import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutp
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.utils.JsonUtils;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for moving a deal to a new pipeline stage.
+ ** Backend operation used by the streamed CRM actions for moving a deal to a new pipeline stage.
  ** Enforces stage-belongs-to-pipeline validation, required field gating,
  ** weighted amount recalculation, close-date stamping, and stage history
  ** tracking.
  *******************************************************************************/
-public class MoveDealStageProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class MoveDealStageProcess implements BackendStep
 {
    public static final String NAME = "crm_move_deal_stage";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Move Deal Stage")
-         .withTableName(Deal.TABLE_NAME)
-         .withIcon(new QIcon().withName("swap_horiz"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(MoveDealStageProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("dealId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("targetStageId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

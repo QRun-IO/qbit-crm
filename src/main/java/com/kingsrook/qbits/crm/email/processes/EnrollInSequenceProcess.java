@@ -28,7 +28,6 @@ package com.kingsrook.qbits.crm.email.processes;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
 import com.kingsrook.qbits.crm.email.model.EmailSequence;
@@ -51,49 +50,16 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep to enroll a contact in an email sequence.
+ ** Backend operation used by the streamed CRM actions to enroll a contact in an email sequence.
  ** Validates that the contact is not already enrolled, the sequence is active,
  ** and the contact has not opted out of email.
  *******************************************************************************/
-public class EnrollInSequenceProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class EnrollInSequenceProcess implements BackendStep
 {
    public static final String NAME = "crm_enroll_in_sequence";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Enroll in Sequence")
-         .withIcon(new QIcon().withName("playlist_add"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(EnrollInSequenceProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("sequenceId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("contactId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("dealId", QFieldType.INTEGER)
-               )))
-         ));
-   }
 
 
 

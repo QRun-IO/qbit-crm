@@ -53,6 +53,7 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.get.GetOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
@@ -88,6 +89,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
    {
       return new QProcessMetaData()
          .withName(NAME)
+         .withIsHidden(true)
          .withLabel("Process Sequence Steps")
          .withIcon(new QIcon().withName("play_circle"))
          // Scheduling is configured by the host application via ScheduledJob records
@@ -109,29 +111,37 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
       ///////////////////////////////////////////////////////////
       // query enrollments where status=ACTIVE and due now     //
       ///////////////////////////////////////////////////////////
-      QueryOutput enrollmentQuery = new QueryAction().execute(
-         new QueryInput(SequenceEnrollment.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))
-               .withCriteria(new QFilterCriteria("nextStepDate", QCriteriaOperator.LESS_THAN_OR_EQUALS, Instant.now()))));
-
       int processedCount = 0;
-
-      for(QRecord enrollmentRecord : enrollmentQuery.getRecords())
+      Integer lastId = null;
+      Instant dueThrough = Instant.now();
+      while(true)
       {
-         SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentRecord);
-
-         try
+         QQueryFilter filter = new QQueryFilter()
+            .withCriteria(new QFilterCriteria("status", QCriteriaOperator.EQUALS, CrmEnrollmentStatus.ACTIVE.getPossibleValueId()))
+            .withCriteria(new QFilterCriteria("nextStepDate", QCriteriaOperator.LESS_THAN_OR_EQUALS, dueThrough))
+            .withOrderBy(new QFilterOrderBy("id")).withLimit(200);
+         if(lastId != null)
          {
-            processEnrollment(enrollment);
-            processedCount++;
+            filter.withCriteria(new QFilterCriteria("id", QCriteriaOperator.GREATER_THAN, lastId));
          }
-         catch(Exception e)
+         List<QRecord> page = new QueryAction().execute(new QueryInput(SequenceEnrollment.TABLE_NAME).withFilter(filter)).getRecords();
+         for(QRecord enrollmentRecord : page)
          {
-            /////////////////////////////////////////////
-            // handle step failure                     //
-            /////////////////////////////////////////////
-            handleFailure(enrollment, e.getMessage());
+            SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentRecord);
+            try
+            {
+               processEnrollment(enrollment);
+               processedCount++;
+            }
+            catch(Exception e)
+            {
+               handleFailure(enrollment, e.getMessage());
+            }
+            lastId = enrollment.getId();
+         }
+         if(page.size() < 200)
+         {
+            break;
          }
       }
 

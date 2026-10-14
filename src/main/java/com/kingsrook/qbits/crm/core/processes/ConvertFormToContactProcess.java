@@ -29,7 +29,6 @@ package com.kingsrook.qbits.crm.core.processes;
 
 
 import java.time.Instant;
-import java.util.List;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
 import com.kingsrook.qbits.crm.core.model.Contact;
@@ -54,49 +53,17 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for converting a form submission into a
+ ** Backend operation used by the streamed CRM actions for converting a form submission into a
  ** contact record. Deduplicates on email, updates the form with conversion
  ** data, and creates a Note activity on the contact.
  *******************************************************************************/
-public class ConvertFormToContactProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class ConvertFormToContactProcess implements BackendStep
 {
    public static final String NAME = "crm_convert_form_to_contact";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Convert Form to Contact")
-         .withTableName(FormSubmission.TABLE_NAME)
-         .withIcon(new QIcon().withName("swap_horiz"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(ConvertFormToContactProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("formSubmissionId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

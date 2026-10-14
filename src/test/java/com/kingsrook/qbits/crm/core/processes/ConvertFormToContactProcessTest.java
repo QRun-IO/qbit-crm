@@ -33,12 +33,11 @@ import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.FormSubmission;
 import com.kingsrook.qbits.crm.core.model.LeadSource;
 import com.kingsrook.qbits.crm.core.model.enums.CrmFormConversionStatus;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -78,11 +77,11 @@ class ConvertFormToContactProcessTest extends BaseTest
       ///////////////////////////////////////////////
       // run the conversion process               //
       ///////////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ConvertFormToContactProcess.NAME);
       processInput.addValue("formSubmissionId", formId);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       ///////////////////////////////////////////////
       // verify a new contact was created          //
@@ -154,11 +153,11 @@ class ConvertFormToContactProcessTest extends BaseTest
       /////////////////////////////////////////////
       // run conversion                          //
       /////////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ConvertFormToContactProcess.NAME);
       processInput.addValue("formSubmissionId", formId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       /////////////////////////////////////////////
       // verify no new contact was created       //

@@ -30,12 +30,11 @@ import com.kingsrook.qbits.crm.BaseTest;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -89,12 +88,12 @@ class MergeContactsProcessTest extends BaseTest
       ////////////////////////////////////
       // run merge process              //
       ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MergeContactsProcess.NAME);
       processInput.addValue("primaryContactId", primaryId);
       processInput.addValue("secondaryContactId", secondaryId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       /////////////////////////////////////////////
       // verify secondary contact is deleted     //

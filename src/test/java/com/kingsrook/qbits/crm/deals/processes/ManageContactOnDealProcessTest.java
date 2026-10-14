@@ -34,13 +34,12 @@ import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -71,14 +70,14 @@ class ManageContactOnDealProcessTest extends BaseTest
       Integer dealId    = setupDeal();
       Integer contactId = insertContact("Alice", "Test");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ManageContactOnDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("contactId", contactId);
       processInput.addValue("action", "ADD");
       processInput.addValue("isPrimary", false);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       ///////////////////////////////////////////
       // verify DealContact junction created   //
@@ -182,14 +181,14 @@ class ManageContactOnDealProcessTest extends BaseTest
       Integer dealId    = setupDeal();
       Integer contactId = insertContact("Not", "Linked");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ManageContactOnDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("contactId", contactId);
       processInput.addValue("action", "REMOVE");
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 
@@ -199,7 +198,7 @@ class ManageContactOnDealProcessTest extends BaseTest
     ***************************************************************************/
    private void runManageContact(Integer dealId, Integer contactId, String action, Boolean isPrimary) throws QException
    {
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ManageContactOnDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("contactId", contactId);
@@ -209,7 +208,7 @@ class ManageContactOnDealProcessTest extends BaseTest
          processInput.addValue("isPrimary", isPrimary);
       }
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
    }
 
 

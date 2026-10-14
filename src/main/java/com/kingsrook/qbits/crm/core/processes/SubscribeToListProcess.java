@@ -28,7 +28,6 @@ package com.kingsrook.qbits.crm.core.processes;
 
 
 import java.time.Instant;
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.EmailListMember;
 import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
@@ -47,51 +46,17 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep to subscribe an email address to a list.
+ ** Backend operation used by the streamed CRM actions to subscribe an email address to a list.
  ** Handles: new subscription, resubscription after unsub, and no-op for
  ** existing active subscribers.
  *******************************************************************************/
-public class SubscribeToListProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class SubscribeToListProcess implements BackendStep
 {
    public static final String NAME = "crm_subscribe_to_list";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Subscribe to List")
-         .withIcon(new QIcon().withName("person_add"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(SubscribeToListProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("email", QFieldType.STRING).withIsRequired(true),
-                  new QFieldMetaData("emailListId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("firstName", QFieldType.STRING),
-                  new QFieldMetaData("subscriptionSource", QFieldType.STRING)
-               )))
-         ));
-   }
 
 
 
