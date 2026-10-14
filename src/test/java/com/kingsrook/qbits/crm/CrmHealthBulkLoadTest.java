@@ -35,6 +35,9 @@ import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType;
+import com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.savedbulkloadprofiles.SavedBulkLoadProfileMetaDataProvider;
 import com.kingsrook.qqq.backend.core.processes.implementations.bulk.insert.model.BulkLoadProfile;
 import com.kingsrook.qqq.middleware.health.model.metadata.HealthStatus;
@@ -184,6 +187,37 @@ class CrmHealthBulkLoadTest extends BaseTest
       }).get();
       assertThat(status).isEqualTo(HealthStatus.UP);
       assertThat(QContext.getQInstance()).isSameAs(instance);
+   }
+
+
+
+   /*******************************************************************************
+    ** Regression: indicators registered with no caller session (at host startup)
+    ** must still run on a host whose authentication rejects tokenless sessions
+    ** (OAuth2, Auth0). They used a plain new QSession(), so every check failed
+    ** session validation and reported UNKNOWN.
+    *******************************************************************************/
+   @Test
+   void contextlessIndicatorsRunOnTokenRequiredHost() throws Exception
+   {
+      var instance = QContext.getQInstance();
+      instance.withInstanceDefaultAuthentication(new QAuthenticationMetaData()
+         .withName("token-required")
+         .withType(QAuthenticationType.MOCK)
+         .withModuleCodeReference(new QCodeReference(TokenRequiredAuthenticationModule.class)));
+      var status = java.util.concurrent.CompletableFuture.supplyAsync(() ->
+      {
+         try
+         {
+            var indicator = new CrmHealthChecks(new CrmQBitConfig()).indicators().get(1);
+            return (indicator.check(instance).getStatus());
+         }
+         catch(Exception e)
+         {
+            throw (new AssertionError(e));
+         }
+      }).get();
+      assertThat(status).isEqualTo(HealthStatus.UP);
    }
 
 }
