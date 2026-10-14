@@ -1,8 +1,30 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Test class for all CRM PossibleValueSource enums. Validates NAME constants,
  ** getById() lookups, null/unknown ID handling, and PossibleValueEnum interface
  ** contract for every enum value across all 24 CRM enums.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.model.enums;
 
 
@@ -463,39 +485,6 @@ class CrmEnumPvsTest
       for(CrmSyncStatus value : CrmSyncStatus.values())
       {
          assertThat(CrmSyncStatus.getById(value.getId())).isEqualTo(value);
-      }
-   }
-
-
-
-   /*******************************************************************************
-    ** Test CrmAuditAction
-    *******************************************************************************/
-   @Test
-   void testCrmAuditAction()
-   {
-      assertThat(CrmAuditAction.NAME).isNotNull();
-      assertThat(CrmAuditAction.getById(null)).isNull();
-      assertThat(CrmAuditAction.getById(999)).isNull();
-
-      assertEnumValue(CrmAuditAction.CREATED, 1, "Created");
-      assertEnumValue(CrmAuditAction.UPDATED, 2, "Updated");
-      assertEnumValue(CrmAuditAction.DELETED, 3, "Deleted");
-      assertEnumValue(CrmAuditAction.STAGE_CHANGED, 4, "Stage Changed");
-      assertEnumValue(CrmAuditAction.OWNER_CHANGED, 5, "Owner Changed");
-      assertEnumValue(CrmAuditAction.SCORE_CHANGED, 6, "Score Changed");
-      assertEnumValue(CrmAuditAction.MERGED, 7, "Merged");
-      assertEnumValue(CrmAuditAction.CONSENT_CHANGED, 8, "Consent Changed");
-      assertEnumValue(CrmAuditAction.TAG_CHANGED, 9, "Tag Changed");
-      assertEnumValue(CrmAuditAction.ENROLLED, 10, "Enrolled");
-      assertEnumValue(CrmAuditAction.UNENROLLED, 11, "Unenrolled");
-      assertEnumValue(CrmAuditAction.IMPORTED, 12, "Imported");
-      assertEnumValue(CrmAuditAction.ANONYMIZED, 13, "Anonymized");
-      assertEnumValue(CrmAuditAction.FORM_CONVERTED, 14, "Form Converted");
-
-      for(CrmAuditAction value : CrmAuditAction.values())
-      {
-         assertThat(CrmAuditAction.getById(value.getId())).isEqualTo(value);
       }
    }
 

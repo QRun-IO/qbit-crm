@@ -1,34 +1,50 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
- ** Process to merge two contacts. Re-links activities, deal contacts, tags,
+ ** Process to merge two contacts. Re-links activities, deal contacts,
  ** and email list memberships from the secondary to the primary, then deletes
- ** the secondary contact and logs audit entries.
+ ** the secondary contact with core table auditing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.processes;
 
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import com.kingsrook.qbits.crm.activities.model.Activity;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
-import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.ContactTag;
-import com.kingsrook.qbits.crm.core.model.EmailListMember;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
-import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.CrmSessionUtils;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.EmailListMember;
+import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
-import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
@@ -52,7 +68,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  *******************************************************************************/
 public class MergeContactsProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "mergeContacts";
+   public static final String NAME = "crm_merge_contacts";
 
 
 
@@ -115,10 +131,6 @@ public class MergeContactsProcess implements BackendStep, MetaDataProducerInterf
       ///////////////////////////////////////////////
       relinkDealContacts(primaryContactId, secondaryContactId);
 
-      ///////////////////////////////////////////////
-      // Re-link ContactTag rows                   //
-      ///////////////////////////////////////////////
-      relinkJunctionRecords(ContactTag.TABLE_NAME, "contactId", "tagId", primaryContactId, secondaryContactId);
 
       ///////////////////////////////////////////////
       // Re-link EmailListMember rows              //
@@ -130,27 +142,6 @@ public class MergeContactsProcess implements BackendStep, MetaDataProducerInterf
       ///////////////////////////////////////////////
       new DeleteAction().execute(
          new DeleteInput(Contact.TABLE_NAME).withPrimaryKeys(List.of(secondaryContactId)));
-
-      ///////////////////////////////////////////////
-      // Log audit entries                         //
-      ///////////////////////////////////////////////
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
-               .withEntityId(primaryContactId)
-               .withAction(CrmAuditAction.MERGED.getPossibleValueId())
-               .withUserId(sessionUserId)
-               .withMessage("Merged contact " + secondaryContactId + " into this contact")));
-
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
-               .withEntityId(secondaryContactId)
-               .withAction(CrmAuditAction.DELETED.getPossibleValueId())
-               .withUserId(sessionUserId)
-               .withMessage("Contact deleted during merge into contact " + primaryContactId)));
 
       output.addValue("primaryContactId", primaryContactId);
    }

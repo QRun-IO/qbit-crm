@@ -1,6 +1,28 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Scheduled process to execute pending email sequence steps.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.email.processes;
 
 
@@ -52,7 +74,7 @@ import com.kingsrook.qqq.backend.core.utils.StringUtils;
  *******************************************************************************/
 public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "processSequenceSteps";
+   public static final String NAME = "crm_process_sequence_steps";
 
    private static final int MAX_FAILURES = 3;
 
@@ -212,6 +234,7 @@ public class ProcessSequenceStepsProcess implements BackendStep, MetaDataProduce
             {
                // just advance
             }
+            default -> throw (new QException("Unsupported sequence step type: " + stepType));
          }
       }
 

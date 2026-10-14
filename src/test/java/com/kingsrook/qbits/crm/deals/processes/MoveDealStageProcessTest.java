@@ -1,6 +1,28 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Unit tests for MoveDealStageProcess.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals.processes;
 
 
@@ -8,8 +30,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import com.kingsrook.qbits.crm.BaseTest;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
@@ -21,7 +41,6 @@ import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -29,13 +48,11 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
-import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /*******************************************************************************
@@ -261,43 +278,6 @@ class MoveDealStageProcessTest extends BaseTest
       // weighted = 10000 * 75 / 100 = 7500.00               //
       //////////////////////////////////////////////////////////
       assertEquals(0, new BigDecimal("7500.00").compareTo(updatedDeal.getWeightedAmount()));
-   }
-
-
-
-   /*******************************************************************************
-    ** Verify that an audit log entry with STAGE_CHANGED is created.
-    *******************************************************************************/
-   @Test
-   void testAuditLogCreated() throws QException
-   {
-      Integer pipelineId = insertPipeline("Audit Pipeline");
-      Integer stage1Id   = insertStage(pipelineId, "Step 1", 1, 10, false, false, null, null);
-      Integer stage2Id   = insertStage(pipelineId, "Step 2", 2, 50, false, false, null, null);
-
-      Integer dealId = insertDeal("Audit Deal", pipelineId, stage1Id, new BigDecimal("3000"));
-
-      RunProcessInput processInput = new RunProcessInput();
-      processInput.setProcessName(MoveDealStageProcess.NAME);
-      processInput.addValue("dealId", dealId);
-      processInput.addValue("targetStageId", stage2Id);
-
-      new RunProcessAction().execute(processInput);
-
-      ///////////////////////////////////////////
-      // verify audit log entry                //
-      ///////////////////////////////////////////
-      QueryOutput auditOutput = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityId", QCriteriaOperator.EQUALS, dealId))
-               .withCriteria(new QFilterCriteria("action", QCriteriaOperator.EQUALS, CrmAuditAction.STAGE_CHANGED.getId()))));
-
-      assertTrue(auditOutput.getRecords().size() >= 1);
-      AuditLog audit = new AuditLog(auditOutput.getRecords().get(0));
-      assertEquals("pipelineStageId", audit.getFieldName());
-      assertEquals(String.valueOf(stage1Id), audit.getOldValue());
-      assertEquals(String.valueOf(stage2Id), audit.getNewValue());
    }
 
 

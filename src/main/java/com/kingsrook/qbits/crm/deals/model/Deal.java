@@ -1,6 +1,28 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** QRecord Entity for Deal table
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals.model;
 
 
@@ -41,7 +63,7 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 /*******************************************************************************
  ** QRecord Entity for Deal table -- the primary revenue-tracking record in the
  ** CRM. Deals move through pipeline stages and are linked to contacts, companies,
- ** products, activities, and tags.
+ ** products and activities.
  *******************************************************************************/
 @QMetaDataProducingEntity(
    produceTableMetaData = true,
@@ -59,11 +81,6 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Products", enabled = true, maxRows = 50)),
       @ChildTable(
-         childTableEntityClass = DealTag.class,
-         joinFieldName = "dealId",
-         childJoin = @ChildJoin(enabled = true),
-         childRecordListWidget = @ChildRecordListWidget(label = "Tags", enabled = true, maxRows = 50)),
-      @ChildTable(
          childTableEntityClass = DealStageHistory.class,
          joinFieldName = "dealId",
          childJoin = @ChildJoin(enabled = true),
@@ -77,7 +94,7 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 )
 public class Deal extends QRecordEntity
 {
-   public static final String TABLE_NAME = "crmDeal";
+   public static final String TABLE_NAME = "crm_deal";
 
 
 

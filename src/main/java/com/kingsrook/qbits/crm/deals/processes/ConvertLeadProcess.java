@@ -1,19 +1,38 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Process to convert a contact (lead) into a deal opportunity. Updates the
  ** contact's lifecycle stage to "Opportunity", creates a new Deal, links
- ** them via DealContact junction, and logs audit entries.
+ ** them via DealContact junction, with core table auditing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals.processes;
 
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.LifecycleStage;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
@@ -57,7 +76,7 @@ import com.kingsrook.qqq.backend.core.utils.ValueUtils;
  *******************************************************************************/
 public class ConvertLeadProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "convertLead";
+   public static final String NAME = "crm_convert_lead";
 
 
 
@@ -173,29 +192,6 @@ public class ConvertLeadProcess implements BackendStep, MetaDataProducerInterfac
 
       new InsertAction().execute(
          new InsertInput(DealContact.TABLE_NAME).withRecordEntity(dealContact));
-
-      /////////////////////////////////////////////////////////////////////
-      // Step 7: log audit entries                                       //
-      /////////////////////////////////////////////////////////////////////
-      AuditLog contactAudit = new AuditLog()
-         .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
-         .withEntityId(contactId)
-         .withAction(CrmAuditAction.STAGE_CHANGED.getPossibleValueId())
-         .withUserId(userId)
-         .withFieldName("lifecycleStageId")
-         .withNewValue(opportunityStageId != null ? String.valueOf(opportunityStageId) : null)
-         .withMessage("Lead converted to deal: " + dealName);
-
-      AuditLog dealAudit = new AuditLog()
-         .withEntityType(CrmEntityType.DEAL.getPossibleValueId())
-         .withEntityId(dealId)
-         .withAction(CrmAuditAction.CREATED.getPossibleValueId())
-         .withUserId(userId)
-         .withMessage("Deal created from lead conversion (contact " + contactId + ")");
-
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecords(List.of(
-            contactAudit.toQRecord(), dealAudit.toQRecord())));
 
       output.addValue("dealId", dealId);
    }

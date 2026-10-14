@@ -1,34 +1,48 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Process to merge two companies. Re-links contacts, deals, activities, and
- ** tags from the secondary to the primary, then deletes the secondary company
- ** and logs audit entries.
+ ** related records from the secondary to the primary, then deletes the secondary company
+ ** with core table auditing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.processes;
 
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import com.kingsrook.qbits.crm.activities.model.Activity;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
-import com.kingsrook.qbits.crm.core.model.Company;
-import com.kingsrook.qbits.crm.core.model.CompanyTag;
-import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
-import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.CrmSessionUtils;
+import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.model.Company;
+import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
-import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.delete.DeleteInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
@@ -52,7 +66,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  *******************************************************************************/
 public class MergeCompaniesProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "mergeCompanies";
+   public static final String NAME = "crm_merge_companies";
 
 
 
@@ -117,37 +131,12 @@ public class MergeCompaniesProcess implements BackendStep, MetaDataProducerInter
       ///////////////////////////////////////////////
       relinkRecords(Activity.TABLE_NAME, "companyId", secondaryCompanyId, primaryCompanyId);
 
-      ///////////////////////////////////////////////
-      // Re-link CompanyTag rows (skip duplicates) //
-      ///////////////////////////////////////////////
-      relinkCompanyTags(primaryCompanyId, secondaryCompanyId);
 
       ///////////////////////////////////////////////
       // Delete the secondary company              //
       ///////////////////////////////////////////////
       new DeleteAction().execute(
          new DeleteInput(Company.TABLE_NAME).withPrimaryKeys(List.of(secondaryCompanyId)));
-
-      ///////////////////////////////////////////////
-      // Log audit entries                         //
-      ///////////////////////////////////////////////
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.COMPANY.getPossibleValueId())
-               .withEntityId(primaryCompanyId)
-               .withAction(CrmAuditAction.MERGED.getPossibleValueId())
-               .withUserId(sessionUserId)
-               .withMessage("Merged company " + secondaryCompanyId + " into this company")));
-
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.COMPANY.getPossibleValueId())
-               .withEntityId(secondaryCompanyId)
-               .withAction(CrmAuditAction.DELETED.getPossibleValueId())
-               .withUserId(sessionUserId)
-               .withMessage("Company deleted during merge into company " + primaryCompanyId)));
 
       output.addValue("primaryCompanyId", primaryCompanyId);
    }
@@ -176,45 +165,5 @@ public class MergeCompaniesProcess implements BackendStep, MetaDataProducerInter
    }
 
 
-
-   /***************************************************************************
-    ** Re-link CompanyTag rows: skip duplicates (same tagId already on primary).
-    ***************************************************************************/
-   private void relinkCompanyTags(Integer primaryCompanyId, Integer secondaryCompanyId) throws QException
-   {
-      QueryOutput primaryTags = new QueryAction().execute(
-         new QueryInput(CompanyTag.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("companyId", QCriteriaOperator.EQUALS, primaryCompanyId))));
-
-      Set<Integer> primaryTagIds = new HashSet<>();
-      for(QRecord record : primaryTags.getRecords())
-      {
-         primaryTagIds.add(record.getValueInteger("tagId"));
-      }
-
-      QueryOutput secondaryTags = new QueryAction().execute(
-         new QueryInput(CompanyTag.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("companyId", QCriteriaOperator.EQUALS, secondaryCompanyId))));
-
-      for(QRecord record : secondaryTags.getRecords())
-      {
-         Integer tagId = record.getValueInteger("tagId");
-         if(primaryTagIds.contains(tagId))
-         {
-            new DeleteAction().execute(
-               new DeleteInput(CompanyTag.TABLE_NAME).withPrimaryKeys(List.of(record.getValueInteger("id"))));
-         }
-         else
-         {
-            QRecord updateRecord = new QRecord()
-               .withValue("id", record.getValueInteger("id"))
-               .withValue("companyId", primaryCompanyId);
-            new UpdateAction().execute(
-               new UpdateInput(CompanyTag.TABLE_NAME).withRecord(updateRecord));
-         }
-      }
-   }
 
 }

@@ -1,40 +1,50 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Unit tests for GdprAnonymizeContactProcess.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.processes;
 
 
 import com.kingsrook.qbits.crm.BaseTest;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.ConsentRecord;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
-import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
-import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -100,109 +110,6 @@ class GdprAnonymizeContactProcessTest extends BaseTest
       assertEquals(CrmConsentStatus.WITHDRAWN.getId(), consent.getStatus());
       assertEquals(CrmConsentType.DATA_PROCESSING.getId(), consent.getConsentType());
 
-      /////////////////////////////////////////////
-      // verify audit log entry created          //
-      /////////////////////////////////////////////
-      QueryOutput auditQuery = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME));
-      assertTrue(auditQuery.getRecords().size() >= 1);
-   }
-
-
-
-   /*******************************************************************************
-    ** Verify that audit log entries are anonymized after GDPR process runs.
-    *******************************************************************************/
-   @Test
-   void testAuditLogScrubbing() throws QException
-   {
-      ///////////////////////////////////////
-      // create a contact                  //
-      ///////////////////////////////////////
-      Integer contactId = insertContact();
-
-      ///////////////////////////////////////
-      // insert a pre-existing audit entry //
-      ///////////////////////////////////////
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getId())
-               .withEntityId(contactId)
-               .withAction(CrmAuditAction.UPDATED.getId())
-               .withUserId("test-user-1")
-               .withFieldName("email")
-               .withOldValue("old@example.com")
-               .withNewValue("new@example.com")
-               .withMessage("Email changed")));
-
-      ////////////////////////////////////
-      // run the anonymize process      //
-      ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
-      processInput.setProcessName(GdprAnonymizeContactProcess.NAME);
-      processInput.addValue("contactId", contactId);
-      new RunProcessAction().execute(processInput);
-
-      /////////////////////////////////////////////
-      // query audit entries for this contact    //
-      /////////////////////////////////////////////
-      QueryOutput auditQuery = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getId()))
-               .withCriteria(new QFilterCriteria("entityId", QCriteriaOperator.EQUALS, contactId))));
-
-      /////////////////////////////////////////////
-      // find the pre-existing entry (not the    //
-      // ANONYMIZED action log entry itself)     //
-      /////////////////////////////////////////////
-      boolean foundScrubbed = false;
-      for(QRecord record : auditQuery.getRecords())
-      {
-         AuditLog log = new AuditLog(record);
-         if(CrmAuditAction.UPDATED.getId().equals(log.getAction()))
-         {
-            assertEquals("[ANONYMIZED]", log.getOldValue());
-            assertEquals("[ANONYMIZED]", log.getNewValue());
-            assertEquals("[ANONYMIZED]", log.getMessage());
-            foundScrubbed = true;
-         }
-      }
-      assertTrue(foundScrubbed, "Expected at least one scrubbed audit log entry");
-   }
-
-
-
-   /*******************************************************************************
-    ** Verify that normal (non-GDPR) audit log updates still throw exceptions.
-    *******************************************************************************/
-   @Test
-   void testAuditLogImmutabilityEnforced() throws QException
-   {
-      ///////////////////////////////////////
-      // insert an audit log entry         //
-      ///////////////////////////////////////
-      InsertOutput insertOutput = new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-            new AuditLog()
-               .withEntityType(CrmEntityType.CONTACT.getId())
-               .withEntityId(999)
-               .withAction(CrmAuditAction.CREATED.getId())
-               .withUserId("test-user-1")
-               .withMessage("Record created")));
-
-      Integer auditId = insertOutput.getRecords().get(0).getValueInteger("id");
-
-      ///////////////////////////////////////
-      // attempt to update without bypass  //
-      ///////////////////////////////////////
-      QRecord update = new QRecord()
-         .withValue("id", auditId)
-         .withValue("message", "tampered");
-
-      assertThrows(QUserFacingException.class, () ->
-         new UpdateAction().execute(new UpdateInput(AuditLog.TABLE_NAME).withRecords(List.of(update))));
    }
 
 

@@ -1,16 +1,35 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Unit tests for MergeContactsProcess.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.processes;
 
 
 import com.kingsrook.qbits.crm.BaseTest;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.ContactTag;
-import com.kingsrook.qbits.crm.core.model.Tag;
 import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
@@ -24,11 +43,9 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
-import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /*******************************************************************************
@@ -63,16 +80,6 @@ class MergeContactsProcessTest extends BaseTest
                .withOwnerUserId("user-001")
                .withIsCompleted(false)));
 
-      ///////////////////////////////////////
-      // create tags on both contacts      //
-      ///////////////////////////////////////
-      Integer tag1Id = insertTag("VIP");
-      Integer tag2Id = insertTag("Prospect");
-
-      insertContactTag(primaryId, tag1Id);
-      insertContactTag(secondaryId, tag1Id); // duplicate
-      insertContactTag(secondaryId, tag2Id); // unique
-
       ////////////////////////////////////
       // run merge process              //
       ////////////////////////////////////
@@ -97,21 +104,6 @@ class MergeContactsProcessTest extends BaseTest
                .withCriteria(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, primaryId))));
       assertEquals(1, activities.getRecords().size());
 
-      /////////////////////////////////////////////
-      // verify tags: primary should have both   //
-      /////////////////////////////////////////////
-      QueryOutput tags = new QueryAction().execute(
-         new QueryInput(ContactTag.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, primaryId))));
-      assertEquals(2, tags.getRecords().size());
-
-      /////////////////////////////////////////////
-      // verify audit logs created               //
-      /////////////////////////////////////////////
-      QueryOutput auditQuery = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME));
-      assertTrue(auditQuery.getRecords().size() >= 2);
    }
 
 
@@ -133,6 +125,9 @@ class MergeContactsProcessTest extends BaseTest
 
 
 
+   /*******************************************************************************
+    ** Insert Activity Type.
+    *******************************************************************************/
    private Integer insertActivityType(String name) throws QException
    {
       InsertOutput output = new InsertAction().execute(
@@ -147,24 +142,5 @@ class MergeContactsProcessTest extends BaseTest
    }
 
 
-
-   private Integer insertTag(String name) throws QException
-   {
-      InsertOutput output = new InsertAction().execute(
-         new InsertInput(Tag.TABLE_NAME).withRecordEntity(
-            new Tag().withName(name)));
-      return (output.getRecords().get(0).getValueInteger("id"));
-   }
-
-
-
-   private void insertContactTag(Integer contactId, Integer tagId) throws QException
-   {
-      new InsertAction().execute(
-         new InsertInput(ContactTag.TABLE_NAME).withRecord(
-            new QRecord()
-               .withValue("contactId", contactId)
-               .withValue("tagId", tagId)));
-   }
 
 }

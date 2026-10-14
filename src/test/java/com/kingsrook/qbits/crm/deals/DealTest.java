@@ -1,19 +1,40 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Unit tests for the Deal entity.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals;
 
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import com.kingsrook.qbits.crm.BaseTest;
+import com.kingsrook.qbits.crm.core.model.enums.CrmDealPriority;
+import com.kingsrook.qbits.crm.core.model.enums.CrmWinLossType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
 import com.kingsrook.qbits.crm.deals.model.WinLossReason;
-import com.kingsrook.qbits.crm.core.model.enums.CrmDealPriority;
-import com.kingsrook.qbits.crm.core.model.enums.CrmWinLossType;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
