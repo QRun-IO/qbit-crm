@@ -45,6 +45,7 @@ public class CrmQBitConfig implements QBitConfig
 
    private String                                      defaultBackendNameForTables;
    private Boolean                                     inferBackendNames = true;
+   private Boolean                                     appEnabled = true;
    private MetaDataCustomizerInterface<QTableMetaData>  tableMetaDataCustomizer;
    private List<QFieldMetaData>                         securityFields;
    private List<RecordSecurityLock>                     recordSecurityLocks;
@@ -185,6 +186,25 @@ public class CrmQBitConfig implements QBitConfig
    public CrmQBitConfig withInferBackendNames(Boolean inferBackendNames)
    {
       this.inferBackendNames = inferBackendNames;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Whether to publish the standalone CRM app.
+    *******************************************************************************/
+   public Boolean getAppEnabled()
+   {
+      return (appEnabled);
+   }
+
+
+   /*******************************************************************************
+    ** Allow a host to put CRM tables in its own app.
+    *******************************************************************************/
+   public CrmQBitConfig withAppEnabled(Boolean appEnabled)
+   {
+      this.appEnabled = appEnabled;
       return (this);
    }
 
