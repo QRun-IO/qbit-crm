@@ -40,7 +40,8 @@ public enum CrmConsentType implements PossibleValueEnum<Integer>
    EMAIL(1, "Email"),
    CALL(2, "Call"),
    SMS(3, "SMS"),
-   DATA_PROCESSING(4, "Data Processing");
+   DATA_PROCESSING(4, "Data Processing"),
+   REPLY_TO_INQUIRY(5, "Reply to inquiry");
 
    private final Integer id;
    private final String  label;

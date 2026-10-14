@@ -38,6 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import com.kingsrook.qbits.crm.api.CrmApi;
+import com.kingsrook.qbits.crm.api.CrmFormRequest;
+import com.kingsrook.qbits.crm.api.CrmIntakeApi;
+import com.kingsrook.qbits.crm.api.CrmMarketingApi;
+import com.kingsrook.qbits.crm.api.FormType;
 import com.kingsrook.qbits.crm.security.CrmPermissions;
 import com.kingsrook.qqq.backend.core.actions.dashboard.RenderWidgetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
@@ -144,9 +149,9 @@ class CrmRdbmsTest
       Integer activityType = insert("crm_activity_type", new QRecord().withValue("name", "Call").withValue("sortOrder", 1));
       Integer activity = insert("crm_activity", new QRecord().withValue("activityTypeId", activityType).withValue("subject", "Discovery call")
          .withValue("ownerUserId", "rep").withValue("contactId", contact).withValue("companyId", company).withValue("dealId", deal));
-      Integer submission = insert("crm_form_submission", new QRecord().withValue("formType", 1).withValue("email", "ada@example.test")
+      Integer submission = insert("crm_form_submission", new QRecord().withValue("formKey", "test-form").withValue("formType", 1).withValue("email", "ada@example.test")
          .withValue("firstName", "Ada").withValue("lastName", "Lovelace"));
-      Integer list = insert("crm_email_list", new QRecord().withValue("name", "Newsletter").withValue("slug", "newsletter").withValue("sortOrder", 1));
+      Integer list = insert("crm_email_list", new QRecord().withValue("name", "Newsletter").withValue("listKey", "newsletter").withValue("slug", "newsletter").withValue("sortOrder", 1));
       Integer member = insert("crm_email_list_member", new QRecord().withValue("emailListId", list).withValue("contactId", contact)
          .withValue("email", "ada@example.test").withValue("subscribedDate", Instant.parse("2026-10-14T12:00:00Z")).withValue("formSubmissionId", submission));
       Integer consent = insert("crm_consent_record", new QRecord().withValue("contactId", contact).withValue("consentType", 1)
@@ -167,6 +172,49 @@ class CrmRdbmsTest
             "INSERT INTO crm_email_list_member (email_list_id, email, status, subscribed_date) "
                + "SELECT email_list_id, email, status, subscribed_date FROM crm_email_list_member WHERE id = " + member));
          assertThat(duplicate.getSQLState()).isEqualTo("23505");
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Intake persists attribution and immutable evidence against the shipped SQL schema.
+    *******************************************************************************/
+   @Test
+   void testIntakeAndFreshInstallConstraints() throws Exception
+   {
+      CrmApi.config().withTokenSecret("h2-test-secret").withPublicBaseUrl("https://example.test");
+      Integer contactId = insert("crm_contact", new QRecord().withValue("firstName", "Ada").withValue("lastName", "Lovelace")
+         .withValue("email", "ADA@EXAMPLE.TEST").withValue("ownerUserId", "rep"));
+      CrmIntakeApi intake = new CrmIntakeApi();
+      var result = intake.submitForm(new CrmFormRequest("contact", FormType.CONTACT, "Ada", "Lovelace", "ada@example.test",
+         null, "Example", "Please reply", false, "Reply only", "search", "organic", "launch", "hero", "crm",
+         "https://example.test/contact", "https://search.example.test", "a".repeat(64), "b".repeat(64)));
+      assertThat(result.contactCreated()).isFalse();
+      assertThat(result.contactId()).isEqualTo(contactId);
+      assertThat(query("crm_contact", contactId).getValueString("firstTouchUtmContent")).isEqualTo("hero");
+      assertThat(query("crm_contact", contactId).getValueString("lastTouchUtmTerm")).isEqualTo("crm");
+      assertThat(query("crm_form_submission", result.submissionId()).getValueString("clientHash")).isEqualTo("b".repeat(64));
+      var consents = new QueryAction().execute(new QueryInput("crm_consent_record")).getRecords();
+      assertThat(consents).hasSize(1);
+      assertThat(consents.get(0).getValueInteger("evidenceFormSubmissionId")).isEqualTo(result.submissionId());
+      assertThat(consents.get(0).getValueString("consentText")).isEqualTo("Reply only");
+      assertThat(new CrmMarketingApi().checkEmailEligibility(contactId).eligible()).isFalse();
+      try(Statement statement = connection.createStatement())
+      {
+         statement.executeUpdate("INSERT INTO crm_email_list (name, list_key, slug, sort_order) VALUES ('News', 'news', 'news', 1)");
+         try(ResultSet rows = statement.executeQuery("SELECT require_double_opt_in FROM crm_email_list WHERE list_key = 'news'"))
+         {
+            assertThat(rows.next()).isTrue();
+            assertThat(rows.getBoolean(1)).isTrue();
+         }
+         assertThat(assertThrows(SQLException.class, () -> statement.executeUpdate(
+            "INSERT INTO crm_email_list (name, list_key, slug, sort_order) VALUES ('Other', 'news', 'other', 2)")).getSQLState()).isEqualTo("23505");
+         assertThat(assertThrows(SQLException.class, () -> statement.executeUpdate(
+            "INSERT INTO crm_activity_type (name, code, sort_order) VALUES ('Another note', 'NOTE', 2)")).getSQLState()).isEqualTo("23505");
+         assertThat(assertThrows(SQLException.class, () -> statement.executeUpdate(
+            "INSERT INTO crm_form_submission (form_type, email) VALUES (1, 'missing-key@example.test')")).getSQLState()).isEqualTo("23502");
+         statement.executeUpdate("INSERT INTO crm_activity_type (name, sort_order) VALUES ('Custom A', 10), ('Custom B', 11)");
       }
    }
 

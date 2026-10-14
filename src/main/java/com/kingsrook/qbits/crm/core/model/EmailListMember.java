@@ -28,6 +28,8 @@ package com.kingsrook.qbits.crm.core.model;
 
 import java.time.Instant;
 import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
+import com.kingsrook.qqq.backend.core.actions.ai.AiFieldMetaData;
+import com.kingsrook.qqq.backend.core.actions.ai.DataClassification;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
@@ -77,7 +79,7 @@ public class EmailListMember extends QRecordEntity
             .withRecordLabelFields("emailListId", "email")
             .withUniqueKey(new UniqueKey("emailListId", "email"))
             .withSection(SectionFactory.defaultT1("id", "emailListId", "contactId", "email", "firstName", "status"))
-            .withSection(SectionFactory.defaultT2("subscribedDate", "unsubscribedDate", "subscriptionSource", "formSubmissionId"))
+            .withSection(SectionFactory.defaultT2("subscribedDate", "unsubscribedDate", "subscriptionSource", "formSubmissionId", "source", "consentText", "confirmationTokenHash", "confirmationSentDate", "confirmedDate"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
          ////////////////////////////////////////////////////////////
@@ -86,11 +88,31 @@ public class EmailListMember extends QRecordEntity
          table.getField("formSubmissionId").withPossibleValueSourceFilter(new QQueryFilter(
             new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, "${input.contactId}")));
 
+         table.getField("email").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("firstName").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("consentText").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("confirmationTokenHash").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+
          return (table);
       }
    }
 
 
+
+   @QField(maxLength = 64, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String confirmationTokenHash;
+
+   @QField()
+   private Instant confirmationSentDate;
+
+   @QField()
+   private Instant confirmedDate;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String source;
+
+   @QField()
+   private String consentText;
 
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
@@ -110,7 +132,7 @@ public class EmailListMember extends QRecordEntity
    @QField(isRequired = true, possibleValueSourceName = CrmListMemberStatus.NAME, defaultValue = "1")
    private Integer status;
 
-   @QField(isRequired = true)
+   @QField()
    private Instant subscribedDate;
 
    @QField()
@@ -516,6 +538,147 @@ public class EmailListMember extends QRecordEntity
    public EmailListMember withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for confirmationTokenHash
+    *******************************************************************************/
+   public String getConfirmationTokenHash()
+   {
+      return (this.confirmationTokenHash);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for confirmationTokenHash
+    *******************************************************************************/
+   public void setConfirmationTokenHash(String confirmationTokenHash)
+   {
+      this.confirmationTokenHash = confirmationTokenHash;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for confirmationTokenHash
+    *******************************************************************************/
+   public EmailListMember withConfirmationTokenHash(String confirmationTokenHash)
+   {
+      this.confirmationTokenHash = confirmationTokenHash;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for confirmationSentDate
+    *******************************************************************************/
+   public Instant getConfirmationSentDate()
+   {
+      return (this.confirmationSentDate);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for confirmationSentDate
+    *******************************************************************************/
+   public void setConfirmationSentDate(Instant confirmationSentDate)
+   {
+      this.confirmationSentDate = confirmationSentDate;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for confirmationSentDate
+    *******************************************************************************/
+   public EmailListMember withConfirmationSentDate(Instant confirmationSentDate)
+   {
+      this.confirmationSentDate = confirmationSentDate;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for confirmedDate
+    *******************************************************************************/
+   public Instant getConfirmedDate()
+   {
+      return (this.confirmedDate);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for confirmedDate
+    *******************************************************************************/
+   public void setConfirmedDate(Instant confirmedDate)
+   {
+      this.confirmedDate = confirmedDate;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for confirmedDate
+    *******************************************************************************/
+   public EmailListMember withConfirmedDate(Instant confirmedDate)
+   {
+      this.confirmedDate = confirmedDate;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for source
+    *******************************************************************************/
+   public String getSource()
+   {
+      return (this.source);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for source
+    *******************************************************************************/
+   public void setSource(String source)
+   {
+      this.source = source;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for source
+    *******************************************************************************/
+   public EmailListMember withSource(String source)
+   {
+      this.source = source;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for consentText
+    *******************************************************************************/
+   public String getConsentText()
+   {
+      return (this.consentText);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for consentText
+    *******************************************************************************/
+   public void setConsentText(String consentText)
+   {
+      this.consentText = consentText;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentText
+    *******************************************************************************/
+   public EmailListMember withConsentText(String consentText)
+   {
+      this.consentText = consentText;
       return (this);
    }
 

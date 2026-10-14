@@ -125,7 +125,7 @@ class ContingentPossibleValuesTest extends BaseTest
    {
       return new QRecord().withValue("id", id).withValue(parent, scope)
          .withValue("name", "Choice " + id).withValue("firstName", "Contact " + id)
-         .withValue("email", "contact" + id + "@example.com").withValue("formType", 1);
+         .withValue("email", "contact" + id + "@example.com").withValue("formKey", "test-form").withValue("formType", 1);
    }
 
 

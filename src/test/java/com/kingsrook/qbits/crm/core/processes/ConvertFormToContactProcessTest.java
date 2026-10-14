@@ -190,7 +190,7 @@ class ConvertFormToContactProcessTest extends BaseTest
       InsertOutput output = new InsertAction().execute(
          new InsertInput(FormSubmission.TABLE_NAME).withRecordEntity(
             new FormSubmission()
-               .withFormType(1)
+               .withFormKey("test-form").withFormType(1)
                .withEmail(email)
                .withFirstName(firstName)
                .withLastName(lastName)

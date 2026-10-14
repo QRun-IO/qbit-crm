@@ -107,7 +107,7 @@ class CrmIntegrationTest extends BaseTest
          new InsertInput(FormSubmission.TABLE_NAME)
             .withRecordEntity(new FormSubmission()
                .withEmail("john@example.com")
-               .withFormType(CrmFormType.CONTACT.getPossibleValueId())
+               .withFormKey("test-form").withFormType(CrmFormType.CONTACT.getPossibleValueId())
                .withFirstName("John")));
       Integer formId = formInsert.getRecords().get(0).getValueInteger("id");
 

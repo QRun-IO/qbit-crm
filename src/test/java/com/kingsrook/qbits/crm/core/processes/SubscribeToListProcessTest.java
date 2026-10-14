@@ -225,7 +225,7 @@ class SubscribeToListProcessTest extends BaseTest
          new InsertInput(EmailList.TABLE_NAME).withRecordEntity(
             new EmailList()
                .withName(name)
-               .withSlug(name.toLowerCase())
+               .withListKey(name.toLowerCase()).withSlug(name.toLowerCase())
                .withIsActive(true)
                .withIsPublic(true)
                .withSortOrder(1)));
