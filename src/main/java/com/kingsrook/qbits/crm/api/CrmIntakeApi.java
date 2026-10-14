@@ -288,7 +288,8 @@ public class CrmIntakeApi
       QRecord contact;
       if(contacts.isEmpty())
       {
-         String source = request.utmSource() == null || request.utmSource().isBlank() ? "Website" : request.utmSource();
+         String source = request.utmSource() == null || request.utmSource().isBlank() ? "Website" : request.utmSource().strip();
+         source = source.length() > 100 ? source.substring(0, 100) : source;
          List<QRecord> sources = store.by("crm_lead_source", "name", source);
          QRecord leadSource = sources.isEmpty() ? store.insert("crm_lead_source", new QRecord().withValue("name", source).withValue("sortOrder", 0)) : sources.get(0);
          List<QRecord> stages = store.by("crm_lifecycle_stage", "name", "Lead");

@@ -123,7 +123,7 @@ public class EmailListMember extends QRecordEntity
    @QField(possibleValueSourceName = Contact.TABLE_NAME)
    private Integer contactId;
 
-   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(isRequired = true, maxLength = 320, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String email;
 
    @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)

@@ -130,19 +130,19 @@ public class Contact extends QRecordEntity
 
 
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstTouchUtmSource;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstTouchUtmMedium;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstTouchUtmCampaign;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstTouchUtmContent;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String firstTouchUtmTerm;
 
    @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
@@ -154,19 +154,19 @@ public class Contact extends QRecordEntity
    @QField()
    private Instant firstTouchDate;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastTouchUtmSource;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastTouchUtmMedium;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastTouchUtmCampaign;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastTouchUtmContent;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastTouchUtmTerm;
 
    @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
@@ -187,10 +187,10 @@ public class Contact extends QRecordEntity
    @QField(isRequired = true, maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String lastName;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 320, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String email;
 
-   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   @QField(maxLength = 320, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String secondaryEmail;
 
    @QField(maxLength = 50, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
