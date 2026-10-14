@@ -43,6 +43,7 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.session.QSession;
+import com.kingsrook.qqq.backend.core.model.session.QSystemUserSession;
 import com.kingsrook.qqq.middleware.health.HealthIndicator;
 import com.kingsrook.qqq.middleware.health.model.metadata.HealthCheckResult;
 import com.kingsrook.qqq.middleware.health.model.metadata.HealthStatus;
@@ -51,7 +52,8 @@ import com.kingsrook.qqq.middleware.health.model.metadata.HealthStatus;
 /*******************************************************************************
  ** STAND-IN(core=QRun-IO/qqq#1199, removeBy=4.1.0-RC.9)
  ** CRM checks for hosts to register with their health middleware. Run in the
- ** caller's tenant context; no check elevates access or returns personal values.
+ ** caller's tenant context when one is supplied, else as the core system user;
+ ** no check returns personal values.
  *******************************************************************************/
 public class CrmHealthChecks
 {
@@ -86,17 +88,21 @@ public class CrmHealthChecks
 
 
    /*******************************************************************************
-    ** Expose individual checks through the RC.6 health SPI.
+    ** Expose individual checks through the RC.6 health SPI. With no caller
+    ** session (registration at startup), each check runs as the core system
+    ** user: token-based authentication modules (OAuth2, Auth0) reject any other
+    ** tokenless session, and the checks report only UP/DEGRADED, never values.
     *******************************************************************************/
    public List<HealthIndicator> indicators()
    {
-      return (indicators(QContext.getQSession() == null ? new QSession() : QContext.getQSession()));
+      return (indicators(QContext.getQSession()));
    }
 
 
    /*******************************************************************************
     ** Supply the host's monitoring session explicitly for middleware worker threads.
     ** Its permissions and tenant keys are preserved; this adapter never grants keys.
+    ** A null session runs each check as the core system user.
     *******************************************************************************/
    public List<HealthIndicator> indicators(QSession session)
    {
@@ -136,7 +142,7 @@ public class CrmHealthChecks
          CapturedContext original = QContext.capture();
          try
          {
-            QContext.init(instance, session);
+            QContext.init(instance, session != null ? session : new QSystemUserSession(instance));
             return (switch(name)
             {
                case "crm.email" -> email();
