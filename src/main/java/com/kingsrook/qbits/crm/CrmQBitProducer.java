@@ -31,9 +31,11 @@ import java.util.Locale;
 import java.util.Map;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
+import com.kingsrook.qbits.crm.core.customizers.CurrencyRateDateCustomizer;
 import com.kingsrook.qbits.crm.core.customizers.FormSubmissionAutoLinkCustomizer;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.Currency;
 import com.kingsrook.qbits.crm.core.model.FormSubmission;
 import com.kingsrook.qbits.crm.deals.customizers.DealInitializationCustomizer;
 import com.kingsrook.qbits.crm.deals.customizers.DealProductRecalculationCustomizer;
@@ -230,6 +232,15 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          {
             addOrComposeCustomizer(table, TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(DealStageChangeCustomizer.class));
             addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, new QCodeReference(DealInitializationCustomizer.class));
+         }
+
+         ///////////////////////////////////////////////////////////////
+         // stamp the exchange-rate date when a rate is set or changed  //
+         ///////////////////////////////////////////////////////////////
+         if(tableName.equals(Currency.TABLE_NAME))
+         {
+            addOrComposeCustomizer(table, TableCustomizers.PRE_INSERT_RECORD, new QCodeReference(CurrencyRateDateCustomizer.OnInsert.class));
+            addOrComposeCustomizer(table, TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(CurrencyRateDateCustomizer.OnUpdate.class));
          }
 
          ///////////////////////////////////////////////////////////////
