@@ -22,13 +22,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
    <properties>
-      <revision>0.1.0</revision>
+      <revision>0.2.0-SNAPSHOT</revision>
+      <maven.compiler.source>21</maven.compiler.source>
+      <maven.compiler.target>21</maven.compiler.target>
+      <jacoco.version>0.8.15</jacoco.version>
+      <qbit.guardrails.enforce>true</qbit.guardrails.enforce>
+      <qbit.guardrails.strictUiApiRoutes>true</qbit.guardrails.strictUiApiRoutes>
    </properties>
 
    <parent>
       <groupId>com.kingsrook</groupId>
       <artifactId>qbit-build-parent</artifactId>
-      <version>1.4.0</version>
+      <version>2.1.2</version>
    </parent>
 
    <groupId>com.kingsrook.qbits</groupId>
@@ -82,7 +87,7 @@
       <dependency>
          <groupId>com.h2database</groupId>
          <artifactId>h2</artifactId>
-         <version>2.2.220</version>
+         <version>2.3.232</version>
          <scope>test</scope>
       </dependency>
 
@@ -95,9 +100,101 @@
       <dependency>
          <groupId>org.assertj</groupId>
          <artifactId>assertj-core</artifactId>
-         <version>3.27.3</version>
+         <version>3.27.7</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
 
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>3.6.0</version>
+            <configuration>
+               <configLocation>checkstyle/config.xml</configLocation>
+               <includeTestSourceDirectory>true</includeTestSourceDirectory>
+               <violationSeverity>warning</violationSeverity>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>checkstyle</id>
+                  <phase>validate</phase>
+                  <goals><goal>check</goal></goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+               <execution>
+                  <id>prepare-agent</id>
+                  <goals>
+                     <goal>prepare-agent</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>report</id>
+                  <phase>verify</phase>
+                  <goals>
+                     <goal>report</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>check</id>
+                  <goals>
+                     <goal>check</goal>
+                  </goals>
+                  <configuration>
+                     <rules>
+                        <rule>
+                           <element>BUNDLE</element>
+                           <limits>
+                              <limit>
+                                 <counter>INSTRUCTION</counter>
+                                 <value>COVEREDRATIO</value>
+                                 <minimum>0.70</minimum>
+                              </limit>
+                              <limit>
+                                 <counter>CLASS</counter>
+                                 <value>COVEREDRATIO</value>
+                                 <minimum>0.90</minimum>
+                              </limit>
+                           </limits>
+                        </rule>
+                     </rules>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+   <profiles>
+      <!-- Built against qqq 4.1 (QBitMetaDataProducer). Until qbit-build-parent  -->
+      <!-- imports the released 4.1 BOM, this profile is active by default and     -->
+      <!-- imports qqq-bom-pom 4.1.0-RC.6 ahead of the parent's 4.0.0 BOM.         -->
+      <profile>
+         <id>qqq-snapshot</id>
+         <activation>
+            <activeByDefault>true</activeByDefault>
+         </activation>
+         <properties>
+            <qqq.snapshot.version>4.1.0-RC.6</qqq.snapshot.version>
+         </properties>
+         <dependencyManagement>
+            <dependencies>
+               <dependency>
+                  <groupId>com.kingsrook.qqq</groupId>
+                  <artifactId>qqq-bom-pom</artifactId>
+                  <version>${qqq.snapshot.version}</version>
+                  <type>pom</type>
+                  <scope>import</scope>
+               </dependency>
+            </dependencies>
+         </dependencyManagement>
+      </profile>
+   </profiles>
 </project>

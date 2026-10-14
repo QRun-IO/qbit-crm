@@ -1,6 +1,28 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** QRecord Entity for Contact table
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.model;
 
 
@@ -33,7 +55,7 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 
 /*******************************************************************************
  ** QRecord Entity for Contact table -- the primary person record in the CRM.
- ** Contacts are linked to companies, activities, deals, and tags.
+ ** Contacts are linked to companies, activities and deals.
  *******************************************************************************/
 @QMetaDataProducingEntity(
    producePossibleValueSource = true,
@@ -46,9 +68,6 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
       @ChildTable(childTableEntityClass = DealContact.class, joinFieldName = "contactId",
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Deals", enabled = true, maxRows = 25)),
-      @ChildTable(childTableEntityClass = ContactTag.class, joinFieldName = "contactId",
-         childJoin = @ChildJoin(enabled = true),
-         childRecordListWidget = @ChildRecordListWidget(label = "Tags", enabled = true, maxRows = 50)),
       @ChildTable(childTableEntityClass = ConsentRecord.class, joinFieldName = "contactId",
          childJoin = @ChildJoin(enabled = true),
          childRecordListWidget = @ChildRecordListWidget(label = "Consent Records", enabled = true, maxRows = 25))
@@ -56,7 +75,7 @@ import com.kingsrook.qqq.backend.core.utils.collections.MutableList;
 )
 public class Contact extends QRecordEntity
 {
-   public static final String TABLE_NAME = "crmContact";
+   public static final String TABLE_NAME = "crm_contact";
 
 
 

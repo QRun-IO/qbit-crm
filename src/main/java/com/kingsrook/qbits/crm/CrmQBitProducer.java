@@ -1,31 +1,61 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** QBitMetaDataProducer for the CRM QBit.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm;
 
 
-import java.util.List;
+import java.util.Locale;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.customizers.FormSubmissionAutoLinkCustomizer;
-import com.kingsrook.qbits.crm.core.model.FormSubmission;
-import com.kingsrook.qbits.crm.audit.customizers.CrmAuditLogCustomizer;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
+import com.kingsrook.qbits.crm.core.model.FormSubmission;
 import com.kingsrook.qbits.crm.deals.customizers.DealInitializationCustomizer;
 import com.kingsrook.qbits.crm.deals.customizers.DealProductRecalculationCustomizer;
 import com.kingsrook.qbits.crm.deals.customizers.DealStageChangeCustomizer;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
+import com.kingsrook.qbits.crm.security.CrmPermissions;
+import com.kingsrook.qbits.crm.widgets.CrmWidgetMetaData;
 import com.kingsrook.qqq.backend.core.actions.customizers.MultiCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.instances.QInstanceEnricher;
 import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
+import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerOutput;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.audits.AuditLevel;
+import com.kingsrook.qqq.backend.core.model.metadata.audits.QAuditRules;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReferenceWithProperties;
+import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaDataProducer;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
@@ -39,7 +69,7 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
 {
    public static final String GROUP_ID    = "com.kingsrook.qbits";
    public static final String ARTIFACT_ID = "crm";
-   public static final String VERSION     = "0.1.0";
+   public static final String VERSION     = "0.2.0-SNAPSHOT";
 
    private CrmQBitConfig qBitConfig;
 
@@ -67,12 +97,48 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
    @Override
    public void postProduceActions(MetaDataProducerMultiOutput metaDataProducerMultiOutput, QInstance qInstance) throws QException
    {
+      for(QJoinMetaData join : metaDataProducerMultiOutput.getEach(QJoinMetaData.class))
+      {
+         join.setName(snakeCase(join.getName()));
+      }
+      for(QWidgetMetaData widget : metaDataProducerMultiOutput.getEach(QWidgetMetaData.class))
+      {
+         widget.setName(snakeCase(widget.getName()));
+         widget.setPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE));
+         if(widget.getDefaultValues() != null && widget.getDefaultValues().get("joinName") instanceof String joinName)
+         {
+            widget.withDefaultValue("joinName", snakeCase(joinName));
+         }
+      }
+
+      for(QProcessMetaData process : metaDataProducerMultiOutput.getEach(QProcessMetaData.class))
+      {
+         process.setPermissionRules(CrmPermissions.processRules(process.getName()));
+         process.setSourceQBitName(getQBitMetaData().getName());
+      }
+
       /////////////////////////////////////////////////////////////////////////
       // iterate tables produced by this QBit and register customizers       //
       /////////////////////////////////////////////////////////////////////////
       for(QTableMetaData table : metaDataProducerMultiOutput.getEach(QTableMetaData.class))
       {
          String tableName = table.getName();
+         table.setPermissionRules(CrmPermissions.tableRules(tableName));
+         table.setSourceQBitName(getQBitMetaData().getName());
+         if(table.getSections() != null)
+         {
+            table.getSections().forEach(section ->
+            {
+               if(section.getWidgetName() != null)
+               {
+                  section.setWidgetName(snakeCase(section.getWidgetName()));
+               }
+            });
+         }
+         if(Boolean.TRUE.equals(qBitConfig.getInferBackendNames()))
+         {
+            QInstanceEnricher.setInferredFieldBackendNames(table);
+         }
 
          ///////////////////////////////////////////////////////////////
          // wire audit log on tracked entities                        //
@@ -80,10 +146,7 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          if(tableName.equals(Contact.TABLE_NAME) || tableName.equals(Company.TABLE_NAME)
             || tableName.equals(Deal.TABLE_NAME) || tableName.equals(Activity.TABLE_NAME))
          {
-            QCodeReference auditRef = new QCodeReference(CrmAuditLogCustomizer.class);
-            addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, auditRef);
-            addOrComposeCustomizer(table, TableCustomizers.POST_UPDATE_RECORD, auditRef);
-            addOrComposeCustomizer(table, TableCustomizers.POST_DELETE_RECORD, auditRef);
+            table.withAuditRules(new QAuditRules().withAuditLevel(AuditLevel.FIELD));
          }
 
          ///////////////////////////////////////////////////////////////
@@ -207,6 +270,30 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
    {
       this.qBitConfig = qBitConfig;
       return (this);
+   }
+
+   /*******************************************************************************
+    ** Normalize generated metadata names as well as explicit CRM names.
+    *******************************************************************************/
+   private static String snakeCase(String name)
+   {
+      return (name.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT));
+   }
+
+   /*******************************************************************************
+    ** Add widget provenance after the standard package-discovered production.
+    *******************************************************************************/
+   @Override
+   public MetaDataProducerMultiOutput produce(QInstance qInstance) throws QException
+   {
+      MetaDataProducerMultiOutput produced = QBitMetaDataProducer.super.produce(qInstance);
+      MetaDataProducerMultiOutput output = new MetaDataProducerMultiOutput();
+      for(MetaDataProducerOutput item : produced.getEach(MetaDataProducerOutput.class))
+      {
+         output.add(item instanceof QWidgetMetaData widget
+            ? new CrmWidgetMetaData(widget).withSourceQBitName(getQBitMetaData().getName()) : item);
+      }
+      return (output);
    }
 
 }

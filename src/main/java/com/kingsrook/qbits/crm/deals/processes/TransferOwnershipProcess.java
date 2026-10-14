@@ -1,26 +1,44 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Process to transfer ownership of all contacts, companies, and deals from
- ** one user to another, logging audit entries for each change.
+ ** one user to another, using core table auditing for each change.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals.processes;
 
 
 import java.util.List;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
-import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
@@ -45,7 +63,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  *******************************************************************************/
 public class TransferOwnershipProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "transferOwnership";
+   public static final String NAME = "crm_transfer_ownership";
 
 
 
@@ -124,20 +142,7 @@ public class TransferOwnershipProcess implements BackendStep, MetaDataProducerIn
          new UpdateAction().execute(
             new UpdateInput(tableName).withRecord(updateRecord));
 
-         //////////////////////////////////
-         // log audit entry              //
-         //////////////////////////////////
-         new InsertAction().execute(
-            new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-               new AuditLog()
-                  .withEntityType(entityType.getPossibleValueId())
-                  .withEntityId(recordId)
-                  .withAction(CrmAuditAction.OWNER_CHANGED.getPossibleValueId())
-                  .withUserId(sessionUserId)
-                  .withFieldName("ownerUserId")
-                  .withOldValue(fromUserId)
-                  .withNewValue(toUserId)
-                  .withMessage("Ownership transferred from " + fromUserId + " to " + toUserId)));
+
       }
    }
 

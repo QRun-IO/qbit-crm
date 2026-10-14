@@ -1,485 +1,140 @@
-# QBit: CRM
+# QBit CRM
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/QRun-IO/qbit-crm)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Java](https://img.shields.io/badge/java-17+-blue.svg)](https://adoptium.net/)
+**0.2.0-SNAPSHOT — unreleased, P1 Platform.** CRM tables, processes and widgets for QQQ applications. This phase upgrades the build, names, permissions, audit integration and database schema. It does not complete the later 0.2.0 product phases.
 
-> **Customer Relationship Management for QQQ Applications - Activity-Centric, Pipeline-Driven**
+## Build and verification
 
-This QBit provides a complete CRM system for QQQ applications, covering contact and company management, deal pipeline tracking, activity logging, email tracking, product catalog, lead scoring, assignment automation, website form capture, mailing list subscriptions, and reporting.
+Use **Java 21** and the included Maven wrapper (**Maven 3.9.11**). The build uses `com.kingsrook:qbit-build-parent:2.1.2` and a default-active `qqq-snapshot` profile importing `qqq-bom-pom:4.1.0-RC.6`.
 
-## Core Capabilities
-
-- **Contact & Company Management**: Full lifecycle tracking with tagging, segmentation, and duplicate detection
-- **Deal Pipeline**: Configurable multi-pipeline stages with probability weighting, rot/aging detection, and stage-gating rules
-- **Activity Tracking**: Unified activity table for calls, emails, meetings, notes, and tasks with per-record timelines
-- **Email Integration**: Tracked email sending, open/click/bounce detection, templates with merge fields
-- **Email Sequences**: Multi-step automated outreach with configurable send windows and failure handling
-- **Lead Scoring**: Rule-based scoring with dot-notation field paths and time-decay operators
-- **Assignment Automation**: Round-robin, least-active, and rule-based auto-assignment
-- **Website Forms**: Capture web form submissions with UTM tracking and lead conversion
-- **Mailing Lists**: Newsletter and subscription management independent of sales sequences
-- **GDPR Compliance**: Consent tracking, right-to-erasure via anonymization (not deletion)
-- **Multi-Currency**: Exchange rate table with converted amounts for accurate pipeline reporting
-- **Immutable Audit Log**: Field-level change tracking with anonymization support for GDPR
-- **14 Dashboard Widgets**: Pipeline summary, forecast, leaderboard, conversion rates, win rate, activity feed, and more
-
-## Open Source & Full Control
-
-QBit CRM is 100% open source under Apache 2.0. All data stays in your systems. No external CRM services required.
-
-## Architecture
-
-### Design Principles
-
-1. **Activity-centric**: A unified `crm_activity` table is the heart of the system. Every interaction (calls, emails, meetings, notes, tasks) is an activity linked to contacts, companies, and deals. One table to query, one timeline per record.
-
-2. **Pipeline-driven**: Deals move through configurable pipeline stages. Each stage has probability weighting, rot thresholds, and optional required-field gating. Stage transitions are first-class events captured in `crm_deal_stage_history` for reliable analytics.
-
-3. **Perpetual activity log**: The `crm_audit_log` table is immutable and append-only. Every meaningful change is recorded with field-level old/new values. For GDPR, PII is anonymized in-place rather than deleted.
-
-### Technology Stack
-
-- **Java 17+** with QQQ backend modules
-- **QQQ Framework**: Entities, processes, widgets, permissions, API layer
-- **Database**: RDBMS through QQQ's backend abstraction
-- **MemoryRecordStore**: Full test suite runs in-memory (no database required)
-
-### Module Organization
-
-```
-qbit-crm/
-  src/main/java/com/kingsrook/qbits/crm/
-    CrmQBitConfig.java            -- Configuration (backend, security, companion QBits)
-    CrmQBitProducer.java          -- Gen 2 QBitMetaDataProducer (auto-discovers all entities)
-    core/                         -- Contacts, Companies, Tags, Attachments, Forms, Email Lists
-    deals/                        -- Deals, Pipelines, Stages, Products, Line Items, Stage History
-    activities/                   -- Activities, Activity Types, Outcomes, Participants
-    email/                        -- Email Messages, Templates, Sequences, Enrollments
-    scoring/                      -- Lead Score Rules, Assignment Rules, Sales Goals
-    audit/                        -- Immutable audit log + CrmAuditLogCustomizer
-    sync/                         -- External system mapping, Currency management
-    widgets/                      -- 14 dashboard widgets (producers + renderers)
+```sh
+./mvnw -q verify
+# Windows PowerShell:
+./mvnw.cmd -q verify
+# If dependencies are already cached and network resolution is unavailable:
+./mvnw.cmd -o -q verify
 ```
 
-## Getting Started
+Verification runs Checkstyle on production and test sources, architecture guardrails (including strict UI API routes), JUnit tests and JaCoCo 0.8.15. Coverage gates are 70% instructions and 90% classes. The current suite runs **372 tests**, with no failures or skips, including four H2 integration tests. Tests use H2 2.3.232 and AssertJ 3.27.7. CircleCI uses `kingsrook/qqq-orb@0.6.9`.
 
-### Prerequisites
+The H2 tests execute the shipped PostgreSQL DDL in PostgreSQL mode. They verify all 33 tables and 395 columns, the 21 declared unique keys, relationship indexes, seven persisted entity types, duplicate list-member rejection and DDL/changelog parity. They do not replace deployment verification against the host's PostgreSQL installation.
 
-- **Java 17+**
-- **Maven 3.8+**
-- **A QQQ Application** with an RDBMS backend (PostgreSQL, MySQL, H2, etc.)
-- **QQQ Maven Registry** access (for resolving the dependency)
+## Install in a host application
 
-### Step 1: Add the Maven dependency
+1. Build/install this unreleased snapshot with `./mvnw install`, or resolve the same artifact from your configured snapshot repository. The dependency version is explicit; do not assume the QQQ BOM manages this QBit.
 
 ```xml
 <dependency>
-    <groupId>com.kingsrook.qbits</groupId>
-    <artifactId>qbit-crm</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+   <groupId>com.kingsrook.qbits</groupId>
+   <artifactId>qbit-crm</artifactId>
+   <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
-If you are using the QQQ BOM POM, the version is managed for you:
-```xml
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>com.kingsrook.qqq</groupId>
-            <artifactId>qqq-bom-pom</artifactId>
-            <version>${qqq.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-```
+2. Align the host with QQQ **4.1.0-RC.6**. For a new database, apply [the reference PostgreSQL DDL](docs/ddl/postgres.sql), or include the packaged Liquibase formatted SQL at `db/liquibase/qbit-crm/crm.changelog.sql`. Choose one installation path. The Java producer does not create the schema.
 
-### Step 2: Configure and produce the QBit
-
-In your application's metadata setup class (where you build your `QInstance`), add the CRM QBit. The `defaultBackendNameForTables` must match a backend you have already registered with your QInstance (typically your RDBMS backend).
+3. Register the host backend and authentication, then produce and add the CRM metadata:
 
 ```java
 import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.CrmQBitProducer;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
 
-// In your QInstance setup method:
-public void defineQInstance(QInstance qInstance)
-{
-   // ... your existing backend, auth, and app setup ...
-
-   ///////////////////////////////
-   // configure and produce CRM //
-   ///////////////////////////////
-   CrmQBitConfig crmConfig = new CrmQBitConfig()
-      .withDefaultBackendNameForTables("rdbms");  // must match a registered backend name
-
-   CrmQBitProducer crmProducer = new CrmQBitProducer()
-      .withQBitConfig(crmConfig);
-
-   MetaDataProducerMultiOutput crmOutput = crmProducer.produce(qInstance);
-   crmOutput.addSelfToInstance(qInstance);
-}
-```
-
-### Step 3: Create the database tables
-
-The QBit defines 39 tables. On first run against a new database, you need to create the schema. QQQ can auto-create tables if your backend supports it, or you can generate DDL from the entity metadata.
-
-For **development/testing** with H2 or auto-DDL:
-```java
-// QQQ will auto-create tables in memory backends.
-// For RDBMS with auto-DDL enabled, tables are created on startup.
-```
-
-For **production** with PostgreSQL/MySQL, generate migration scripts from the entity field definitions. Each entity class documents its table name (e.g., `crmContact`, `crmCompany`, `crmDeal`) and all field types. Column names in the database are `snake_case` versions of the Java `camelCase` field names (e.g., `firstName` -> `first_name`).
-
-### Step 4: Add CRM to your app navigation
-
-```java
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
-
-QAppMetaData app = new QAppMetaData()
-   .withName("myApp")
-   .withLabel("My Application")
-   .withSections(List.of(
-      CrmQBitProducer.produceAppSection(),
-      // ... your other app sections ...
-   ));
-qInstance.addApp(app);
-```
-
-This adds a "CRM" navigation section to the QQQ Material Dashboard with links to all CRM tables.
-
-### Step 5 (optional): Seed reference data
-
-The CRM works without seed data, but you'll want to populate the configuration tables before users start working:
-
-- **`crmLifecycleStage`**: Lead, Marketing Qualified, Sales Qualified, Opportunity, Customer, Evangelist
-- **`crmLeadSource`**: Website, Referral, Cold Call, Trade Show, Social Media, Advertisement, Partner
-- **`crmIndustry`**: Technology, Healthcare, Finance, Manufacturing, Retail, etc.
-- **`crmActivityType`**: Call, Email, Meeting, Note, Task (with `isSystem=true`)
-- **`crmActivityOutcome`**: Connected, Left Voicemail, No Answer (for Call type); Completed, No Show, Rescheduled (for Meeting type)
-- **`crmPipeline`** + **`crmPipelineStage`**: At minimum one pipeline with stages (Prospecting, Qualification, Proposal, Negotiation, Closed Won, Closed Lost)
-- **`crmContactRole`**: Decision Maker, Influencer, Champion, Budget Holder, End User, Evaluator
-- **`crmWinLossReason`**: Better Fit (WIN), Price (WIN), Lost to Competitor (LOSS), No Budget (LOSS), etc.
-- **`crmCurrency`**: At minimum USD with `isBaseCurrency=true` and `exchangeRateToBase=1.0`
-
-You can insert these via QQQ's `InsertAction` in an application startup process, or directly via SQL.
-
-### Step 6 (optional): Multi-tenant security
-
-For SaaS or multi-tenant deployments where each client's CRM data must be isolated:
-
-```java
-import com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock;
-
+// The host has already registered the backend named "rdbms".
 CrmQBitConfig crmConfig = new CrmQBitConfig()
-   .withDefaultBackendNameForTables("rdbms")
-   .withRecordSecurityLocks(List.of(
-      new RecordSecurityLock()
-         .withFieldName("clientId")
-         .withSecurityKeyType("crmClientAccess")
-         .withNullValueBehavior(NullValueBehavior.DENY)
-   ));
+   .withDefaultBackendNameForTables("rdbms");
+
+new CrmQBitProducer()
+   .withQBitConfig(crmConfig)
+   .produce(qInstance)
+   .addSelfToInstance(qInstance);
+
+qInstance.setEnforcePermissionsInCoreActions(true);
 ```
 
-This injects a `clientId` security field onto all root CRM tables (Contact, Company, Deal, Pipeline) and propagates security locks through join chains to child tables. Users only see records matching their security key values.
-
-### Step 7 (optional): Companion QBits
-
-The CRM integrates with other QBits for enhanced functionality:
-
-```java
-CrmQBitConfig crmConfig = new CrmQBitConfig()
-   .withDefaultBackendNameForTables("rdbms")
-   .withQuickSearchQBitNamespace("quickSearch")    // full-text search across contacts/companies/deals
-   .withWebhooksQBitNamespace("webhooks")          // fire events on CRM changes (deal won, contact created, etc.)
-   .withWorkflowsQBitNamespace("workflows");       // user-defined automation rules
-```
-
-Each companion QBit must be separately added as a Maven dependency and produced into your QInstance. The namespace strings must match the namespaces you used when producing those QBits.
-
-### Complete example
-
-```java
-public void defineQInstance(QInstance qInstance)
-{
-   ///////////////
-   // backend   //
-   ///////////////
-   qInstance.addBackend(new RDBMSBackendMetaData()
-      .withName("rdbms")
-      .withVendor("postgresql")
-      .withHostName("localhost")
-      .withDatabaseName("myapp")
-      .withUsername("myapp")
-      .withPassword("secret"));
-
-   ////////////////////
-   // authentication //
-   ////////////////////
-   qInstance.setAuthentication(new Auth0AuthenticationMetaData()
-      .withType(QAuthenticationType.AUTH_0)
-      // ... auth config ...
-   );
-
-   //////////
-   // CRM  //
-   //////////
-   CrmQBitConfig crmConfig = new CrmQBitConfig()
-      .withDefaultBackendNameForTables("rdbms");
-
-   new CrmQBitProducer()
-      .withQBitConfig(crmConfig)
-      .produce(qInstance)
-      .addSelfToInstance(qInstance);
-
-   //////////
-   // App  //
-   //////////
-   qInstance.addApp(new QAppMetaData()
-      .withName("myApp")
-      .withSections(List.of(
-         CrmQBitProducer.produceAppSection()
-      )));
-}
-```
-
-## Data Model
-
-### Tables (39 total)
-
-#### Core (Phase 1a)
-
-| Table | Description |
-|-------|-------------|
-| `crmContact` | People with lifecycle stages, lead scoring, consent tracking |
-| `crmCompany` | Organizations with industry, type, parent-child hierarchy |
-| `crmLifecycleStage` | Configurable contact lifecycle (Lead, MQL, SQL, Customer, etc.) |
-| `crmLeadSource` | How contacts were acquired (Website, Referral, etc.) |
-| `crmIndustry` | Industry classification for companies |
-| `crmTag` | Free-form tags for categorizing records |
-| `crmContactTag` / `crmCompanyTag` | Tag junction tables |
-| `crmAttachment` | File attachments on any entity (polymorphic) |
-| `crmConsentRecord` | GDPR consent tracking (append-only) |
-| `crmFormSubmission` | Website form capture with UTM parameters |
-| `crmEmailList` | Marketing mailing lists |
-| `crmEmailListMember` | List subscribers (standalone or linked to contacts) |
-| `crmCurrency` | Exchange rates for multi-currency support |
-| `crmAuditLog` | Immutable field-level change tracking |
-
-#### Activities
-
-| Table | Description |
-|-------|-------------|
-| `crmActivity` | Unified table for calls, emails, meetings, notes, tasks |
-| `crmActivityType` | Configurable activity types with icons |
-| `crmActivityOutcome` | Call/meeting outcomes (Connected, No Answer, etc.) |
-| `crmActivityParticipant` | Additional participants on activities |
-
-#### Deals & Pipeline (Phase 1b)
-
-| Table | Description |
-|-------|-------------|
-| `crmPipeline` | Pipeline definitions (multiple pipelines supported) |
-| `crmPipelineStage` | Stages with probability, rot days, required-field gating |
-| `crmDeal` | Deals with multi-currency, weighted amounts, probability override |
-| `crmDealContact` | Contact-to-deal junction with roles and primary flag |
-| `crmContactRole` | Roles contacts play on deals (Decision Maker, etc.) |
-| `crmWinLossReason` | Win/loss reasons for closed deals |
-| `crmDealTag` | Deal tag junction |
-| `crmDealStageHistory` | Stage transition log for pipeline analytics |
-
-#### Email (Phase 2)
-
-| Table | Description |
-|-------|-------------|
-| `crmEmailTemplate` | Reusable templates with merge field support |
-| `crmEmailMessage` | Tracked emails with open/click/bounce/spam detection |
-
-#### Products (Phase 2)
-
-| Table | Description |
-|-------|-------------|
-| `crmProduct` | Product catalog with SKU and pricing |
-| `crmDealProduct` | Line items on deals with quantity, discount, calculated totals |
-
-#### Sequences & Scoring (Phase 3)
-
-| Table | Description |
-|-------|-------------|
-| `crmEmailSequence` | Multi-step outreach sequences with send windows |
-| `crmSequenceStep` | Individual steps (email, call, task, wait) |
-| `crmSequenceEnrollment` | Contact enrollment tracking with failure handling |
-| `crmLeadScoreRule` | Scoring rules with dot-notation field paths |
-| `crmAssignmentRule` | Auto-assignment rules (round-robin, least-active, specific user) |
-| `crmAssignmentRuleMember` | Users in assignment pools |
-| `crmSalesGoal` | Revenue quotas per user per period |
-
-#### Sync (Phase 2)
-
-| Table | Description |
-|-------|-------------|
-| `crmExternalMapping` | Bidirectional sync mapping for external systems |
-
-### Enum PossibleValueSources (24)
-
-CrmEntityType, CrmCompanyType, CrmDealPriority, CrmActivityPriority, CrmDirection, CrmBounceType, CrmWinLossType, CrmParticipantRole, CrmSequenceStepType, CrmEnrollmentStatus, CrmEmailStatus, CrmScorableEntity, CrmScoreOperator, CrmAssignableEntity, CrmAssignStrategy, CrmConsentType, CrmConsentStatus, CrmLegalBasis, CrmGoalPeriod, CrmSyncStatus, CrmAuditAction, CrmFormType, CrmFormConversionStatus, CrmListMemberStatus
-
-## Processes (27)
-
-### Core Operations
-
-| Process | Description |
-|---------|-------------|
-| `logActivity` | Quick-log a call, meeting, note, or task from any record |
-| `convertFormToContact` | Convert website form submission to CRM contact |
-| `bulkConvertForms` | Batch convert multiple form submissions |
-| `subscribeToList` / `unsubscribeFromList` | Mailing list management |
-| `bulkAssignOwner` | Reassign record ownership in bulk |
-| `bulkAddTag` / `bulkRemoveTag` | Tag management in bulk |
-| `transferOwnership` | Transfer all records from one user to another |
-
-### Deal Operations
-
-| Process | Description |
-|---------|-------------|
-| `moveDealStage` | Move deal to new stage with required-field validation |
-| `reopenDeal` | Reopen a closed deal to an active stage |
-| `convertLead` | Convert contact to deal (atomic: lifecycle + deal + junction) |
-| `manageContactOnDeal` | Add/remove contacts with role and primary flag enforcement |
-| `cloneDeal` | Duplicate deal with contacts, products, and tags |
-
-### Email & Sequences
-
-| Process | Description |
-|---------|-------------|
-| `sendEmail` | Compose and send tracked email with template resolution |
-| `trackEmailEvent` | Webhook callback for open/click/bounce/spam events |
-| `enrollInSequence` | Enroll contacts in multi-step sequences |
-| `processSequenceSteps` | Scheduled: execute pending sequence steps (5 min interval) |
-| `unenrollFromSequence` | Remove contact from active sequence |
-
-### Scoring & Assignment
-
-| Process | Description |
-|---------|-------------|
-| `calculateLeadScores` | Scheduled daily: recalculate scores from rules |
-| `autoAssign` | POST_INSERT hook: first-match rule-based assignment |
-
-### Data Management
-
-| Process | Description |
-|---------|-------------|
-| `mergeContacts` / `mergeCompanies` | Merge duplicates with unique-key conflict resolution |
-| `importContacts` | CSV import with validation and duplicate detection |
-| `detectDuplicates` | Find duplicate contacts by email or companies by domain |
-| `gdprAnonymizeContact` | Right-to-erasure: anonymize PII, scrub audit log, delete attachments |
+4. Map the host's authenticated roles to the permissions below. Configure the host's core audit storage. Add tables, processes and widgets to the host UI as needed: `produceAppSection()` currently returns an empty CRM section; P1 does not provide an assembled app or home dashboard.
 
-### Scheduled Maintenance
+## Configuration and access
 
-| Process | Description |
-|---------|-------------|
-| `processOverdueTasks` | Hourly: detect overdue task activities |
-| `fireReminders` | Every 5 min: fire and clear activity reminders |
+- `defaultBackendNameForTables`: required backend name.
+- `inferBackendNames`: defaults to true; sets snake_case SQL column names while Java/QQQ field names remain camelCase. SQL table names equal the QQQ table names. Set false only for an explicit host column mapping.
+- `tableMetaDataCustomizer`: optional host table customizer.
+- `securityFields` and `recordSecurityLocks`: retained in P1, applied to contact, company and deal. Host-managed schema columns must match these fields. This is not yet tenant isolation across every child table or workflow.
 
-## Widgets (14)
+| Scope | Permissions |
+|---|---|
+| Main and sub-tables | `crm.read`, `crm.write` |
+| Settings tables except currency | `crm.manage.read`, `crm.manage.write` |
+| Currency | `crm.admin.read`, `crm.admin.write` |
+| Widgets and everyday processes | `crm.hasAccess` |
+| Merge, bulk assignment, list and sequence management processes | `crm.manage.hasAccess` |
+| GDPR anonymization | `crm.admin.hasAccess` |
 
-| Widget | Type | Description |
-|--------|------|-------------|
-| `crmPipelineSummary` | Table | Deal count and amount per stage |
-| `crmActivityFeed` | Table | Most recent activities across all entities |
-| `crmDealForecast` | Table | Weighted pipeline by expected close month |
-| `crmRottingDeals` | Table | Deals exceeding stage rot threshold |
-| `crmContactTimeline` | Stepper | Per-contact activity timeline |
-| `crmActivityCount` | Statistics | Activity counts by type (today/week/month) |
-| `crmRecentDeals` | Table | Recently won/lost deals |
-| `crmSalesLeaderboard` | Table | Users ranked by closed-won revenue |
-| `crmQuotaAttainment` | Statistics | Won revenue vs. sales goal target |
-| `crmPipelineConversion` | Table | Stage-to-stage conversion rates |
-| `crmStageDuration` | Table | Average days per pipeline stage |
-| `crmWinRate` | Table | Win rate trend over time |
-| `crmAvgDealSize` | Table | Average won deal size |
-| `crmSalesCycleLength` | Table | Average days from creation to close |
+Permissions are independent grants. Every CRM-produced table, process and widget has explicit `QPermissionRules` with `DenyBehavior.HIDDEN` and QBit provenance. `security.CrmPermissions.ALL` lists the grants for host administration and tests. The widget provenance adapter supplies core's `SourceQBitAware` interface because RC.6's widget class lacks it.
 
-## Companion QBit Integration
+## Tables
 
-### qbit-quick-search (ElasticSearch)
+All 33 table names and table-backed possible-value sources use `crm_` snake_case. The 23 enum possible-value sources retain their enum names. Relationship columns have indexes; the reference DDL does not impose foreign-key constraints or host-specific tenant columns. Unique constraints match the current QQQ metadata.
 
-Index `crmContact`, `crmCompany`, and `crmDeal` for full-text global search.
+### Main tables (6)
 
-### qbit-webhooks
+`crm_contact`, `crm_company`, `crm_deal`, `crm_activity`, `crm_form_submission`, `crm_email_list`.
 
-Supported event types:
+### Settings tables (15)
 
-| Event | Fires When |
-|-------|------------|
-| `crm.contact.created` / `crm.contact.updated` | Contact inserted or updated |
-| `crm.company.created` / `crm.company.updated` | Company inserted or updated |
-| `crm.deal.created` / `crm.deal.stageChanged` | Deal created or stage changed |
-| `crm.deal.won` / `crm.deal.lost` | Deal moved to terminal stage |
-| `crm.activity.created` | Activity logged |
-| `crm.consent.changed` | Consent granted or withdrawn |
-| `crm.form.submitted` / `crm.form.converted` | Form submitted or converted to contact |
+`crm_pipeline`, `crm_product`, `crm_email_template`, `crm_email_sequence`, `crm_lead_score_rule`, `crm_assignment_rule`, `crm_sales_goal`, `crm_currency`, `crm_lifecycle_stage`, `crm_lead_source`, `crm_industry`, `crm_activity_type`, `crm_activity_outcome`, `crm_contact_role`, `crm_win_loss_reason`.
 
-### qbit-workflows
+### Sub-tables (12)
 
-User-defined automation beyond built-in scoring/assignment. The CRM does not re-implement a workflow engine.
+`crm_pipeline_stage`, `crm_consent_record`, `crm_email_list_member`, `crm_email_message`, `crm_sequence_step`, `crm_sequence_enrollment`, `crm_deal_contact`, `crm_deal_product`, `crm_deal_stage_history`, `crm_activity_participant`, `crm_assignment_rule_member`, `crm_external_mapping`.
 
-## Phased Delivery
+Contact, company, deal and activity declare core FIELD-level audit rules. The bespoke tag tables, attachment table, audit-log table and bulk tag processes have been removed. 0.2.0 is a fresh-install release with no upgrade path from 0.1.0. Collaboration replacements arrive in a later phase.
 
-| Phase | Tables | Processes | Widgets | Focus |
-|-------|--------|-----------|---------|-------|
-| 1a | 18 | 7 | 6 | Core + Website Integration |
-| 1b | 8 | 4 | 3 | Deals + Pipeline |
-| 2 | 5 | 7 | 1 | Email, Products, Scheduling |
-| 3 | 7 | 5 | 2 | Sequences, Scoring, Automation |
-| 4 | 1 | 7 | 5 | Data Management, Analytics, GDPR |
-| **Total** | **39** | **30** | **14** | |
+## Processes
 
-## Testing
+The QBit produces 25 processes with these names and labels. QQQ may additionally generate standard table actions such as `<table>.bulkInsert`; those retain core's naming conventions. CRM processes are available to host wiring and are not registered as scheduled jobs.
 
-```bash
-mvn test                    # Run all 271 tests
-mvn test -Dtest=BaseTest    # Verify QBit produces metadata
-```
+| Process name | Label |
+|---|---|
+| `crm_auto_assign` | Auto Assign |
+| `crm_bulk_assign_owner` | Bulk Assign Owner |
+| `crm_calculate_lead_scores` | Calculate Lead Scores |
+| `crm_clone_deal` | Clone Deal |
+| `crm_convert_form_to_contact` | Convert Form to Contact |
+| `crm_convert_lead` | Convert Lead |
+| `crm_detect_duplicates` | Detect Duplicates |
+| `crm_enroll_in_sequence` | Enroll in Sequence |
+| `crm_fire_reminders` | Fire Reminders |
+| `crm_gdpr_anonymize_contact` | GDPR Anonymize Contact |
+| `crm_import_contacts` | Import Contacts |
+| `crm_log_activity` | Log Activity |
+| `crm_manage_contact_on_deal` | Manage Contact on Deal |
+| `crm_merge_companies` | Merge Companies |
+| `crm_merge_contacts` | Merge Contacts |
+| `crm_move_deal_stage` | Move Deal Stage |
+| `crm_process_overdue_tasks` | Process Overdue Tasks |
+| `crm_process_sequence_steps` | Process Sequence Steps |
+| `crm_reopen_deal` | Reopen Deal |
+| `crm_send_email` | Send Email |
+| `crm_subscribe_to_list` | Subscribe to List |
+| `crm_track_email_event` | Track Email Event |
+| `crm_transfer_ownership` | Transfer Ownership |
+| `crm_unenroll_from_sequence` | Unenroll from Sequence |
+| `crm_unsubscribe_from_list` | Unsubscribe from List |
 
-### Coverage
+## Current behavior and limits
 
-- **91.5% instruction coverage** (Jacoco)
-- **73 test classes** covering all entities, processes, widgets, and customizers
-- All tests run in-memory via MemoryRecordStore (no database required)
+The existing pipeline/stage logic, stage history, product totals, currency conversion, contact/company merge, activity logging, form auto-linking, list subscribe/unsubscribe, scoring and assignment processes remain. Fourteen custom dashboard widget producers remain available for host placement, together with generated child-record widgets.
 
-```bash
-mvn org.jacoco:jacoco-maven-plugin:0.8.11:prepare-agent test \
-    org.jacoco:jacoco-maven-plugin:0.8.11:report
-# Report at: target/site/jacoco/index.html
-```
+Some process names describe unfinished behavior inherited from 0.1.0:
 
-## Documentation
+- Send Email and sequence email steps record CRM activity/message state; they do not deliver email. Template merging and live delivery tracking are not implemented here.
+- Sequence execution, lead scoring and overdue-task work require host invocation. No schedules are shipped. Assignment is a process, not an automatic insert hook; reminders do not deliver notifications.
+- Scoring's date-decay operators remain unimplemented. Import Contacts expects pre-parsed input and does not provide the planned streamed bulk-load workflow.
+- GDPR anonymization scrubs the contact, unenrolls sequences and records withdrawn consent. It does not yet erase all linked PII or core audit details. The P1 schema retains existing PII fields; classification, complete erasure and redesigned tenancy are later work.
 
-- **[QQQ Wiki](https://github.com/Kingsrook/qqq/wiki)** - Framework documentation
-- **[QBit Development Guide](https://github.com/Kingsrook/qqq/wiki/QBit-Development)** - How QBits work
-- **Design Spec** - Full data model and architecture in `QRun-IO/specs/2026-03-28-qbit-crm-design-v2.md`
+The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and full app navigation are not part of this phase.
 
-## Contributing
+## Source layout
 
-QBit CRM is open source and welcomes contributions.
+`CrmQBitProducer` discovers entity, process and widget producers. `core/` holds contacts, companies, forms, lists and consent; `deals/`, `activities/`, `email/` and `scoring/` hold their respective metadata and behavior. `security/` defines permissions, `sync/` holds external mappings and currency utilities, and `widgets/` contains widget producers/renderers. SQL is shipped under `src/main/resources/db/liquibase/qbit-crm/`.
 
-- **[Report Issues](https://github.com/QRun-IO/qqq/issues)** - Bug reports and feature requests
-- **[QQQ Contribution Guide](https://github.com/Kingsrook/qqq/wiki/Contribution-Guidelines)** - How to contribute
-
-## About Kingsrook
-
-QBit CRM is built by **[Kingsrook](https://qrun.io)** - making engineers more productive through intelligent automation and developer tools.
-
-- **Website**: [https://qrun.io](https://qrun.io)
-- **Contact**: [contact@kingsrook.com](mailto:contact@kingsrook.com)
-- **GitHub**: [https://github.com/QRun-IO](https://github.com/QRun-IO)
-
-## License
-
-This project is licensed under the **Apache License, Version 2.0** - see the [LICENSE](LICENSE) file for details.
+Licensed under [Apache License 2.0](LICENSE).

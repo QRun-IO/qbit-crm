@@ -1,41 +1,52 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** End-to-end integration test for the CRM QBit. Exercises the full lifecycle:
  ** contacts, companies, form submissions, activities, pipelines, deals,
  ** deal products, stage changes, audit logs, and stage history.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm;
 
 
 import java.math.BigDecimal;
-import java.util.List;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.FormSubmission;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDirection;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmFormType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
-import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
 import com.kingsrook.qbits.crm.deals.model.Product;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
-import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import org.junit.jupiter.api.Test;
@@ -236,36 +247,6 @@ class CrmIntegrationTest extends BaseTest
       assertThat(dealClosedWon.getActualCloseDate()).isNotNull();
       assertThat(dealClosedWon.getWeightedAmount()).isEqualByComparingTo(new BigDecimal("10000"));
 
-      ////////////////////////////////////////////////////////////////////////
-      // Step 10: Query AuditLog for CONTACT -> verify CREATED entry        //
-      ////////////////////////////////////////////////////////////////////////
-      QueryOutput contactAuditQuery = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.CONTACT.getPossibleValueId()))));
-      List<QRecord> contactAudits = contactAuditQuery.getRecords();
-      assertThat(contactAudits).isNotEmpty();
-      assertThat(contactAudits).anyMatch(r -> CrmAuditAction.CREATED.getPossibleValueId().equals(r.getValueInteger("action")));
-
-      ////////////////////////////////////////////////////////////////////////
-      // Step 11: Query AuditLog for DEAL -> verify CREATED and additional  //
-      ////////////////////////////////////////////////////////////////////////
-      QueryOutput dealAuditQuery = new QueryAction().execute(
-         new QueryInput(AuditLog.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("entityType", QCriteriaOperator.EQUALS, CrmEntityType.DEAL.getPossibleValueId()))));
-      List<QRecord> dealAudits = dealAuditQuery.getRecords();
-      assertThat(dealAudits).anyMatch(r -> CrmAuditAction.CREATED.getPossibleValueId().equals(r.getValueInteger("action")));
-      assertThat(dealAudits.size()).isGreaterThanOrEqualTo(2);
-
-      ////////////////////////////////////////////////////////////////////////
-      // Step 12: Query DealStageHistory -> verify at least 2 rows          //
-      ////////////////////////////////////////////////////////////////////////
-      QueryOutput stageHistoryQuery = new QueryAction().execute(
-         new QueryInput(DealStageHistory.TABLE_NAME)
-            .withFilter(new QQueryFilter()
-               .withCriteria(new QFilterCriteria("dealId", QCriteriaOperator.EQUALS, dealId))));
-      assertThat(stageHistoryQuery.getRecords().size()).isGreaterThanOrEqualTo(2);
    }
 
 }

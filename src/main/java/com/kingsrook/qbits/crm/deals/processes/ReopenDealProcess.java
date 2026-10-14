@@ -1,18 +1,37 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Process to reopen a closed deal by moving it to an active (non-closed)
  ** pipeline stage. Clears actualCloseDate and winLossReasonId, recalculates
- ** weighted amount, and logs stage history and audit entries.
+ ** weighted amount, and logs stage history and core table auditing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.deals.processes;
 
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.math.BigDecimal;
 import java.util.List;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
@@ -46,7 +65,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  *******************************************************************************/
 public class ReopenDealProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "reopenDeal";
+   public static final String NAME = "crm_reopen_deal";
 
 
 
@@ -173,22 +192,6 @@ public class ReopenDealProcess implements BackendStep, MetaDataProducerInterface
 
       new InsertAction().execute(
          new InsertInput(DealStageHistory.TABLE_NAME).withRecordEntity(history));
-
-      //////////////////////////////////////////////////////////////
-      // Step 9: log audit entry                                  //
-      //////////////////////////////////////////////////////////////
-      AuditLog auditEntry = new AuditLog()
-         .withEntityType(CrmEntityType.DEAL.getPossibleValueId())
-         .withEntityId(dealId)
-         .withAction(CrmAuditAction.STAGE_CHANGED.getPossibleValueId())
-         .withUserId(sessionUserId)
-         .withFieldName("pipelineStageId")
-         .withOldValue(oldStageId != null ? String.valueOf(oldStageId) : null)
-         .withNewValue(String.valueOf(targetStageId))
-         .withMessage("Deal reopened to stage: " + targetStage.getName());
-
-      new InsertAction().execute(
-         new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(auditEntry));
 
       output.addValue("dealId", dealId);
       output.addValue("newStageId", targetStageId);

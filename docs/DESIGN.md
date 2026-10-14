@@ -7,8 +7,9 @@ the `/v2/contact` form and newsletter capture). The document records three thing
 - the target design
 - the integration contracts and the delivery phases
 
-0.2.0 is a breaking release: tables are renamed, and several bespoke features are replaced by
-platform features. The [upgrade notes](#upgrading-from-010) cover existing installs (Voyage).
+0.2.0 is a breaking, fresh-install release: tables are renamed, and several bespoke features are
+replaced by platform features. 0.1.0 never went live anywhere (Voyage was a proof of concept), so
+there is no upgrade path or compatibility layer.
 
 ## Goals
 
@@ -79,7 +80,7 @@ These parts are real and are kept, adapted to 0.2.0:
 |---|---|---|
 | Build | parent 1.4.0, QQQ 0.27.9, Java 17, orb 0.3.8 | parent 2.1.2 (guardrails profile), QQQ 4.1.0-RC.6 (RC.7 when cut), Java 21, `./mvnw`, orb 0.6.9 |
 | Table names | `crmContact` (camelCase) | `crm_contact`, backend name = table name, snake_case columns |
-| Permissions | none | `crm.view`, `crm.edit`, `crm.manage`, `crm.admin` (see [Security](#security-tenancy-and-pii)) |
+| Permissions | none | `crm`, `crm.manage`, `crm.admin` bases (see [Security](#security-tenancy-and-pii)) |
 | UI | n/a | `/qqq/v1` only; the one public machine route is under `/qqq/hooks/crm/` (G2, G3) |
 | Messaging | own (fake) sending | qbit-email public API (allow-listed by G1) or core `SendMessageAction` |
 | Collaboration | bespoke tags, attachments, reminders | core `RecordFeaturesMetaData` (TAGS, COMMENTS, ATTACHMENTS, FOLLOW, TASKS, ASSIGNMENT, TIMELINE) |
@@ -315,10 +316,9 @@ Server-side validation (`ValidateContingentPossibleValuesHelper`) is on for stag
 
 | Permission | Allows |
 |---|---|
-| `crm.view` | Read all CRM tables |
-| `crm.edit` | Insert, edit and delete on main and sub-tables; everyday actions |
-| `crm.manage` | Settings tables; merge, bulk assign, list and sequence management |
-| `crm.admin` | Erase personal data, consent overrides, currency rates |
+| `crm.hasAccess`, `crm.read`, `crm.write` | The app; main and sub-tables; everyday actions |
+| `crm.manage.*` | Settings tables (including currencies); merge, bulk assign, list and sequence management |
+| `crm.admin.*` | Erase personal data and consent overrides |
 
 Each table's standard QQQ suffixes map onto these, through `QPermissionRules` with
 `DenyBehavior.HIDDEN`.
@@ -332,7 +332,7 @@ default) does three things:
 The host maps Authentik groups or claims to keys in its `AuthentikPolicyClaimMapper` override.
 An all-access key is configurable. Widgets, processes and the API query with the session, so
 every read is scoped. kof22 is single-tenant and leaves this off. The 0.1.0 `securityFields` and
-`recordSecurityLocks` config is replaced, and the upgrade notes cover it.
+`recordSecurityLocks` config is replaced.
 
 **PII classification** (`DataClassification.PII`):
 - contact: names, emails, phones, address, LinkedIn, time zone
@@ -435,18 +435,15 @@ The adoption changes:
 - **Marketing:** qbit-marketing on kof22 uses `QbitCrmGateway`, which delegates to
   `CrmMarketingApi`.
 
-## Upgrading from 0.1.0
+## No upgrade path from 0.1.0
 
-- **Table renames:** 0.2.0 renames every table and column. `docs/MIGRATION-0.2.md` lists the
-  Postgres `ALTER TABLE ... RENAME` statements.
-- **Removed tables:** the tag, attachment and audit tables are dropped after export. Tags can be
-  re-applied through collaboration.
-- **Voyage:** Voyage pins 0.1.0 and has no CRM DDL. It moves when its owner chooses, using the
-  migration notes.
-- **Config:** the 0.1.0 config options `tableNamePrefix`, `quickSearchQBitNamespace`,
-  `webhooksQBitNamespace`, `workflowsQBitNamespace`, `securityFields` and `recordSecurityLocks`
-  are removed. Use `withTenantSecurityKeyType`, `withApiName`, `withEsbDestinationName` and
-  `withSchedulesEnabled`.
+0.1.0 never went live. 0.2.0 is a fresh install: there are no rename scripts and no compatibility shims. These 0.1.0 config options are removed:
+- `tableNamePrefix`
+- `quickSearchQBitNamespace`
+- `webhooksQBitNamespace`
+- `workflowsQBitNamespace`
+
+`securityFields` and `recordSecurityLocks` are replaced by `withTenantSecurityKeyType` in P4.
 
 ## Delivery phases
 
@@ -466,7 +463,7 @@ accepts every recommendation above. Specifically:
 
 | # | Decision |
 |---|---|
-| 1 | 0.2.0 is a breaking release with `crm_` names. Voyage stays on 0.1.0 until its owner migrates. |
+| 1 | 0.2.0 is a breaking, fresh-install release with `crm_` names and no compatibility work for 0.1.0. Voyage was a proof of concept (owner, 2026-10-14). |
 | 2 | Tags, attachments, reminders and audit move to collaboration, alerts and core audit. The bespoke tables are removed. |
 | 3 | The CRM never sends email itself: it uses qbit-email first, then core messaging. |
 | 4 | Lists use double opt-in by default. Contact forms never grant marketing consent without an explicit opt-in. |

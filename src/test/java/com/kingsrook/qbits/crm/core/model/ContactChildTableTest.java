@@ -1,7 +1,29 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Unit tests verifying Contact child table joins for Activity, DealContact,
- ** ContactTag, and ConsentRecord.
+ ** and ConsentRecord.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.model;
 
 
@@ -28,14 +50,13 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /*******************************************************************************
  ** Tests that Contact entity has child joins for Activity, DealContact,
- ** ContactTag, and ConsentRecord, and that child records can be inserted
+ ** and ConsentRecord, and that child records can be inserted
  ** and queried against a parent contact.
  *******************************************************************************/
 class ContactChildTableTest extends BaseTest
@@ -47,7 +68,7 @@ class ContactChildTableTest extends BaseTest
    @Test
    void testContactActivityJoinExists()
    {
-      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, Activity.TABLE_NAME);
+      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, Activity.TABLE_NAME).replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
       QJoinMetaData join = QContext.getQInstance().getJoin(joinName);
       assertNotNull(join, "Expected join from Contact to Activity to exist");
    }
@@ -60,22 +81,9 @@ class ContactChildTableTest extends BaseTest
    @Test
    void testContactDealContactJoinExists()
    {
-      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, DealContact.TABLE_NAME);
+      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, DealContact.TABLE_NAME).replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
       QJoinMetaData join = QContext.getQInstance().getJoin(joinName);
       assertNotNull(join, "Expected join from Contact to DealContact to exist");
-   }
-
-
-
-   /*******************************************************************************
-    ** Verify the join from Contact to ContactTag exists in the QInstance.
-    *******************************************************************************/
-   @Test
-   void testContactContactTagJoinExists()
-   {
-      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, ContactTag.TABLE_NAME);
-      QJoinMetaData join = QContext.getQInstance().getJoin(joinName);
-      assertNotNull(join, "Expected join from Contact to ContactTag to exist");
    }
 
 
@@ -86,7 +94,7 @@ class ContactChildTableTest extends BaseTest
    @Test
    void testContactConsentRecordJoinExists()
    {
-      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, ConsentRecord.TABLE_NAME);
+      String joinName = QJoinMetaData.makeInferredJoinName(Contact.TABLE_NAME, ConsentRecord.TABLE_NAME).replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
       QJoinMetaData join = QContext.getQInstance().getJoin(joinName);
       assertNotNull(join, "Expected join from Contact to ConsentRecord to exist");
    }
@@ -94,7 +102,7 @@ class ContactChildTableTest extends BaseTest
 
 
    /*******************************************************************************
-    ** Insert a contact, then insert child Activity, DealContact, ContactTag,
+    ** Insert a contact, then insert child Activity, DealContact,
     ** and ConsentRecord records referencing it. Verify all persist and can be
     ** queried by contactId.
     *******************************************************************************/
@@ -137,19 +145,6 @@ class ContactChildTableTest extends BaseTest
       QueryOutput dealContactQuery = new QueryAction().execute(new QueryInput(DealContact.TABLE_NAME)
          .withFilter(new QQueryFilter(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId))));
       assertEquals(1, dealContactQuery.getRecords().size());
-
-      ///////////////////////////
-      // insert a contact tag  //
-      ///////////////////////////
-      Integer tagId = insertTag("VIP");
-      new InsertAction().execute(new InsertInput(ContactTag.TABLE_NAME)
-         .withRecordEntity(new ContactTag()
-            .withContactId(contactId)
-            .withTagId(tagId)));
-
-      QueryOutput tagQuery = new QueryAction().execute(new QueryInput(ContactTag.TABLE_NAME)
-         .withFilter(new QQueryFilter(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, contactId))));
-      assertEquals(1, tagQuery.getRecords().size());
 
       ////////////////////////////////
       // insert a consent record    //
@@ -252,17 +247,5 @@ class ContactChildTableTest extends BaseTest
    }
 
 
-
-   /***************************************************************************
-    ** Helper: insert a Tag and return its id.
-    ***************************************************************************/
-   private Integer insertTag(String name) throws QException
-   {
-      InsertOutput output = new InsertAction().execute(
-         new InsertInput(Tag.TABLE_NAME)
-            .withRecordEntity(new Tag()
-               .withName(name)));
-      return (output.getRecords().get(0).getValueInteger("id"));
-   }
 
 }

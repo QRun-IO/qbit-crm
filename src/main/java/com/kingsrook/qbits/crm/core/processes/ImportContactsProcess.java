@@ -1,19 +1,37 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Simplified import process for contacts. Takes a list of QRecords,
  ** validates required fields, checks for duplicates by email, inserts new
- ** contacts, and logs audit entries.
+ ** contacts, with core table auditing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm.core.processes;
 
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import com.kingsrook.qbits.crm.audit.model.AuditLog;
 import com.kingsrook.qbits.crm.core.model.Contact;
-import com.kingsrook.qbits.crm.core.model.enums.CrmAuditAction;
-import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
@@ -22,10 +40,6 @@ import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
-import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -43,7 +57,7 @@ import com.kingsrook.qqq.backend.core.utils.StringUtils;
  *******************************************************************************/
 public class ImportContactsProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
 {
-   public static final String NAME = "importContacts";
+   public static final String NAME = "crm_import_contacts";
 
 
 
@@ -129,23 +143,10 @@ public class ImportContactsProcess implements BackendStep, MetaDataProducerInter
             .withValue("phone", inputRecord.getValueString("phone"))
             .withValue("ownerUserId", sessionUserId);
 
-         InsertOutput insertOutput = new InsertAction().execute(
+         new InsertAction().execute(
             new InsertInput(Contact.TABLE_NAME).withRecord(newContact));
-         Integer newContactId = insertOutput.getRecords().get(0).getValueInteger("id");
 
          existingEmails.add(email.toLowerCase());
-
-         ///////////////////////////////////////////
-         // log IMPORTED audit entry              //
-         ///////////////////////////////////////////
-         new InsertAction().execute(
-            new InsertInput(AuditLog.TABLE_NAME).withRecordEntity(
-               new AuditLog()
-                  .withEntityType(CrmEntityType.CONTACT.getPossibleValueId())
-                  .withEntityId(newContactId)
-                  .withAction(CrmAuditAction.IMPORTED.getPossibleValueId())
-                  .withUserId(sessionUserId)
-                  .withMessage("Contact imported")));
 
          importedCount++;
       }

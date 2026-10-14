@@ -1,18 +1,41 @@
+/*
+ * QQQ - Low-code Application Framework for Engineers.
+ * Copyright (C) 2021-2026.  Kingsrook, LLC
+ * 651 N Broad St Ste 205 # 6917 | Middletown DE 19709 | United States
+ * contact@kingsrook.com
+ * https://github.com/Kingsrook/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 /*******************************************************************************
  ** Base test class for the CRM QBit. Sets up QInstance with all CRM entities
  ** using MemoryRecordStore and anonymous auth for testing.
  *******************************************************************************/
+
 package com.kingsrook.qbits.crm;
 
 
+import com.kingsrook.qbits.crm.security.CrmPermissions;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
 import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
 import com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType;
+import com.kingsrook.qqq.backend.core.model.metadata.QBackendMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.QBackendMetaData;
 import com.kingsrook.qqq.backend.core.model.session.QSession;
 import com.kingsrook.qqq.backend.core.modules.backend.implementations.memory.MemoryBackendModule;
 import com.kingsrook.qqq.backend.core.modules.backend.implementations.memory.MemoryRecordStore;
@@ -42,7 +65,7 @@ public class BaseTest
       QInstance qInstance = defineQInstance();
       new QInstanceValidator().validate(qInstance);
 
-      QSession session = new QSession();
+      QSession session = new QSession().withPermissions(CrmPermissions.ALL);
       session.setIdReference(TEST_USER_ID);
       QContext.init(qInstance, session);
 
@@ -70,7 +93,7 @@ public class BaseTest
    {
       QInstance qInstance = new QInstance();
 
-      qInstance.setAuthentication(new QAuthenticationMetaData()
+      qInstance.withInstanceDefaultAuthentication(new QAuthenticationMetaData().withName("anonymous")
          .withType(QAuthenticationType.FULLY_ANONYMOUS));
 
       qInstance.addBackend(new QBackendMetaData()
