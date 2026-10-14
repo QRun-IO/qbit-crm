@@ -79,13 +79,13 @@ Permissions are independent grants. Every CRM-produced table, process and widget
 
 ## Starter defaults
 
-Include `db/liquibase/qbit-crm/crm-defaults.changelog.sql` in the host changelog after the CRM schema:
+Include `db/liquibase/qbit-crm/crm-defaults.changelog.sql` in the host changelog after `crm.changelog.sql` and, on a tenant-enabled install, after `crm-tenancy.changelog.sql` as well:
 
 ```yaml
 - include: { file: db/liquibase/qbit-crm/crm-defaults.changelog.sql }
 ```
 
-It seeds, insert-only: the activity types and call/meeting outcomes; the default `Sales Pipeline` (Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100%, Closed Lost 0%); lifecycle stages (the code looks up `Lead` and `Opportunity` by name); lead sources (`Website` is the web-form default); industries; win and loss reasons (prefixed `Won:` / `Lost:` because names are unique); contact roles; and a USD base currency. Lists are seeded only while empty, so a configured host is unchanged. Tenant-enabled hosts seed per tenant (the changelog skips tenant-keyed tables). The Setup card on the CRM home shows what is still missing.
+It seeds, insert-only: the activity types and call/meeting outcomes; the default `Sales Pipeline` (Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100%, Closed Lost 0%); lifecycle stages (the code looks up `Lead` and `Opportunity` by name); lead sources (`Website` is the web-form default); industries; win and loss reasons (prefixed `Won:` / `Lost:` because names are unique); contact roles; and a USD base currency. Lists are seeded only while empty, so a configured host is unchanged. The lifecycle stages (they change what intake and Convert lead assign) and the base currency are seeded only on a fresh install (no contact, respectively no deal, yet), and the stages only when `Sales Pipeline` is the only pipeline. Rollbacks are empty, so they never delete host rows. Tenant-enabled hosts seed per tenant (the changelog skips tenant-keyed tables). The Setup card on the CRM home shows what is still missing.
 
 ## Tables
 

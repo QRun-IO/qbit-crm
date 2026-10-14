@@ -8,14 +8,14 @@ lifecycle stage, and amounts have no currency prefix.
 
 What a host must do:
 
-1. Add one line to its master changelog, after the changesets that create the `crm_*` tables:
+1. Add one line to its master changelog, after `crm.changelog.sql` and, on tenant-enabled installs, after `crm-tenancy.changelog.sql` (the file checks for `tenant_key` columns, so the order matters):
 
    ```yaml
    - include: { file: db/liquibase/qbit-crm/crm-defaults.changelog.sql }
    ```
 
 2. Review what it seeds (see README, "Starter defaults"). Existing configuration is never touched: lists are seeded
-   only while their table is empty, the pipeline only when no pipeline exists, the base currency only when none exists.
+   only while their table is empty, the pipeline only when no pipeline exists, its stages only when it is the only pipeline and no stage or deal exists. Lifecycle stages and the base currency are seeded only on a fresh install (no contact, respectively no deal, yet), because they change what intake and Convert lead assign. Rollbacks are empty.
 3. Tenant-enabled hosts (the `crm-tenancy` changelog added `tenant_key` columns): the changelog skips those tables
    (marks them ran), because rows without a tenant key are invisible to tenants. Insert the same rows once per tenant
    with `tenant_key` set. The Setup card on the CRM home shows what is still missing.

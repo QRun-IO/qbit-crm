@@ -77,7 +77,7 @@ entries:
     content: |
       Roles a contact can play in a deal or relationship.
 
-      **How rows get created:** the qbit seeds six roles (Decision Maker, Champion, Influencer, Economic Buyer, Technical Evaluator, End User). Add or retire your own with New. They are offered when you attach a contact to a deal.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds six roles (Decision Maker, Champion, Influencer, Economic Buyer, Technical Evaluator, End User). Add or retire your own with New. They are offered when you attach a contact to a deal.
   - key: table:crm_deal;slot:help
     summary: "Sales opportunities tracked through a pipeline."
     content: |
@@ -199,13 +199,13 @@ entries:
     content: |
       Sales pipelines that group stages. Give each pipeline a clear purpose and ordered stages.
 
-      **How rows get created:** the qbit seeds one default pipeline, Sales Pipeline, when you have none. Add more with New and tick Default on the one new deals and converted leads should use. Create Deal (Convert lead) fails without a default pipeline that has stages.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds one default pipeline, Sales Pipeline, when you have none. Add more with New and tick Default on the one new deals and converted leads should use. Create Deal (Convert lead) fails without a default pipeline that has stages.
   - key: table:crm_pipeline_stage;slot:help
     summary: "Ordered stages within a pipeline, with probability, required fields and won or lost outcomes."
     content: |
       Ordered stages within a pipeline, with probability, required fields and won or lost outcomes.
 
-      **How rows get created:** the qbit seeds six stages for Sales Pipeline: Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100% and Closed Lost 0%. Add the stages of other pipelines from the pipeline's record. Tick Closed Won and Closed Lost on the stages that end a deal: the home, goals and forecasts count from them.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds six stages for Sales Pipeline: Qualification 10%, Discovery 25%, Proposal 50%, Negotiation 75%, Closed Won 100% and Closed Lost 0%. Add the stages of other pipelines from the pipeline's record. Tick Closed Won and Closed Lost on the stages that end a deal: the home, goals and forecasts count from them.
   - key: table:crm_product;slot:help
     summary: "Products and services available as deal line items."
     content: |
@@ -217,7 +217,7 @@ entries:
     content: |
       Reasons for winning or losing a deal. Use these to improve pipeline reporting.
 
-      **How rows get created:** the qbit seeds three won reasons (Price, Product fit, Relationship) and five lost ones (Price, Competitor, No budget, No decision, Timing), each prefixed Won: or Lost:. Add your own with New. A user picks one when marking a deal won or lost.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds three won reasons (Price, Product fit, Relationship) and five lost ones (Price, Competitor, No budget, No decision, Timing), each prefixed Won: or Lost:. Add your own with New. A user picks one when marking a deal won or lost.
   - key: table:crm_company;slot:help
     summary: "Organizations linked to contacts and deals."
     content: |
@@ -533,7 +533,7 @@ entries:
     content: |
       Currency codes and exchange rates used to report deal values in a base currency.
 
-      **How rows get created:** the qbit seeds US Dollar as the base currency (rate 1) when you have none. Add other currencies with New and a rate to the base; changing a rate stamps Rate last updated. Change the base before your first deal if you do not report in USD. Without a base currency, amounts have no prefix and conversion does nothing.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds US Dollar as the base currency (rate 1) when you have none. Add other currencies with New and a rate to the base; changing a rate stamps Rate last updated. Change the base before your first deal if you do not report in USD. Without a base currency, amounts have no prefix and conversion does nothing.
   - key: table:crm_email_list;slot:help
     summary: "Mailing lists and opt-in settings."
     content: |
@@ -729,19 +729,19 @@ entries:
     content: |
       Industry categories for companies. Choose one that describes the primary business.
 
-      **How rows get created:** the qbit seeds ten generic industries (Technology, Healthcare and so on). Add or retire your own with New. A company picks one.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds ten generic industries (Technology, Healthcare and so on). Add or retire your own with New. A company picks one.
   - key: table:crm_lead_source;slot:help
     summary: "Where a contact or deal originated."
     content: |
       Where a contact or deal originated. Use consistent categories for attribution reports.
 
-      **How rows get created:** the qbit seeds eight sources: Website (the one web forms use), Referral, Event, Email Campaign, Social, Partner, Cold Outreach and Other. Add your own with New. Contacts and deals pick one for attribution reports.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds eight sources: Website (the one web forms use), Referral, Event, Email Campaign, Social, Partner, Cold Outreach and Other. Add your own with New. Contacts and deals pick one for attribution reports.
   - key: table:crm_lifecycle_stage;slot:help
     summary: "Lifecycle categories for contacts, such as lead and customer."
     content: |
       Lifecycle categories for contacts, such as lead and customer.
 
-      **How rows get created:** the qbit seeds eight stages: Subscriber, Lead, Marketing Qualified Lead, Sales Qualified Lead, Opportunity, Customer, Evangelist and Other. Keep the names Lead and Opportunity exactly: new web leads get Lead, and Create Deal (Convert lead) moves the contact to Opportunity. A missing one is skipped silently.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds eight stages: Subscriber, Lead, Marketing Qualified Lead, Sales Qualified Lead, Opportunity, Customer, Evangelist and Other. Keep the names Lead and Opportunity exactly: new web leads get Lead, and Create Deal (Convert lead) moves the contact to Opportunity. A missing one is skipped silently.
   - key: table:crm_activity;slot:help
     summary: "Past interactions with contacts, companies and deals."
     content: |
@@ -857,7 +857,7 @@ entries:
     content: |
       The result of an activity. Only outcomes belonging to the selected activity type are offered.
 
-      **How rows get created:** the qbit seeds Connected, Left voicemail and No answer for calls and Meeting held and Meeting no-show for meetings. Add your own with New, choosing the activity type it belongs to.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds Connected, Left voicemail and No answer for calls and Meeting held and Meeting no-show for meetings. Add your own with New, choosing the activity type it belongs to.
   - key: table:crm_activity_participant;slot:help
     summary: "People participating in a recorded activity and their roles."
     content: |
@@ -869,7 +869,7 @@ entries:
     content: |
       Types of interaction such as calls, meetings and notes. Outcomes are scoped to a type.
 
-      **How rows get created:** the qbit seeds Note, Email, Call, Meeting, Form submission and Sequence step, and the CRM adds any that are missing the first time it needs them. Add your own with New.
+      **How rows get created:** when the host includes the crm-defaults changelog, the qbit seeds Note, Email, Call, Meeting, Form submission and Sequence step, and the CRM adds any that are missing the first time it needs them. Add your own with New.
   - key: possibleValueSource:CrmActivityPriority;slot:help
     summary: "Available activity priority values."
     content: |

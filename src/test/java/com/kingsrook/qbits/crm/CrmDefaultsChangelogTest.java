@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  ** inserts nothing and keeps an administrator's edits, an existing setup is
  ** respected, and a tenant-enabled schema is left alone.
  *******************************************************************************/
-class CrmDefaultsChangelogTest
+public class CrmDefaultsChangelogTest
 {
    static final String SCHEMA    = "/db/liquibase/qbit-crm/crm.changelog.sql";
    static final String TENANCY   = "/db/liquibase/qbit-crm/crm-tenancy.changelog.sql";
@@ -58,7 +58,7 @@ class CrmDefaultsChangelogTest
    /*******************************************************************************
     ** The tables the changelog seeds.
     *******************************************************************************/
-   static final List<String> SEEDED_TABLES = List.of("crm_activity_type", "crm_activity_outcome", "crm_pipeline", "crm_pipeline_stage",
+   public static final List<String> SEEDED_TABLES = List.of("crm_activity_type", "crm_activity_outcome", "crm_pipeline", "crm_pipeline_stage",
       "crm_lifecycle_stage", "crm_lead_source", "crm_industry", "crm_win_loss_reason", "crm_contact_role", "crm_currency");
 
 
@@ -77,7 +77,7 @@ class CrmDefaultsChangelogTest
          assertThat(first).containsEntry("crm_activity_type", 6).containsEntry("crm_activity_outcome", 5).containsEntry("crm_pipeline", 1)
             .containsEntry("crm_pipeline_stage", 6).containsEntry("crm_lifecycle_stage", 8).containsEntry("crm_lead_source", 8)
             .containsEntry("crm_win_loss_reason", 8).containsEntry("crm_contact_role", 6).containsEntry("crm_currency", 1);
-         assertThat(first.get("crm_industry")).isGreaterThanOrEqualTo(8);
+         assertThat(first.get("crm_industry")).isEqualTo(10);
 
          try(Statement statement = connection.createStatement())
          {
@@ -193,6 +193,106 @@ class CrmDefaultsChangelogTest
 
 
    /*******************************************************************************
+    ** Rolling the defaults back deletes nothing: host-owned rows (and tenant rows,
+    ** whose changesets were marked ran) survive a Liquibase rollback.
+    *******************************************************************************/
+   @Test
+   void rollbackNeverDeletesHostRows() throws Exception
+   {
+      try(Connection connection = DriverManager.getConnection(url()))
+      {
+         liquibase(connection, SCHEMA);
+         liquibase(connection, CHANGELOG);
+         Map<String, Integer> seeded = counts(connection);
+         connection.createStatement().execute("INSERT INTO crm_lead_source (name, sort_order) VALUES ('Host source', 99)");
+         connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default) VALUES ('Host pipeline', FALSE)");
+         rollback(connection, CHANGELOG, 10);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lead_source WHERE name = 'Host source'")).isEqualTo("1");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline WHERE name = 'Host pipeline'")).isEqualTo("1");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lead_source")).isEqualTo("9");
+         assertThat(seeded.get("crm_pipeline_stage")).isEqualTo(6);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline_stage")).isEqualTo("6");
+      }
+      try(Connection connection = DriverManager.getConnection(url()))
+      {
+         liquibase(connection, SCHEMA);
+         liquibase(connection, TENANCY);
+         liquibase(connection, CHANGELOG);
+         connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default, tenant_key) VALUES ('Sales Pipeline', TRUE, 'acme')");
+         connection.createStatement().execute("INSERT INTO crm_lifecycle_stage (name, sort_order, tenant_key) VALUES ('Lead', 1, 'acme')");
+         rollback(connection, CHANGELOG, 10);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline WHERE tenant_key = 'acme'")).isEqualTo("1");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lifecycle_stage WHERE tenant_key = 'acme'")).isEqualTo("1");
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Lifecycle stages and the base currency change what intake, Convert lead
+    ** and amounts do, so they are seeded only on a fresh install; the pipeline
+    ** stages only into the pipeline the defaults created.
+    *******************************************************************************/
+   @Test
+   void behaviorChangingSeedsNeedAFreshInstall() throws Exception
+   {
+      try(Connection connection = freshSchema())
+      {
+         connection.createStatement().execute("INSERT INTO crm_contact (email) VALUES ('a@example.test')");
+         runChangelog(connection, false);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lifecycle_stage")).isEqualTo("0");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lead_source")).isEqualTo("8");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_currency")).isEqualTo("1");
+      }
+      try(Connection connection = freshSchema())
+      {
+         connection.createStatement().execute("INSERT INTO crm_deal (name, pipeline_id, pipeline_stage_id) VALUES ('d', 1, 1)");
+         runChangelog(connection, false);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_currency")).isEqualTo("0");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline_stage")).isEqualTo("0");
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lifecycle_stage")).isEqualTo("8");
+      }
+      try(Connection connection = freshSchema())
+      {
+         connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default) VALUES ('Sales Pipeline', TRUE)");
+         connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default) VALUES ('Other', FALSE)");
+         runChangelog(connection, false);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline_stage")).as("not the only pipeline").isEqualTo("0");
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Order matters: included before crm-tenancy, the untenanted rows are seeded
+    ** and the tenancy columns are added afterwards; included after, nothing is.
+    *******************************************************************************/
+   @Test
+   void orderAgainstTenancyMatters() throws Exception
+   {
+      try(Connection connection = DriverManager.getConnection(url()))
+      {
+         liquibase(connection, SCHEMA);
+         liquibase(connection, CHANGELOG);
+         liquibase(connection, TENANCY);
+         assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline WHERE tenant_key IS NULL")).as("wrong order: untenanted rows").isEqualTo("1");
+      }
+   }
+
+
+
+   /*******************************************************************************
+    **
+    *******************************************************************************/
+   private static void rollback(Connection connection, String path, int count) throws Exception
+   {
+      Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+      new Liquibase(path.substring(1), new ClassLoaderResourceAccessor(), database).rollback(count, "crm-tenancy");
+   }
+
+
+
+   /*******************************************************************************
     **
     *******************************************************************************/
    private static String url()
@@ -267,7 +367,7 @@ class CrmDefaultsChangelogTest
    /*******************************************************************************
     ** A fresh H2 (PostgreSQL mode) with the qbit's own schema.
     *******************************************************************************/
-   static Connection freshSchema() throws Exception
+   public static Connection freshSchema() throws Exception
    {
       Connection connection = DriverManager.getConnection("jdbc:h2:mem:crmdefaults" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH");
       try(Statement statement = connection.createStatement())
@@ -288,7 +388,7 @@ class CrmDefaultsChangelogTest
     ** precondition-sql-check does not give its expected result is skipped, as
     ** Liquibase would (MARK_RAN).
     *******************************************************************************/
-   static void runChangelog(Connection connection, boolean ignorePreconditions) throws Exception
+   public static void runChangelog(Connection connection, boolean ignorePreconditions) throws Exception
    {
       try(Statement statement = connection.createStatement())
       {
