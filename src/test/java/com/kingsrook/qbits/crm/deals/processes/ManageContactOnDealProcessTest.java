@@ -35,6 +35,7 @@ import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
 import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -50,6 +51,7 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
@@ -143,6 +145,9 @@ class ManageContactOnDealProcessTest extends BaseTest
 
       assertEquals(1, primaryCount, "Only one contact should be primary");
       assertEquals(contact3Id, primaryContactId, "Third contact should be the primary");
+      assertEquals(contact3Id, GetAction.execute(Deal.TABLE_NAME, dealId).getValueInteger("primaryContactId"));
+      runManageContact(dealId, contact3Id, "REMOVE", null);
+      assertNull(GetAction.execute(Deal.TABLE_NAME, dealId).getValueInteger("primaryContactId"));
    }
 
 

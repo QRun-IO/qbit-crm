@@ -33,6 +33,7 @@ import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealContact;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.actions.tables.DeleteAction;
+import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
@@ -131,6 +132,11 @@ public class ManageContactOnDealProcess implements BackendStep, MetaDataProducer
 
          new InsertAction().execute(
             new InsertInput(DealContact.TABLE_NAME).withRecordEntity(dealContact));
+         if(Boolean.TRUE.equals(isPrimary))
+         {
+            new UpdateAction().execute(new UpdateInput(Deal.TABLE_NAME).withRecord(new QRecord()
+               .withValue("id", dealId).withValue("primaryContactId", contactId)));
+         }
       }
       else if("REMOVE".equalsIgnoreCase(action))
       {
@@ -156,6 +162,12 @@ public class ManageContactOnDealProcess implements BackendStep, MetaDataProducer
          deleteInput.setTableName(DealContact.TABLE_NAME);
          deleteInput.setPrimaryKeys(idsToDelete.stream().map(id -> (java.io.Serializable) id).toList());
          new DeleteAction().execute(deleteInput);
+         QRecord deal = GetAction.execute(Deal.TABLE_NAME, dealId);
+         if(deal != null && contactId.equals(deal.getValueInteger("primaryContactId")))
+         {
+            new UpdateAction().execute(new UpdateInput(Deal.TABLE_NAME).withRecord(new QRecord()
+               .withValue("id", dealId).withValue("primaryContactId", null)));
+         }
       }
       else
       {

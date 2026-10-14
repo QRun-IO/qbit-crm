@@ -102,6 +102,7 @@ class SendEmailProcessTest extends BaseTest
 
       EmailMessage emailMsg = new EmailMessage(emailQuery.getRecords().get(0));
       assertEquals("Test Subject", emailMsg.getSubject());
+      assertEquals(contactId, emailMsg.getContactId());
       assertEquals("<p>Hello</p>", emailMsg.getBodyHtml());
       assertEquals("jane@example.com", emailMsg.getToAddresses());
       assertNotNull(emailMsg.getSentDate());

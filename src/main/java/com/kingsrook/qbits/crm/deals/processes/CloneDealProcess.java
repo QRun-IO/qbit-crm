@@ -127,6 +127,7 @@ public class CloneDealProcess implements BackendStep, MetaDataProducerInterface<
          .withValue("amount", sourceDeal.getAmount())
          .withValue("currencyCode", sourceDeal.getCurrencyCode())
          .withValue("companyId", sourceDeal.getCompanyId())
+         .withValue("primaryContactId", sourceDeal.getPrimaryContactId())
          .withValue("ownerUserId", sourceDeal.getOwnerUserId())
          .withValue("leadSourceId", sourceDeal.getLeadSourceId())
          .withValue("expectedCloseDate", sourceDeal.getExpectedCloseDate())

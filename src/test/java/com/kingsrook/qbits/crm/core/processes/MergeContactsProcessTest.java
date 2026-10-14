@@ -43,6 +43,8 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
+import com.kingsrook.qqq.backend.core.modules.backend.implementations.memory.MemoryRecordStore;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -66,6 +68,10 @@ class MergeContactsProcessTest extends BaseTest
       ///////////////////////////////////////
       Integer primaryId   = insertContact("primary@example.com", "Primary", "Contact");
       Integer secondaryId = insertContact("secondary@example.com", "Secondary", "Contact");
+      MemoryRecordStore.getInstance().insert(new InsertInput("crm_deal")
+         .withRecord(new QRecord().withValue("id", 1).withValue("primaryContactId", secondaryId)), true);
+      MemoryRecordStore.getInstance().insert(new InsertInput("crm_email_message")
+         .withRecord(new QRecord().withValue("id", 1).withValue("contactId", secondaryId)), true);
 
       ///////////////////////////////////////
       // create activity on secondary      //
@@ -103,6 +109,8 @@ class MergeContactsProcessTest extends BaseTest
             .withFilter(new QQueryFilter()
                .withCriteria(new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, primaryId))));
       assertEquals(1, activities.getRecords().size());
+      assertEquals(primaryId, GetAction.execute("crm_deal", 1).getValueInteger("primaryContactId"));
+      assertEquals(primaryId, GetAction.execute("crm_email_message", 1).getValueInteger("contactId"));
 
    }
 
