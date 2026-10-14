@@ -22,13 +22,14 @@
 /*******************************************************************************
  ** MetaData producer for the CRM Contact Timeline widget.
  **
- ** Provides a STEPPER view showing a chronological timeline of activities for
- ** a specific contact. The contactId is passed as a widget input parameter.
+ ** Provides a standard table of activities, messages, web leads and consent for
+ ** the contact selected by the record screen id parameter.
  *******************************************************************************/
 
 package com.kingsrook.qbits.crm.widgets;
 
 
+import com.kingsrook.qbits.crm.security.CrmPermissions;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.dashboard.widgets.WidgetType;
 import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducer;
@@ -39,7 +40,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 
 
 /*******************************************************************************
- ** Produces metadata for the crm_contact_timeline widget (STEPPER type).
+ ** Produces metadata for the crm_contact_timeline widget (TABLE type).
  *******************************************************************************/
 public class CrmContactTimelineWidgetProducer extends MetaDataProducer<QWidgetMetaData>
 {
@@ -55,8 +56,9 @@ public class CrmContactTimelineWidgetProducer extends MetaDataProducer<QWidgetMe
    {
       return new QWidgetMetaData()
          .withName(NAME)
-         .withType(WidgetType.STEPPER.getType())
+         .withType(WidgetType.TABLE.getType())
          .withGridColumns(12)
+         .withPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE))
          .withIsCard(true)
          .withLabel("Contact Timeline")
          .withTooltip("Chronological activity timeline for this contact")
