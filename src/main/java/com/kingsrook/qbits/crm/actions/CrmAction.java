@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import com.kingsrook.qbits.crm.activities.processes.LogActivityProcess;
+import com.kingsrook.qbits.crm.api.CrmApi;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEnrollmentStatus;
 import com.kingsrook.qbits.crm.core.processes.ConvertFormToContactProcess;
 import com.kingsrook.qbits.crm.core.processes.GdprAnonymizeContactProcess;
@@ -42,6 +43,8 @@ import com.kingsrook.qbits.crm.core.processes.UnsubscribeFromListProcess;
 import com.kingsrook.qbits.crm.deals.processes.CloneDealProcess;
 import com.kingsrook.qbits.crm.deals.processes.ConvertLeadProcess;
 import com.kingsrook.qbits.crm.deals.processes.ManageContactOnDealProcess;
+import com.kingsrook.qbits.crm.email.CrmEmailTransport;
+import com.kingsrook.qbits.crm.email.CrmEmails;
 import com.kingsrook.qbits.crm.email.processes.EnrollInSequenceProcess;
 import com.kingsrook.qbits.crm.email.processes.UnenrollFromSequenceProcess;
 import com.kingsrook.qbits.crm.scoring.processes.AutoAssignProcess;
@@ -84,7 +87,7 @@ public final class CrmAction
 {
    private static final QLogger LOG = QLogger.getLogger(CrmAction.class);
 
-   public static final String EMAIL_WARNING = "Email sending arrives with the email transport";
+
 
    /*******************************************************************************
     ** Utility holder.
@@ -162,6 +165,14 @@ public final class CrmAction
     *******************************************************************************/
    public static class Transform extends AbstractTransformStep implements ProcessSummaryProviderInterface
    {
+      /*******************************************************************************
+       ** Resolve the host transport; tests may supply a fake.
+       *******************************************************************************/
+      protected CrmEmailTransport emailTransport() throws QException
+      {
+         return (new CrmEmailTransport(CrmApi.config()));
+      }
+
       private final Map<String, ProcessSummaryLine> lines = new LinkedHashMap<>();
       private final Map<String, List<Serializable>> duplicateGroups = new LinkedHashMap<>();
       private List<QRecord> pair;
@@ -190,7 +201,7 @@ public final class CrmAction
             try
             {
                QRecord row = requireRow(action, input, id);
-               String reason = check(action, input, row);
+               String reason = check(action, input, row, action.operation().equals("email") ? emailTransport() : null);
                if(reason != null)
                {
                   add(lines, Status.WARNING, reason, reason, id);
@@ -253,6 +264,14 @@ public final class CrmAction
     *******************************************************************************/
    public static class Load extends AbstractLoadStep implements ProcessSummaryProviderInterface
    {
+      /*******************************************************************************
+       ** Resolve the host transport; tests may supply a fake.
+       *******************************************************************************/
+      protected CrmEmailTransport emailTransport() throws QException
+      {
+         return (new CrmEmailTransport(CrmApi.config()));
+      }
+
       private final Map<String, ProcessSummaryLine> lines = new LinkedHashMap<>();
       private boolean duplicates;
 
@@ -267,14 +286,14 @@ public final class CrmAction
             try
             {
                QRecord row = requireRow(action, input, id);
-               String reason = check(action, input, row);
+               String reason = check(action, input, row, action.operation().equals("email") ? emailTransport() : null);
                if(reason != null)
                {
                   add(lines, Status.WARNING, reason, reason, id);
                   continue;
                }
                row.setValue("mergeSecondaryId", reviewed.getValue("mergeSecondaryId"));
-               String skipped = perform(action, input, row);
+               String skipped = perform(action, input, row, action.operation().equals("email") ? emailTransport() : null);
                if(skipped == null)
                {
                   add(lines, Status.OK, "will be " + action.past(), "was " + action.past(), id);
@@ -345,7 +364,7 @@ public final class CrmAction
    /*******************************************************************************
     ** Shared read-only checks for Review and Result.
     *******************************************************************************/
-   private static String check(CrmActions.Action action, RunBackendStepInput input, QRecord row) throws QException
+   private static String check(CrmActions.Action action, RunBackendStepInput input, QRecord row, CrmEmailTransport transport) throws QException
    {
       for(QFieldMetaData field : CrmActions.inputFields(action))
       {
@@ -365,15 +384,7 @@ public final class CrmAction
       switch(action.operation())
       {
          case "email":
-            try
-            {
-               Class.forName("com.kingsrook.qbits.crm.email.CrmEmailTransport");
-               return ("Email transport is present; sending integration is not configured for this action yet");
-            }
-            catch(ClassNotFoundException expected)
-            {
-               return (EMAIL_WARNING);
-            }
+            return (CrmEmails.skipReason(row, transport));
          case "subscribe", "unsubscribe":
             if(!StringUtils.hasContent(row.getValueString("email")))
             {
@@ -479,7 +490,7 @@ public final class CrmAction
    /*******************************************************************************
     ** Invoke the existing business operations only at Load time.
     *******************************************************************************/
-   private static String perform(CrmActions.Action action, RunBackendStepInput input, QRecord row) throws QException
+   private static String perform(CrmActions.Action action, RunBackendStepInput input, QRecord row, CrmEmailTransport transport) throws QException
    {
       RunBackendStepInput call = new RunBackendStepInput().withProcessName(input.getProcessName()).withValues(new HashMap<>());
       for(QFieldMetaData field : CrmActions.inputFields(action))
@@ -494,6 +505,16 @@ public final class CrmAction
       RunBackendStepOutput result = new RunBackendStepOutput();
       switch(action.operation())
       {
+         case "email" ->
+         {
+            String processUUID = input.getValueString("crmEmailProcessUUID");
+            if(processUUID == null)
+            {
+               throw (new QUserFacingException("Email process identity is missing; start the Send Email action again"));
+            }
+            CrmEmails.send(transport, row, input.getValueInteger("emailTemplateId"), input.getValueString("subject"), input.getValueString("body"),
+               "email", id + ":" + processUUID, null);
+         }
          case "assign" -> update(action.table(), new QRecord().withValue("id", id).withValue("ownerUserId", input.getValue("newOwnerUserId")));
          case "auto" ->
          {

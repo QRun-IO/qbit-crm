@@ -148,6 +148,12 @@ public class CrmActions implements MetaDataProducerInterface<MetaDataProducerMul
       List<QFieldMetaData> fields = new ArrayList<>();
       switch(action.operation())
       {
+         case "email" ->
+         {
+            fields.add(field("emailTemplateId", "Template", QFieldType.INTEGER, "crm_email_template").withIsRequired(false));
+            fields.add(field("subject", "Subject", QFieldType.STRING, null).withIsRequired(false));
+            fields.add(field("body", "Body", QFieldType.TEXT, null).withIsRequired(false));
+         }
          case "assign" -> fields.add(field("newOwnerUserId", "Owner", QFieldType.STRING, null));
          case "subscribe", "unsubscribe" -> fields.add(field("emailListId", "List", QFieldType.INTEGER, "crm_email_list"));
          case "enroll", "unenroll" -> fields.add(field("sequenceId", "Sequence", QFieldType.INTEGER, "crm_email_sequence"));

@@ -40,7 +40,13 @@ public enum CrmEmailStatus implements PossibleValueEnum<Integer>
    DRAFT(1, "Draft"),
    SENT(2, "Sent"),
    DELIVERED(3, "Delivered"),
-   FAILED(4, "Failed");
+   FAILED(4, "Failed"),
+   QUEUED(5, "Queued"),
+   BOUNCED(6, "Bounced"),
+   COMPLAINED(7, "Complained"),
+   OPENED(8, "Opened"),
+   CLICKED(9, "Clicked"),
+   SUPPRESSED(10, "Suppressed");
 
    private final Integer id;
    private final String  label;
