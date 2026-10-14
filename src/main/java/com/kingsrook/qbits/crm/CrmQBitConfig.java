@@ -43,6 +43,12 @@ public class CrmQBitConfig implements QBitConfig
 {
    public static final CrmQBitConfig DEFAULT_CONFIG = new CrmQBitConfig();
 
+   private String messagingProviderName;
+
+   private String publicBaseUrl;
+
+   private String tokenSecret;
+
    private String                                      defaultBackendNameForTables;
    private Boolean                                     inferBackendNames = true;
    private MetaDataCustomizerInterface<QTableMetaData>  tableMetaDataCustomizer;
@@ -185,6 +191,64 @@ public class CrmQBitConfig implements QBitConfig
    public CrmQBitConfig withInferBackendNames(Boolean inferBackendNames)
    {
       this.inferBackendNames = inferBackendNames;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for tokenSecret
+    *******************************************************************************/
+   public String getTokenSecret()
+   {
+      return (tokenSecret);
+   }
+
+
+   /*******************************************************************************
+    ** Configure tokenSecret
+    *******************************************************************************/
+   public CrmQBitConfig withTokenSecret(String tokenSecret)
+   {
+      this.tokenSecret = tokenSecret;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for publicBaseUrl
+    *******************************************************************************/
+   public String getPublicBaseUrl()
+   {
+      return (publicBaseUrl);
+   }
+
+
+   /*******************************************************************************
+    ** Configure publicBaseUrl
+    *******************************************************************************/
+   public CrmQBitConfig withPublicBaseUrl(String publicBaseUrl)
+   {
+      this.publicBaseUrl = publicBaseUrl;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for messagingProviderName
+    *******************************************************************************/
+   public String getMessagingProviderName()
+   {
+      return (messagingProviderName);
+   }
+
+
+   /*******************************************************************************
+    ** Configure messagingProviderName
+    *******************************************************************************/
+   public CrmQBitConfig withMessagingProviderName(String messagingProviderName)
+   {
+      this.messagingProviderName = messagingProviderName;
       return (this);
    }
 

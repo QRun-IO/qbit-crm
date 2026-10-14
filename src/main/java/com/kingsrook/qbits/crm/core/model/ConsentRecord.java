@@ -31,6 +31,8 @@ import java.util.List;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
 import com.kingsrook.qbits.crm.core.model.enums.CrmLegalBasis;
+import com.kingsrook.qqq.backend.core.actions.ai.AiFieldMetaData;
+import com.kingsrook.qqq.backend.core.actions.ai.DataClassification;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreDeleteCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.AbstractPreUpdateCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
@@ -81,7 +83,7 @@ public class ConsentRecord extends QRecordEntity
             .withRecordLabelFormat("Consent %s - %s")
             .withRecordLabelFields("contactId", "consentType")
             .withSection(SectionFactory.defaultT1("id", "contactId", "consentType", "status"))
-            .withSection(SectionFactory.defaultT2("legalBasis", "source", "consentDate", "expiryDate", "ipAddress"))
+            .withSection(SectionFactory.defaultT2("legalBasis", "source", "consentDate", "expiryDate", "consentText", "evidenceFormSubmissionId"))
             .withSection(SectionFactory.defaultT3("createDate"));
 
          ///////////////////////////////////////////////////////////////////////////
@@ -89,6 +91,8 @@ public class ConsentRecord extends QRecordEntity
          ///////////////////////////////////////////////////////////////////////////
          table.withCustomizer(TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(PreventUpdateCustomizer.class));
          table.withCustomizer(TableCustomizers.PRE_DELETE_RECORD, new QCodeReference(PreventDeleteCustomizer.class));
+
+         table.getField("consentText").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
 
          return (table);
       }
@@ -130,6 +134,12 @@ public class ConsentRecord extends QRecordEntity
 
 
 
+   @QField()
+   private String consentText;
+
+   @QField(possibleValueSourceName = FormSubmission.TABLE_NAME)
+   private Integer evidenceFormSubmissionId;
+
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
 
@@ -153,9 +163,6 @@ public class ConsentRecord extends QRecordEntity
 
    @QField()
    private Instant expiryDate;
-
-   @QField(maxLength = 45, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
-   private String ipAddress;
 
    @QField(isEditable = false)
    private Instant createDate;
@@ -430,37 +437,6 @@ public class ConsentRecord extends QRecordEntity
 
 
    /*******************************************************************************
-    ** Getter for ipAddress
-    *******************************************************************************/
-   public String getIpAddress()
-   {
-      return (this.ipAddress);
-   }
-
-
-
-   /*******************************************************************************
-    ** Setter for ipAddress
-    *******************************************************************************/
-   public void setIpAddress(String ipAddress)
-   {
-      this.ipAddress = ipAddress;
-   }
-
-
-
-   /*******************************************************************************
-    ** Fluent setter for ipAddress
-    *******************************************************************************/
-   public ConsentRecord withIpAddress(String ipAddress)
-   {
-      this.ipAddress = ipAddress;
-      return (this);
-   }
-
-
-
-   /*******************************************************************************
     ** Getter for createDate
     *******************************************************************************/
    public Instant getCreateDate()
@@ -486,6 +462,63 @@ public class ConsentRecord extends QRecordEntity
    public ConsentRecord withCreateDate(Instant createDate)
    {
       this.createDate = createDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for consentText
+    *******************************************************************************/
+   public String getConsentText()
+   {
+      return (this.consentText);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for consentText
+    *******************************************************************************/
+   public void setConsentText(String consentText)
+   {
+      this.consentText = consentText;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentText
+    *******************************************************************************/
+   public ConsentRecord withConsentText(String consentText)
+   {
+      this.consentText = consentText;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for evidenceFormSubmissionId
+    *******************************************************************************/
+   public Integer getEvidenceFormSubmissionId()
+   {
+      return (this.evidenceFormSubmissionId);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for evidenceFormSubmissionId
+    *******************************************************************************/
+   public void setEvidenceFormSubmissionId(Integer evidenceFormSubmissionId)
+   {
+      this.evidenceFormSubmissionId = evidenceFormSubmissionId;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for evidenceFormSubmissionId
+    *******************************************************************************/
+   public ConsentRecord withEvidenceFormSubmissionId(Integer evidenceFormSubmissionId)
+   {
+      this.evidenceFormSubmissionId = evidenceFormSubmissionId;
       return (this);
    }
 

@@ -119,7 +119,7 @@ class EmailListTest extends BaseTest
       listInsert.setTableName(EmailList.TABLE_NAME);
       listInsert.setRecords(List.of(new EmailList()
          .withName("Newsletter")
-         .withSlug("newsletter")
+         .withListKey("newsletter").withSlug("newsletter")
          .withIsActive(true)
          .withIsPublic(true)
          .withSortOrder(1)

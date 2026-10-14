@@ -42,6 +42,8 @@ import com.kingsrook.qbits.crm.security.CrmPermissions;
 import com.kingsrook.qbits.crm.widgets.CrmWidgetMetaData;
 import com.kingsrook.qqq.backend.core.actions.customizers.MultiCustomizer;
 import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
+import com.kingsrook.qqq.backend.core.alerts.AlertSeverity;
+import com.kingsrook.qqq.backend.core.alerts.QAlertTypeMetaData;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceEnricher;
 import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
@@ -293,7 +295,30 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          output.add(item instanceof QWidgetMetaData widget
             ? new CrmWidgetMetaData(widget).withSourceQBitName(getQBitMetaData().getName()) : item);
       }
+      output.add(new QAlertTypeMetaData().withName("crm.lead.received").withLabel("New web lead")
+         .withDefaultSeverity(AlertSeverity.INFO).withSourceQBitName(getQBitMetaData().getName()));
+      output.add(new QAlertTypeMetaData().withName("crm.sequence.failing").withLabel("Sequence needs attention")
+         .withSourceQBitName(getQBitMetaData().getName()));
+      output.add(new QAlertTypeMetaData().withName("crm.email.unavailable").withLabel("Email unavailable")
+         .withSourceQBitName(getQBitMetaData().getName()));
+      registerHooks(qInstance);
       return (output);
    }
 
+   /*******************************************************************************
+    ** Link the route provider only when both optional middleware classes exist.
+    *******************************************************************************/
+   private static void registerHooks(QInstance instance)
+   {
+      try
+      {
+         Class.forName("io.javalin.Javalin");
+         Class.forName("com.kingsrook.qqq.middleware.javalin.QJavalinMetaData");
+      }
+      catch(ClassNotFoundException | LinkageError e)
+      {
+         return;
+      }
+      com.kingsrook.qbits.crm.webhook.CrmHookRouteProvider.register(instance);
+   }
 }

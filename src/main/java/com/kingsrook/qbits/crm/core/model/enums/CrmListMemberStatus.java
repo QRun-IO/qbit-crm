@@ -40,7 +40,8 @@ public enum CrmListMemberStatus implements PossibleValueEnum<Integer>
    SUBSCRIBED(1, "Subscribed"),
    UNSUBSCRIBED(2, "Unsubscribed"),
    BOUNCED(3, "Bounced"),
-   CLEANED(4, "Cleaned");
+   CLEANED(4, "Cleaned"),
+   PENDING_CONFIRMATION(5, "Pending confirmation");
 
    private final Integer id;
    private final String  label;

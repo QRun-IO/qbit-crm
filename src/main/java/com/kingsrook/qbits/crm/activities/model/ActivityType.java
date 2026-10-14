@@ -77,7 +77,8 @@ public class ActivityType extends QRecordEntity
             .withRecordLabelFormat("%s")
             .withRecordLabelFields("name")
             .withUniqueKey(new UniqueKey("name"))
-            .withSection(SectionFactory.defaultT1("id", "name", "iconName"))
+            .withUniqueKey(new UniqueKey("code"))
+            .withSection(SectionFactory.defaultT1("id", "name", "code", "iconName"))
             .withSection(SectionFactory.defaultT2("isSystem", "sortOrder", "isActive"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
 
@@ -115,6 +116,9 @@ public class ActivityType extends QRecordEntity
    }
 
 
+
+   @QField(maxLength = 50, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String code;
 
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
@@ -404,6 +408,35 @@ public class ActivityType extends QRecordEntity
    public ActivityType withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for code
+    *******************************************************************************/
+   public String getCode()
+   {
+      return (this.code);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for code
+    *******************************************************************************/
+   public void setCode(String code)
+   {
+      this.code = code;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for code
+    *******************************************************************************/
+   public ActivityType withCode(String code)
+   {
+      this.code = code;
       return (this);
    }
 
