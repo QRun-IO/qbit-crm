@@ -83,6 +83,54 @@ class CrmHomeWidgetsTest extends BaseTest
 
 
    /*******************************************************************************
+    ** Whole and fractional amounts retain grouping without artificial decimals.
+    *******************************************************************************/
+   @Test
+   void amountFormatting()
+   {
+      assertThat(CrmHomeRenderer.formatAmount(new BigDecimal("72000.000000"))).isEqualTo("72,000");
+      assertThat(CrmHomeRenderer.formatAmount(new BigDecimal("1234.560000"))).isEqualTo("1,234.56");
+      assertThat(CrmHomeRenderer.formatAmount(new BigDecimal("-1234.005"))).isEqualTo("-1,234.005");
+      assertThat(CrmHomeRenderer.formatAmount(null)).isEqualTo("0");
+   }
+
+
+   /*******************************************************************************
+    ** A direct won-stage insert participates in actual-close reporting immediately.
+    *******************************************************************************/
+   @Test
+   void directWonInsert() throws Exception
+   {
+      seedStages();
+      seed("crm_currency", new QRecord().withValue("currencyCode", "USD").withValue("isBaseCurrency", true));
+      var inserted = new com.kingsrook.qqq.backend.core.actions.tables.InsertAction().execute(new InsertInput("crm_deal")
+         .withRecord(new QRecord().withValue("name", "Direct win").withValue("pipelineId", 1).withValue("pipelineStageId", 2)
+            .withValue("amount", new BigDecimal("72000")).withValue("expectedCloseDate", LocalDate.now().plusYears(1))));
+      assertThat(inserted.getRecords().getFirst().getErrors()).isNullOrEmpty();
+      var deal = com.kingsrook.qqq.backend.core.actions.tables.GetAction.execute("crm_deal", inserted.getRecords().getFirst().getValue("id"));
+      assertThat(deal.getValue("ownerUserId")).isNull();
+      assertThat(deal.getValueLocalDate("actualCloseDate")).isEqualTo(LocalDate.now(ZoneOffset.UTC));
+      assertThat(deal.getValueInstant("stageEnteredDate")).isNotNull();
+      assertThat(((StatisticsData) render("crm_won_month")).getCount()).isEqualTo("USD 72,000");
+      TableData leaderboard = (TableData) render("crm_sales_leaderboard");
+      assertCell(leaderboard, 0, "first", "Unassigned");
+      assertCell(leaderboard, 0, "second", "1");
+      assertCell(leaderboard, 0, "third", "72,000");
+   }
+
+
+   /*******************************************************************************
+    ** A partial submission name uses the email to retain identifying context.
+    *******************************************************************************/
+   @Test
+   void partialLeadName() throws Exception
+   {
+      seed("crm_form_submission", new QRecord().withValue("firstName", "Lee").withValue("email", "lee@example.test"));
+      assertCell((TableData) render("crm_recent_web_leads"), 0, "first", "lee@example.test");
+   }
+
+
+   /*******************************************************************************
     ** Empty data renders zero statistics, six months and no goals card.
     *******************************************************************************/
    @Test
@@ -119,16 +167,16 @@ class CrmHomeWidgetsTest extends BaseTest
       TableData data = (TableData) render("crm_pipeline_summary");
       assertThat(data.getColumns()).hasSize(3);
       assertThat(data.getRows()).hasSize(3);
-      assertCell(data, 0, "first", "Open (2 deals)");
-      assertCell(data, 0, "second", "300.00");
-      assertCell(data, 0, "third", "40.50");
-      assertCell(data, 1, "first", "Won (0 deals)");
+      assertCell(data, 0, "first", "Open");
+      assertCell(data, 0, "second", "2");
+      assertCell(data, 0, "third", "40.5");
+      assertCell(data, 1, "first", "Won");
       assertThat(data.getDropdownNameList()).containsExactly("pipelineId");
       RenderWidgetInput selected = new RenderWidgetInput().withWidgetMetaData(QContext.getQInstance().getWidget("crm_pipeline_summary"));
       selected.addQueryParam("pipelineId", "2");
       TableData other = (TableData) new CrmHomeRenderer().render(selected).getWidgetData();
       assertThat(other.getRows()).hasSize(1);
-      assertCell(other, 0, "first", "Other (1 deals)");
+      assertCell(other, 0, "first", "Other");
       selected.addQueryParam("pipelineId", "999");
       assertThat(((TableData) new CrmHomeRenderer().render(selected).getWidgetData()).getRows()).hasSize(3);
       assertLinks(data);
@@ -223,7 +271,7 @@ class CrmHomeWidgetsTest extends BaseTest
       assertThat(PermissionsHelper.hasWidgetPermission(new RenderWidgetInput(), "crm_goals")).isFalse();
       assertThat(data.getRows()).hasSize(1);
       assertCell(data, 0, "first", TEST_USER_ID + " (50.0%)");
-      assertCell(data, 0, "second", "500.50");
+      assertCell(data, 0, "second", "500.5");
       assertCell(data, 0, "third", "250.25");
       assertLinks(data);
    }
@@ -247,7 +295,7 @@ class CrmHomeWidgetsTest extends BaseTest
       assertThat(data.getRows()).hasSize(2);
       assertCell(data, 0, "first", "Ada");
       assertCell(data, 0, "second", "2");
-      assertCell(data, 0, "third", "251.00");
+      assertCell(data, 0, "third", "251");
       assertLinks(data);
    }
 
@@ -331,7 +379,7 @@ class CrmHomeWidgetsTest extends BaseTest
     *******************************************************************************/
    private void assertStatistic(String name, String expected) throws QException
    {
-      assertThat(new BigDecimal(((StatisticsData) render(name)).getCount().toString())).isEqualByComparingTo(expected);
+      assertThat(new BigDecimal(((StatisticsData) render(name)).getCount().toString().replace(",", ""))).isEqualByComparingTo(expected);
    }
 
 

@@ -270,18 +270,39 @@ class CrmRdbmsTest
 
 
    /*******************************************************************************
-    ** Both install paths contain identical SQL, with one Liquibase changeset per table.
+    ** Fresh DDL and the full upgrade changelog produce identical column definitions.
     *******************************************************************************/
    @Test
    void testLiquibaseMatchesReferenceDdl() throws Exception
    {
-      String ddl = Files.readString(Path.of("docs/ddl/postgres.sql"));
       String changelog = Files.readString(Path.of("src/main/resources/db/liquibase/qbit-crm/crm.changelog.sql"));
       assertThat(changelog).startsWith("--liquibase formatted sql");
-      assertThat(changelog.lines().filter(line -> line.startsWith("--changeset qbit-crm:")).count()).isEqualTo(34);
-      assertThat(stripComments(changelog)).isEqualTo(stripComments(ddl));
+      assertThat(changelog.lines().filter(line -> line.startsWith("--changeset qbit-crm:")).count()).isEqualTo(35);
+      var freshColumns = schemaColumns();
+      executeSql("DROP ALL OBJECTS;");
+      executeSql(changelog);
+      assertThat(schemaColumns()).isEqualTo(freshColumns);
+      insert("crm_contact", new QRecord().withValue("email", "email-only@example.test"));
    }
 
+
+
+   /*******************************************************************************
+    ** Capture persisted types and nullability for both installation paths.
+    *******************************************************************************/
+   private java.util.Map<String, String> schemaColumns() throws Exception
+   {
+      java.util.Map<String, String> columns = new java.util.TreeMap<>();
+      try(ResultSet rows = connection.getMetaData().getColumns(null, "public", "crm_%", null))
+      {
+         while(rows.next())
+         {
+            columns.put(rows.getString("TABLE_NAME") + "." + rows.getString("COLUMN_NAME"),
+               rows.getString("TYPE_NAME") + ":" + rows.getInt("COLUMN_SIZE") + ":" + rows.getInt("NULLABLE"));
+         }
+      }
+      return (columns);
+   }
 
 
    /*******************************************************************************
@@ -359,7 +380,7 @@ class CrmRdbmsTest
       input.setWidgetMetaData(qInstance.getWidget("crm_pipeline_summary"));
       TableData pipeline = (TableData) renderer.execute(input).getWidgetData();
       assertThat(pipeline.getRows()).hasSize(2);
-      assertThat(pipeline.getRows().getFirst().get("first").toString()).endsWith(">Open (1 deals)</a>");
+      assertThat(pipeline.getRows().getFirst().get("first").toString()).endsWith(">Open</a>");
       input.setWidgetMetaData(qInstance.getWidget("crm_deal_forecast"));
       TableData forecast = (TableData) renderer.execute(input).getWidgetData();
       assertThat(forecast.getRows()).hasSize(6);

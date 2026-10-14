@@ -386,7 +386,9 @@ class CrmActionsTest extends BaseTest
          put("crm_contact", new QRecord().withValue("id", 10 + i * 2).withValue("lastName", "Contact").withValue("ownerUserId", "original"));
       }
       PageObserver.sizes.clear();
-      QContext.getQInstance().getTable("crm_contact").withCustomizer(TableCustomizers.POST_QUERY_RECORD, new QCodeReference(PageObserver.class));
+      QContext.getQInstance().getTable("crm_contact").getCustomizers().remove(TableCustomizers.POST_QUERY_RECORD.getRole());
+      QContext.getQInstance().getTable("crm_contact").withCustomizer(TableCustomizers.POST_QUERY_RECORD, com.kingsrook.qqq.backend.core.actions.customizers.MultiCustomizer.of(
+            new QCodeReference(com.kingsrook.qbits.crm.core.customizers.ContactLabelCustomizer.class), new QCodeReference(PageObserver.class)));
       RunProcessOutput result = new RunProcessAction().execute(new RunProcessInput().withProcessName("crm_calculate_lead_scores"));
       assertThat(result.getValues().get("totalContacts")).isEqualTo(405);
       assertThat(result.getValues().get("updatedCount")).isEqualTo(405);

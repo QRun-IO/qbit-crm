@@ -357,11 +357,11 @@ entries:
   - key: table:crm_contact;field:firstName
     summary: "The person's given name."
     content: |
-      The person's given name. This is personal data and is removed by Erase Personal Data.
+      The person's given name, when supplied. Email-only contacts may leave names blank. This is personal data and is removed by Erase Personal Data.
   - key: table:crm_contact;field:lastName
     summary: "The person's family name."
     content: |
-      The person's family name. This is personal data and is removed by Erase Personal Data.
+      The person's family name, when supplied. This is personal data and is removed by Erase Personal Data.
   - key: table:crm_contact;field:email
     summary: "Email address used to identify or contact the person."
     content: |
@@ -593,11 +593,11 @@ entries:
   - key: table:crm_form_submission;field:firstName
     summary: "The person's given name."
     content: |
-      The person's given name. This is personal data and is removed by Erase Personal Data.
+      The person's given name, when supplied. Email-only contacts may leave names blank. This is personal data and is removed by Erase Personal Data.
   - key: table:crm_form_submission;field:lastName
     summary: "The person's family name."
     content: |
-      The person's family name. This is personal data and is removed by Erase Personal Data.
+      The person's family name, when supplied. This is personal data and is removed by Erase Personal Data.
   - key: table:crm_form_submission;field:company
     summary: "The company name as submitted on the form; review it before linking to an existing organization."
     content: |
