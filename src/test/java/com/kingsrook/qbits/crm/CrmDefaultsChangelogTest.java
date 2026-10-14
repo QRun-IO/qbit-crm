@@ -206,6 +206,7 @@ public class CrmDefaultsChangelogTest
          Map<String, Integer> seeded = counts(connection);
          connection.createStatement().execute("INSERT INTO crm_lead_source (name, sort_order) VALUES ('Host source', 99)");
          connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default) VALUES ('Host pipeline', FALSE)");
+         connection.commit();
          rollback(connection, CHANGELOG, 10);
          assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lead_source WHERE name = 'Host source'")).isEqualTo("1");
          assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline WHERE name = 'Host pipeline'")).isEqualTo("1");
@@ -220,6 +221,7 @@ public class CrmDefaultsChangelogTest
          liquibase(connection, CHANGELOG);
          connection.createStatement().execute("INSERT INTO crm_pipeline (name, is_default, tenant_key) VALUES ('Sales Pipeline', TRUE, 'acme')");
          connection.createStatement().execute("INSERT INTO crm_lifecycle_stage (name, sort_order, tenant_key) VALUES ('Lead', 1, 'acme')");
+         connection.commit();
          rollback(connection, CHANGELOG, 10);
          assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_pipeline WHERE tenant_key = 'acme'")).isEqualTo("1");
          assertThat(scalar(connection, "SELECT COUNT(*) FROM crm_lifecycle_stage WHERE tenant_key = 'acme'")).isEqualTo("1");
