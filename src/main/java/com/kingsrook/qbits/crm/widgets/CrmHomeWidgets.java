@@ -37,7 +37,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
  *******************************************************************************/
 public class CrmHomeWidgets extends MetaDataProducer<MetaDataProducerMultiOutput>
 {
-   public static final List<String> HOME = List.of("crm_today", "crm_pipeline_summary", "crm_deal_forecast", "crm_rotting_deals",
+   public static final List<String> HOME = List.of("crm_today", "crm_setup", "crm_pipeline_summary", "crm_deal_forecast", "crm_rotting_deals",
       "crm_recent_web_leads", "crm_goals", "crm_sales_leaderboard");
    public static final List<String> TODAY = List.of("crm_open_pipeline", "crm_won_month", "crm_new_contacts", "crm_new_web_leads", "crm_overdue_activities");
 
@@ -49,7 +49,7 @@ public class CrmHomeWidgets extends MetaDataProducer<MetaDataProducerMultiOutput
    public MetaDataProducerMultiOutput produce(QInstance instance)
    {
       MetaDataProducerMultiOutput output = new MetaDataProducerMultiOutput();
-      List<String> labels = List.of("Today", "Pipeline by stage", "Forecast", "Needs attention", "Recent web leads", "Goals", "Leaderboard");
+      List<String> labels = List.of("Today", "Setup", "Pipeline by stage", "Forecast", "Needs attention", "Recent web leads", "Goals", "Leaderboard");
       for(int i = 0; i < HOME.size(); i++)
       {
          output.add(widget(HOME.get(i), labels.get(i), i == 0 ? WidgetType.PARENT_WIDGET : WidgetType.TABLE));

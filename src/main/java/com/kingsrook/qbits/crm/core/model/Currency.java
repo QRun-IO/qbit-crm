@@ -106,7 +106,7 @@ public class Currency extends QRecordEntity
    @QField(isRequired = true, defaultValue = "true")
    private Boolean isActive;
 
-   @QField()
+   @QField(isEditable = false)
    private Instant rateLastUpdatedDate;
 
    @QField(isEditable = false)
