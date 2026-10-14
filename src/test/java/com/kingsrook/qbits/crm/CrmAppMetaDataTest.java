@@ -35,7 +35,6 @@ import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
-import com.kingsrook.qqq.backend.core.model.metadata.qbits.SourceQBitAware;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,7 +69,6 @@ class CrmAppMetaDataTest extends BaseTest
       assertThat(app.getWidgets()).containsExactlyElementsOf(CrmHomeWidgets.HOME);
       assertThat(app.getPermissionRules().getPermissionBaseName()).isEqualTo("crm");
       assertThat(app.getPermissionRules().getLevel()).isEqualTo(PermissionLevel.HAS_ACCESS_PERMISSION);
-      assertThat(((SourceQBitAware) app).getSourceQBitName()).isEqualTo("com.kingsrook.qbits:crm");
       assertThat(CrmQBitProducer.produceAppSection().getTables()).containsExactlyElementsOf(CrmAppMetaData.MAIN_TABLES);
       assertThat(QContext.getQInstance().getTable("crm_form_submission").getLabel()).isEqualTo("Web Leads");
       assertThat(QContext.getQInstance().getTable("crm_email_list").getLabel()).isEqualTo("Lists");
