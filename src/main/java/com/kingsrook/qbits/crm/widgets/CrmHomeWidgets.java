@@ -54,7 +54,7 @@ public class CrmHomeWidgets extends MetaDataProducer<MetaDataProducerMultiOutput
       {
          output.add(widget(HOME.get(i), labels.get(i), i == 0 ? WidgetType.PARENT_WIDGET : WidgetType.TABLE));
       }
-      List<String> statistics = List.of("Open pipeline (base currency)", "Won this month (base currency)", "New contacts (30 days)", "Web leads (7 days)", "My overdue activities");
+      List<String> statistics = List.of("Open pipeline", "Won this month", "New contacts (30 days)", "Web leads (7 days)", "My overdue activities");
       for(int i = 0; i < TODAY.size(); i++)
       {
          output.add(widget(TODAY.get(i), statistics.get(i), WidgetType.STATISTICS));

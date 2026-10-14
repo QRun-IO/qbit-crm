@@ -25,6 +25,8 @@ package com.kingsrook.qbits.crm.widgets;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import com.kingsrook.qbits.crm.core.model.enums.CrmFormConversionStatus;
@@ -118,11 +121,20 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
 
 
    /*******************************************************************************
-    ** Preserve decimals and large counts in the standard statistics renderer.
+    ** Format statistics with the configured base currency in the value.
     *******************************************************************************/
-   private StatisticsData statistic(BigDecimal value, boolean currency)
+   private StatisticsData statistic(BigDecimal value, boolean currency) throws QException
    {
-      return (new StatisticsData().withCount(value).withCountContext(currency ? "base currency" : null));
+      String prefix = "";
+      if(currency)
+      {
+         List<QRecord> base = query("crm_currency", equalsFilter("isBaseCurrency", true), "id", true, 1);
+         if(!base.isEmpty() && base.getFirst().getValueString("currencyCode") != null)
+         {
+            prefix = base.getFirst().getValueString("currencyCode") + " ";
+         }
+      }
+      return (new StatisticsData().withCount(prefix + formatAmount(value)));
    }
 
 
@@ -197,7 +209,7 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
 
 
    /*******************************************************************************
-    ** Stage and deal count share one column, keeping both monetary columns.
+    ** Separate the stage label, integer count and weighted base-currency amount.
     *******************************************************************************/
    private TableData pipeline(RenderWidgetInput input) throws QException
    {
@@ -220,10 +232,10 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
          {
             BigDecimal[] values = totals.getOrDefault(stage.getValue("id"), new BigDecimal[] {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO});
             String href = AiLinkBuilder.recordHref(STAGE, stage.getValue("id"));
-            rows.add(row(href, stage.getValueString("name") + " (" + values[0].toPlainString() + " deals)", values[1], values[2]));
+            rows.add(row(href, stage.getValueString("name"), values[0].toBigIntegerExact(), formatAmount(values[2])));
          }
       }
-      TableData data = table(rows, "Stage / deals", "Amount (base)", "Weighted amount (base)");
+      TableData data = table(rows, "Stage", "Deals", "Weighted amount");
       if(pipelines.size() > 1)
       {
          data.withDropdownNameList(List.of("pipelineId")).withDropdownLabelList(List.of("Pipeline"))
@@ -246,7 +258,7 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
          LocalDate start = today.withDayOfMonth(1).plusMonths(month);
          QQueryFilter filter = period(dealStatus(false), "expectedCloseDate", start, start.plusMonths(1));
          BigDecimal[] totals = totals(filter);
-         rows.add(row(AiLinkBuilder.filteredTableHref(DEAL, filter), start.toString().substring(0, 7), totals[0], totals[2]));
+         rows.add(row(AiLinkBuilder.filteredTableHref(DEAL, filter), start.toString().substring(0, 7), totals[0].toBigIntegerExact(), formatAmount(totals[2])));
       }
       return (table(rows, "Month", "Deals", "Weighted amount (base)"));
    }
@@ -292,7 +304,7 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
       for(QRecord lead : query("crm_form_submission", new QQueryFilter(), "createDate", false, 10))
       {
          String name = (Objects.toString(lead.getValue("firstName"), "") + " " + Objects.toString(lead.getValue("lastName"), "")).trim();
-         if(name.isBlank())
+         if(Objects.toString(lead.getValue("firstName"), "").isBlank() || Objects.toString(lead.getValue("lastName"), "").isBlank())
          {
             name = Objects.toString(lead.getValue("email"), "Web lead");
          }
@@ -339,7 +351,7 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
          BigDecimal target = CrmCurrencyUtils.convertToBaseCurrency(goal.getValueBigDecimal("targetAmount"), goal.getValueString("currencyCode"));
          String attainment = target != null && target.signum() > 0 ? actual.multiply(BigDecimal.valueOf(100)).divide(target, 1, RoundingMode.HALF_UP) + "%" : "No target";
          rows.add(row(AiLinkBuilder.recordHref("crm_sales_goal", goal.getValue("id")),
-            goal.getValueString("userId") + " (" + attainment + ")", target, actual));
+            goal.getValueString("userId") + " (" + attainment + ")", formatAmount(target), formatAmount(actual)));
       }
       TableData data = table(rows, "Owner / attainment", "Target (base)", "Won (base)");
       return (data);
@@ -362,7 +374,7 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
          Serializable user = result.getGroupByValue(owner);
          QQueryFilter ownerFilter = filter.clone().withCriteria(new QFilterCriteria("ownerUserId", user == null ? QCriteriaOperator.IS_BLANK : QCriteriaOperator.EQUALS, user));
          rows.add(row(AiLinkBuilder.filteredTableHref(DEAL, ownerFilter), Objects.toString(user, "Unassigned"),
-            number(result.getAggregateValue(COUNT)), number(result.getAggregateValue(AMOUNT))));
+            number(result.getAggregateValue(COUNT)).toBigIntegerExact(), formatAmount(number(result.getAggregateValue(AMOUNT)))));
       }
       return (table(rows, "Owner", "Won deals", "Won amount (base)"));
    }
@@ -454,6 +466,18 @@ public class CrmHomeRenderer extends AbstractWidgetRenderer
    {
       return (filter.withCriteria(new QFilterCriteria(field, QCriteriaOperator.GREATER_THAN_OR_EQUALS, start))
          .withCriteria(new QFilterCriteria(field, QCriteriaOperator.LESS_THAN, end)));
+   }
+
+
+   /*******************************************************************************
+    ** Group amounts without losing fractional precision or padding whole amounts.
+    *******************************************************************************/
+   static String formatAmount(BigDecimal value)
+   {
+      BigDecimal amount = value == null ? BigDecimal.ZERO : value;
+      DecimalFormat format = new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.US));
+      format.setMaximumFractionDigits(Math.max(0, amount.scale()));
+      return (format.format(amount));
    }
 
 
