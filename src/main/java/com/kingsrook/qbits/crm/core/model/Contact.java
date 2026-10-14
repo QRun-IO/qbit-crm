@@ -107,6 +107,8 @@ public class Contact extends QRecordEntity
                List.of("addressLine1", "addressLine2", "city", "state", "postalCode", "country")))
             .withSection(new QFieldSection("communication", new QIcon().withName("settings"), Tier.T2,
                List.of("doNotEmail", "doNotCall", "unsubscribeDate")))
+            .withSection(new QFieldSection("attribution", new QIcon().withName("campaign"), Tier.T2,
+               List.of("firstTouchUtmSource", "firstTouchUtmMedium", "firstTouchUtmCampaign", "firstTouchUtmContent", "firstTouchUtmTerm", "firstTouchLandingPage", "firstTouchReferrer", "firstTouchDate", "lastTouchUtmSource", "lastTouchUtmMedium", "lastTouchUtmCampaign", "lastTouchUtmContent", "lastTouchUtmTerm", "lastTouchLandingPage", "lastTouchReferrer", "lastTouchDate")).withLabel("Attribution"))
             .withSection(SectionFactory.defaultT2("description"))
             .withSection(SectionFactory.defaultT3("lastActivityDate", "lastContactedDate", "createDate", "modifyDate"));
 
@@ -140,6 +142,54 @@ public class Contact extends QRecordEntity
    }
 
 
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchUtmSource;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchUtmMedium;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchUtmCampaign;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchUtmContent;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchUtmTerm;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchLandingPage;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String firstTouchReferrer;
+
+   @QField()
+   private Instant firstTouchDate;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchUtmSource;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchUtmMedium;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchUtmCampaign;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchUtmContent;
+
+   @QField(maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchUtmTerm;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchLandingPage;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String lastTouchReferrer;
+
+   @QField()
+   private Instant lastTouchDate;
 
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
@@ -1245,6 +1295,455 @@ public class Contact extends QRecordEntity
    public Contact withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchUtmSource
+    *******************************************************************************/
+   public String getFirstTouchUtmSource()
+   {
+      return (this.firstTouchUtmSource);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchUtmSource
+    *******************************************************************************/
+   public void setFirstTouchUtmSource(String firstTouchUtmSource)
+   {
+      this.firstTouchUtmSource = firstTouchUtmSource;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchUtmSource
+    *******************************************************************************/
+   public Contact withFirstTouchUtmSource(String firstTouchUtmSource)
+   {
+      this.firstTouchUtmSource = firstTouchUtmSource;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchUtmMedium
+    *******************************************************************************/
+   public String getFirstTouchUtmMedium()
+   {
+      return (this.firstTouchUtmMedium);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchUtmMedium
+    *******************************************************************************/
+   public void setFirstTouchUtmMedium(String firstTouchUtmMedium)
+   {
+      this.firstTouchUtmMedium = firstTouchUtmMedium;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchUtmMedium
+    *******************************************************************************/
+   public Contact withFirstTouchUtmMedium(String firstTouchUtmMedium)
+   {
+      this.firstTouchUtmMedium = firstTouchUtmMedium;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchUtmCampaign
+    *******************************************************************************/
+   public String getFirstTouchUtmCampaign()
+   {
+      return (this.firstTouchUtmCampaign);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchUtmCampaign
+    *******************************************************************************/
+   public void setFirstTouchUtmCampaign(String firstTouchUtmCampaign)
+   {
+      this.firstTouchUtmCampaign = firstTouchUtmCampaign;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchUtmCampaign
+    *******************************************************************************/
+   public Contact withFirstTouchUtmCampaign(String firstTouchUtmCampaign)
+   {
+      this.firstTouchUtmCampaign = firstTouchUtmCampaign;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchUtmContent
+    *******************************************************************************/
+   public String getFirstTouchUtmContent()
+   {
+      return (this.firstTouchUtmContent);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchUtmContent
+    *******************************************************************************/
+   public void setFirstTouchUtmContent(String firstTouchUtmContent)
+   {
+      this.firstTouchUtmContent = firstTouchUtmContent;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchUtmContent
+    *******************************************************************************/
+   public Contact withFirstTouchUtmContent(String firstTouchUtmContent)
+   {
+      this.firstTouchUtmContent = firstTouchUtmContent;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchUtmTerm
+    *******************************************************************************/
+   public String getFirstTouchUtmTerm()
+   {
+      return (this.firstTouchUtmTerm);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchUtmTerm
+    *******************************************************************************/
+   public void setFirstTouchUtmTerm(String firstTouchUtmTerm)
+   {
+      this.firstTouchUtmTerm = firstTouchUtmTerm;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchUtmTerm
+    *******************************************************************************/
+   public Contact withFirstTouchUtmTerm(String firstTouchUtmTerm)
+   {
+      this.firstTouchUtmTerm = firstTouchUtmTerm;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchLandingPage
+    *******************************************************************************/
+   public String getFirstTouchLandingPage()
+   {
+      return (this.firstTouchLandingPage);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchLandingPage
+    *******************************************************************************/
+   public void setFirstTouchLandingPage(String firstTouchLandingPage)
+   {
+      this.firstTouchLandingPage = firstTouchLandingPage;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchLandingPage
+    *******************************************************************************/
+   public Contact withFirstTouchLandingPage(String firstTouchLandingPage)
+   {
+      this.firstTouchLandingPage = firstTouchLandingPage;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchReferrer
+    *******************************************************************************/
+   public String getFirstTouchReferrer()
+   {
+      return (this.firstTouchReferrer);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchReferrer
+    *******************************************************************************/
+   public void setFirstTouchReferrer(String firstTouchReferrer)
+   {
+      this.firstTouchReferrer = firstTouchReferrer;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchReferrer
+    *******************************************************************************/
+   public Contact withFirstTouchReferrer(String firstTouchReferrer)
+   {
+      this.firstTouchReferrer = firstTouchReferrer;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for firstTouchDate
+    *******************************************************************************/
+   public Instant getFirstTouchDate()
+   {
+      return (this.firstTouchDate);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for firstTouchDate
+    *******************************************************************************/
+   public void setFirstTouchDate(Instant firstTouchDate)
+   {
+      this.firstTouchDate = firstTouchDate;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for firstTouchDate
+    *******************************************************************************/
+   public Contact withFirstTouchDate(Instant firstTouchDate)
+   {
+      this.firstTouchDate = firstTouchDate;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchUtmSource
+    *******************************************************************************/
+   public String getLastTouchUtmSource()
+   {
+      return (this.lastTouchUtmSource);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchUtmSource
+    *******************************************************************************/
+   public void setLastTouchUtmSource(String lastTouchUtmSource)
+   {
+      this.lastTouchUtmSource = lastTouchUtmSource;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchUtmSource
+    *******************************************************************************/
+   public Contact withLastTouchUtmSource(String lastTouchUtmSource)
+   {
+      this.lastTouchUtmSource = lastTouchUtmSource;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchUtmMedium
+    *******************************************************************************/
+   public String getLastTouchUtmMedium()
+   {
+      return (this.lastTouchUtmMedium);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchUtmMedium
+    *******************************************************************************/
+   public void setLastTouchUtmMedium(String lastTouchUtmMedium)
+   {
+      this.lastTouchUtmMedium = lastTouchUtmMedium;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchUtmMedium
+    *******************************************************************************/
+   public Contact withLastTouchUtmMedium(String lastTouchUtmMedium)
+   {
+      this.lastTouchUtmMedium = lastTouchUtmMedium;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchUtmCampaign
+    *******************************************************************************/
+   public String getLastTouchUtmCampaign()
+   {
+      return (this.lastTouchUtmCampaign);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchUtmCampaign
+    *******************************************************************************/
+   public void setLastTouchUtmCampaign(String lastTouchUtmCampaign)
+   {
+      this.lastTouchUtmCampaign = lastTouchUtmCampaign;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchUtmCampaign
+    *******************************************************************************/
+   public Contact withLastTouchUtmCampaign(String lastTouchUtmCampaign)
+   {
+      this.lastTouchUtmCampaign = lastTouchUtmCampaign;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchUtmContent
+    *******************************************************************************/
+   public String getLastTouchUtmContent()
+   {
+      return (this.lastTouchUtmContent);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchUtmContent
+    *******************************************************************************/
+   public void setLastTouchUtmContent(String lastTouchUtmContent)
+   {
+      this.lastTouchUtmContent = lastTouchUtmContent;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchUtmContent
+    *******************************************************************************/
+   public Contact withLastTouchUtmContent(String lastTouchUtmContent)
+   {
+      this.lastTouchUtmContent = lastTouchUtmContent;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchUtmTerm
+    *******************************************************************************/
+   public String getLastTouchUtmTerm()
+   {
+      return (this.lastTouchUtmTerm);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchUtmTerm
+    *******************************************************************************/
+   public void setLastTouchUtmTerm(String lastTouchUtmTerm)
+   {
+      this.lastTouchUtmTerm = lastTouchUtmTerm;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchUtmTerm
+    *******************************************************************************/
+   public Contact withLastTouchUtmTerm(String lastTouchUtmTerm)
+   {
+      this.lastTouchUtmTerm = lastTouchUtmTerm;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchLandingPage
+    *******************************************************************************/
+   public String getLastTouchLandingPage()
+   {
+      return (this.lastTouchLandingPage);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchLandingPage
+    *******************************************************************************/
+   public void setLastTouchLandingPage(String lastTouchLandingPage)
+   {
+      this.lastTouchLandingPage = lastTouchLandingPage;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchLandingPage
+    *******************************************************************************/
+   public Contact withLastTouchLandingPage(String lastTouchLandingPage)
+   {
+      this.lastTouchLandingPage = lastTouchLandingPage;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchReferrer
+    *******************************************************************************/
+   public String getLastTouchReferrer()
+   {
+      return (this.lastTouchReferrer);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchReferrer
+    *******************************************************************************/
+   public void setLastTouchReferrer(String lastTouchReferrer)
+   {
+      this.lastTouchReferrer = lastTouchReferrer;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchReferrer
+    *******************************************************************************/
+   public Contact withLastTouchReferrer(String lastTouchReferrer)
+   {
+      this.lastTouchReferrer = lastTouchReferrer;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for lastTouchDate
+    *******************************************************************************/
+   public Instant getLastTouchDate()
+   {
+      return (this.lastTouchDate);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for lastTouchDate
+    *******************************************************************************/
+   public void setLastTouchDate(Instant lastTouchDate)
+   {
+      this.lastTouchDate = lastTouchDate;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for lastTouchDate
+    *******************************************************************************/
+   public Contact withLastTouchDate(Instant lastTouchDate)
+   {
+      this.lastTouchDate = lastTouchDate;
       return (this);
    }
 

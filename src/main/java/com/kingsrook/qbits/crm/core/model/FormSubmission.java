@@ -30,6 +30,8 @@ import java.time.Instant;
 import java.util.List;
 import com.kingsrook.qbits.crm.core.model.enums.CrmFormConversionStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmFormType;
+import com.kingsrook.qqq.backend.core.actions.ai.AiFieldMetaData;
+import com.kingsrook.qqq.backend.core.actions.ai.DataClassification;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
@@ -47,7 +49,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
 
 /*******************************************************************************
  ** QRecord Entity for FormSubmission table -- raw website form submissions.
- ** Captures web-specific metadata (UTM, referrer, IP) that does not belong on
+ ** Captures web-specific metadata (UTM, referrer, hashed client identifiers) that does not belong on
  ** crm_contact. Submissions are converted to contacts via a process.
  *******************************************************************************/
 @QMetaDataProducingEntity(
@@ -77,21 +79,49 @@ public class FormSubmission extends QRecordEntity
             .withIcon(new QIcon().withName("dynamic_form"))
             .withRecordLabelFormat("%s - %s %s")
             .withRecordLabelFields("formType", "firstName", "email")
-            .withSection(SectionFactory.defaultT1("id", "formType", "email", "firstName", "lastName"))
-            .withSection(SectionFactory.defaultT2("company", "phone", "message"))
+            .withSection(SectionFactory.defaultT1("id", "formKey", "formType", "email", "firstName", "lastName"))
+            .withSection(SectionFactory.defaultT2("company", "phone", "message", "marketingConsent", "consentText"))
             .withSection(new QFieldSection("utm", new QIcon().withName("campaign"), Tier.T2,
-               List.of("sourceUrl", "utmSource", "utmMedium", "utmCampaign", "utmTerm", "utmContent", "referrer")))
+               List.of("sourceUrl", "landingPage", "utmSource", "utmMedium", "utmCampaign", "utmTerm", "utmContent", "referrer")))
             .withSection(new QFieldSection("conversion", new QIcon().withName("swap_horiz"), Tier.T2,
                List.of("contactId", "conversionStatus", "convertedDate", "convertedByUserId")))
             .withSection(new QFieldSection("technical", new QIcon().withName("code"), Tier.T2,
-               List.of("ipAddress", "userAgent", "metadata")))
+               List.of("visitorKey", "clientHash", "metadata")))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
+
+         table.getField("firstName").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("lastName").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("email").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("phone").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("company").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("message").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("consentText").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("visitorKey").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
+         table.getField("clientHash").withSupplementalMetaData(new AiFieldMetaData().withClassification(DataClassification.PII));
 
          return (table);
       }
    }
 
 
+
+   @QField(isRequired = true, maxLength = 250, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String formKey;
+
+   @QField(defaultValue = "false")
+   private Boolean marketingConsent;
+
+   @QField()
+   private String consentText;
+
+   @QField(maxLength = 1000, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String landingPage;
+
+   @QField(maxLength = 64, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String visitorKey;
+
+   @QField(maxLength = 64, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String clientHash;
 
    @QField(isEditable = false, isPrimaryKey = true)
    private Integer id;
@@ -149,12 +179,6 @@ public class FormSubmission extends QRecordEntity
 
    @QField()
    private String convertedByUserId;
-
-   @QField(maxLength = 45, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
-   private String ipAddress;
-
-   @QField(maxLength = 500, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
-   private String userAgent;
 
    @QField()
    private String metadata;
@@ -776,68 +800,6 @@ public class FormSubmission extends QRecordEntity
 
 
    /*******************************************************************************
-    ** Getter for ipAddress
-    *******************************************************************************/
-   public String getIpAddress()
-   {
-      return (this.ipAddress);
-   }
-
-
-
-   /*******************************************************************************
-    ** Setter for ipAddress
-    *******************************************************************************/
-   public void setIpAddress(String ipAddress)
-   {
-      this.ipAddress = ipAddress;
-   }
-
-
-
-   /*******************************************************************************
-    ** Fluent setter for ipAddress
-    *******************************************************************************/
-   public FormSubmission withIpAddress(String ipAddress)
-   {
-      this.ipAddress = ipAddress;
-      return (this);
-   }
-
-
-
-   /*******************************************************************************
-    ** Getter for userAgent
-    *******************************************************************************/
-   public String getUserAgent()
-   {
-      return (this.userAgent);
-   }
-
-
-
-   /*******************************************************************************
-    ** Setter for userAgent
-    *******************************************************************************/
-   public void setUserAgent(String userAgent)
-   {
-      this.userAgent = userAgent;
-   }
-
-
-
-   /*******************************************************************************
-    ** Fluent setter for userAgent
-    *******************************************************************************/
-   public FormSubmission withUserAgent(String userAgent)
-   {
-      this.userAgent = userAgent;
-      return (this);
-   }
-
-
-
-   /*******************************************************************************
     ** Getter for metadata
     *******************************************************************************/
    public String getMetadata()
@@ -925,6 +887,175 @@ public class FormSubmission extends QRecordEntity
    public FormSubmission withModifyDate(Instant modifyDate)
    {
       this.modifyDate = modifyDate;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for formKey
+    *******************************************************************************/
+   public String getFormKey()
+   {
+      return (this.formKey);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for formKey
+    *******************************************************************************/
+   public void setFormKey(String formKey)
+   {
+      this.formKey = formKey;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for formKey
+    *******************************************************************************/
+   public FormSubmission withFormKey(String formKey)
+   {
+      this.formKey = formKey;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for marketingConsent
+    *******************************************************************************/
+   public Boolean getMarketingConsent()
+   {
+      return (this.marketingConsent);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for marketingConsent
+    *******************************************************************************/
+   public void setMarketingConsent(Boolean marketingConsent)
+   {
+      this.marketingConsent = marketingConsent;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for marketingConsent
+    *******************************************************************************/
+   public FormSubmission withMarketingConsent(Boolean marketingConsent)
+   {
+      this.marketingConsent = marketingConsent;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for consentText
+    *******************************************************************************/
+   public String getConsentText()
+   {
+      return (this.consentText);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for consentText
+    *******************************************************************************/
+   public void setConsentText(String consentText)
+   {
+      this.consentText = consentText;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for consentText
+    *******************************************************************************/
+   public FormSubmission withConsentText(String consentText)
+   {
+      this.consentText = consentText;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for landingPage
+    *******************************************************************************/
+   public String getLandingPage()
+   {
+      return (this.landingPage);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for landingPage
+    *******************************************************************************/
+   public void setLandingPage(String landingPage)
+   {
+      this.landingPage = landingPage;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for landingPage
+    *******************************************************************************/
+   public FormSubmission withLandingPage(String landingPage)
+   {
+      this.landingPage = landingPage;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for visitorKey
+    *******************************************************************************/
+   public String getVisitorKey()
+   {
+      return (this.visitorKey);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for visitorKey
+    *******************************************************************************/
+   public void setVisitorKey(String visitorKey)
+   {
+      this.visitorKey = visitorKey;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for visitorKey
+    *******************************************************************************/
+   public FormSubmission withVisitorKey(String visitorKey)
+   {
+      this.visitorKey = visitorKey;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Getter for clientHash
+    *******************************************************************************/
+   public String getClientHash()
+   {
+      return (this.clientHash);
+   }
+
+
+   /*******************************************************************************
+    ** Setter for clientHash
+    *******************************************************************************/
+   public void setClientHash(String clientHash)
+   {
+      this.clientHash = clientHash;
+   }
+
+
+   /*******************************************************************************
+    ** Fluent setter for clientHash
+    *******************************************************************************/
+   public FormSubmission withClientHash(String clientHash)
+   {
+      this.clientHash = clientHash;
       return (this);
    }
 
