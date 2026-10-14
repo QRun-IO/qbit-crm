@@ -35,13 +35,12 @@ import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -87,12 +86,12 @@ class ReopenDealProcessTest extends BaseTest
       ///////////////////////////////////////////
       // reopen the deal to Negotiation        //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ReopenDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", activeStage);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       ///////////////////////////////////////////
       // verify deal was updated               //
@@ -155,13 +154,13 @@ class ReopenDealProcessTest extends BaseTest
                .withStageEnteredDate(Instant.now())));
       Integer dealId = dealInsert.getRecords().get(0).getValueInteger("id");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ReopenDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", otherStage);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 
@@ -178,13 +177,13 @@ class ReopenDealProcessTest extends BaseTest
 
       Integer dealId = insertClosedDeal("Closed Deal", pipelineId, wonStage, new BigDecimal("5000"), null);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(ReopenDealProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", lostStage);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 

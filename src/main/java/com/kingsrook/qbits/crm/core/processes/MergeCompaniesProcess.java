@@ -50,47 +50,14 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for merging two companies into one.
+ ** Backend operation used by the streamed CRM actions for merging two companies into one.
  *******************************************************************************/
-public class MergeCompaniesProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class MergeCompaniesProcess implements BackendStep
 {
    public static final String NAME = "crm_merge_companies";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Merge Companies")
-         .withTableName(Company.TABLE_NAME)
-         .withIcon(new QIcon().withName("merge"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(MergeCompaniesProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("primaryCompanyId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("secondaryCompanyId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

@@ -34,13 +34,12 @@ import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealStageHistory;
 import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.GetAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
@@ -85,12 +84,12 @@ class MoveDealStageProcessTest extends BaseTest
       ///////////////////////////////////////////
       // move to stage 2                       //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", stage2Id);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       ///////////////////////////////////////////
       // verify deal was updated               //
@@ -144,12 +143,12 @@ class MoveDealStageProcessTest extends BaseTest
 
       Integer dealId = insertDeal("Win Deal", pipelineId, stage1Id, new BigDecimal("5000"));
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", wonStageId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       Deal updatedDeal = new Deal(GetAction.execute(Deal.TABLE_NAME, dealId));
       assertEquals(wonStageId, updatedDeal.getPipelineStageId());
@@ -175,12 +174,12 @@ class MoveDealStageProcessTest extends BaseTest
 
       Integer dealId = insertDeal("Lost Deal", pipelineId, stage1Id, new BigDecimal("8000"));
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", lostStageId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       Deal updatedDeal = new Deal(GetAction.execute(Deal.TABLE_NAME, dealId));
       assertNotNull(updatedDeal.getActualCloseDate());
@@ -203,13 +202,13 @@ class MoveDealStageProcessTest extends BaseTest
 
       Integer dealId = insertDeal("Cross Pipeline Deal", pipeline1Id, stage1Id, new BigDecimal("1000"));
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", stage2Id);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 
@@ -229,13 +228,13 @@ class MoveDealStageProcessTest extends BaseTest
       //////////////////////////////////////////////////////////////
       Integer dealId = insertDeal("Gated Deal", pipelineId, stage1Id, new BigDecimal("1000"));
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", stage2Id);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 
@@ -265,12 +264,12 @@ class MoveDealStageProcessTest extends BaseTest
                .withStageEnteredDate(Instant.now().minus(2, ChronoUnit.DAYS))));
       Integer dealId = dealInsert.getRecords().get(0).getValueInteger("id");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(MoveDealStageProcess.NAME);
       processInput.addValue("dealId", dealId);
       processInput.addValue("targetStageId", stage2Id);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       Deal updatedDeal = new Deal(GetAction.execute(Deal.TABLE_NAME, dealId));
 

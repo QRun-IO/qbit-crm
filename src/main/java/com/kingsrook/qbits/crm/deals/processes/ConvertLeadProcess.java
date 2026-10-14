@@ -30,7 +30,6 @@ package com.kingsrook.qbits.crm.deals.processes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.LifecycleStage;
 import com.kingsrook.qbits.crm.deals.model.Deal;
@@ -57,52 +56,17 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.utils.ValueUtils;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for converting a lead (contact) into a
+ ** Backend operation used by the streamed CRM actions for converting a lead (contact) into a
  ** deal opportunity. Transitions the contact's lifecycle stage, creates
  ** a deal with the first pipeline stage, and links them via DealContact.
  *******************************************************************************/
-public class ConvertLeadProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class ConvertLeadProcess implements BackendStep
 {
    public static final String NAME = "crm_convert_lead";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Convert Lead")
-         .withTableName(Contact.TABLE_NAME)
-         .withIcon(new QIcon().withName("trending_up"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(ConvertLeadProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("contactId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("pipelineId", QFieldType.INTEGER),
-                  new QFieldMetaData("dealName", QFieldType.STRING).withIsRequired(true),
-                  new QFieldMetaData("dealAmount", QFieldType.DECIMAL)
-               )))
-         ));
-   }
 
 
 

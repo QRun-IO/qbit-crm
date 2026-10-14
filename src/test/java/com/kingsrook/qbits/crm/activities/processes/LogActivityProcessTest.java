@@ -29,12 +29,11 @@ package com.kingsrook.qbits.crm.activities.processes;
 import com.kingsrook.qbits.crm.BaseTest;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.activities.model.ActivityType;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
@@ -65,7 +64,7 @@ class LogActivityProcessTest extends BaseTest
       ////////////////////////////////////
       // run the LogActivity process    //
       ////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(LogActivityProcess.NAME);
       processInput.addValue("activityTypeId", activityTypeId);
       processInput.addValue("subject", "Test call with client");
@@ -73,7 +72,7 @@ class LogActivityProcessTest extends BaseTest
       processInput.addValue("contactId", 42);
       processInput.addValue("durationMinutes", 15);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       ////////////////////////////////////////////
       // verify the activity record was created //
@@ -102,12 +101,12 @@ class LogActivityProcessTest extends BaseTest
    {
       Integer activityTypeId = insertActivityType("Note");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(LogActivityProcess.NAME);
       processInput.addValue("activityTypeId", activityTypeId);
       processInput.addValue("subject", "Quick note");
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       QueryOutput queryOutput = new QueryAction().execute(
          new QueryInput(Activity.TABLE_NAME));

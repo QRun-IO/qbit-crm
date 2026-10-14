@@ -33,13 +33,12 @@ import com.kingsrook.qbits.crm.core.model.enums.CrmSequenceStepType;
 import com.kingsrook.qbits.crm.email.model.EmailSequence;
 import com.kingsrook.qbits.crm.email.model.SequenceEnrollment;
 import com.kingsrook.qbits.crm.email.model.SequenceStep;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.exceptions.QUserFacingException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
@@ -67,12 +66,12 @@ class EnrollInSequenceProcessTest extends BaseTest
       Integer contactId = insertContact("Alice", "Test", false);
       insertStep(sequenceId, 1, CrmSequenceStepType.EMAIL.getId(), 1, 0);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(EnrollInSequenceProcess.NAME);
       processInput.addValue("sequenceId", sequenceId);
       processInput.addValue("contactId", contactId);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals("ENROLLED", processOutput.getValues().get("action"));
 
@@ -106,23 +105,23 @@ class EnrollInSequenceProcessTest extends BaseTest
       /////////////////////////////////////////////
       // first enrollment                        //
       /////////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(EnrollInSequenceProcess.NAME);
       processInput.addValue("sequenceId", sequenceId);
       processInput.addValue("contactId", contactId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       /////////////////////////////////////////////
       // second enrollment should throw          //
       /////////////////////////////////////////////
-      RunProcessInput processInput2 = new RunProcessInput();
+      RunBackendStepInput processInput2 = new RunBackendStepInput();
       processInput2.setProcessName(EnrollInSequenceProcess.NAME);
       processInput2.addValue("sequenceId", sequenceId);
       processInput2.addValue("contactId", contactId);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput2));
+         runBusinessStep(processInput2));
    }
 
 
@@ -136,13 +135,13 @@ class EnrollInSequenceProcessTest extends BaseTest
       Integer sequenceId = insertSequence("DNE Test", true);
       Integer contactId = insertContact("Carol", "NoEmail", true);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(EnrollInSequenceProcess.NAME);
       processInput.addValue("sequenceId", sequenceId);
       processInput.addValue("contactId", contactId);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 
@@ -156,13 +155,13 @@ class EnrollInSequenceProcessTest extends BaseTest
       Integer sequenceId = insertSequence("Inactive", false);
       Integer contactId = insertContact("Dave", "Test", false);
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(EnrollInSequenceProcess.NAME);
       processInput.addValue("sequenceId", sequenceId);
       processInput.addValue("contactId", contactId);
 
       assertThrows(QUserFacingException.class, () ->
-         new RunProcessAction().execute(processInput));
+         runBusinessStep(processInput));
    }
 
 

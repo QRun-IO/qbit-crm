@@ -57,7 +57,8 @@ public final class CrmPermissions
    private static final Set<String> MANAGEMENT_PROCESSES = Set.of(
       "crm_merge_contacts", "crm_merge_companies", "crm_bulk_assign_owner",
       "crm_subscribe_to_list", "crm_unsubscribe_from_list", "crm_enroll_in_sequence",
-      "crm_unenroll_from_sequence", "crm_process_sequence_steps");
+      "crm_unenroll_from_sequence", "crm_process_sequence_steps", "crm_assign_company_owner",
+      "crm_transfer_ownership", "crm_activate_sequence", "crm_pause_sequence");
 
 
 

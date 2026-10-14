@@ -124,4 +124,37 @@ public class BaseTest
          CrmQBitProducer.GROUP_ID + ":" + CrmQBitProducer.ARTIFACT_ID);
    }
 
+   /*******************************************************************************
+    ** Existing operation regressions run helpers directly. CrmActionsTest covers ETL.
+    *******************************************************************************/
+   protected com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput runBusinessStep(
+      com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput input) throws QException
+   {
+      com.kingsrook.qqq.backend.core.actions.processes.BackendStep step;
+      step = switch(input.getProcessName())
+      {
+         case "crm_auto_assign" -> new com.kingsrook.qbits.crm.scoring.processes.AutoAssignProcess();
+         case "crm_enroll_in_sequence" -> new com.kingsrook.qbits.crm.email.processes.EnrollInSequenceProcess();
+         case "crm_unenroll_from_sequence" -> new com.kingsrook.qbits.crm.email.processes.UnenrollFromSequenceProcess();
+         case "crm_clone_deal" -> new com.kingsrook.qbits.crm.deals.processes.CloneDealProcess();
+         case "crm_convert_lead" -> new com.kingsrook.qbits.crm.deals.processes.ConvertLeadProcess();
+         case "crm_manage_contact_on_deal" -> new com.kingsrook.qbits.crm.deals.processes.ManageContactOnDealProcess();
+         case "crm_move_deal_stage" -> new com.kingsrook.qbits.crm.deals.processes.MoveDealStageProcess();
+         case "crm_reopen_deal" -> new com.kingsrook.qbits.crm.deals.processes.ReopenDealProcess();
+         case "crm_transfer_ownership" -> new com.kingsrook.qbits.crm.deals.processes.TransferOwnershipProcess();
+         case "crm_convert_form_to_contact" -> new com.kingsrook.qbits.crm.core.processes.ConvertFormToContactProcess();
+         case "crm_detect_duplicates" -> new com.kingsrook.qbits.crm.core.processes.DetectDuplicatesProcess();
+         case "crm_gdpr_anonymize_contact" -> new com.kingsrook.qbits.crm.core.processes.GdprAnonymizeContactProcess();
+         case "crm_merge_companies" -> new com.kingsrook.qbits.crm.core.processes.MergeCompaniesProcess();
+         case "crm_merge_contacts" -> new com.kingsrook.qbits.crm.core.processes.MergeContactsProcess();
+         case "crm_subscribe_to_list" -> new com.kingsrook.qbits.crm.core.processes.SubscribeToListProcess();
+         case "crm_unsubscribe_from_list" -> new com.kingsrook.qbits.crm.core.processes.UnsubscribeFromListProcess();
+         case "crm_log_activity" -> new com.kingsrook.qbits.crm.activities.processes.LogActivityProcess();
+         default -> throw (new IllegalArgumentException(input.getProcessName()));
+      };
+      com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput output = new com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput();
+      step.run(input, output);
+      return (output);
+   }
+
 }

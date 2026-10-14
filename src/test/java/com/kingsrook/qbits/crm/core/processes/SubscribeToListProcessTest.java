@@ -31,12 +31,11 @@ import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.EmailList;
 import com.kingsrook.qbits.crm.core.model.EmailListMember;
 import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
@@ -61,14 +60,14 @@ class SubscribeToListProcessTest extends BaseTest
    {
       Integer listId = insertEmailList("Newsletter");
 
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(SubscribeToListProcess.NAME);
       processInput.addValue("email", "new@example.com");
       processInput.addValue("emailListId", listId);
       processInput.addValue("firstName", "Alice");
       processInput.addValue("subscriptionSource", "website");
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals("SUBSCRIBED", processOutput.getValues().get("action"));
 
@@ -111,12 +110,12 @@ class SubscribeToListProcessTest extends BaseTest
       ///////////////////////////////////////////
       // run subscribe process                 //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(SubscribeToListProcess.NAME);
       processInput.addValue("email", "unsub@example.com");
       processInput.addValue("emailListId", listId);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals("RESUBSCRIBED", processOutput.getValues().get("action"));
 
@@ -155,12 +154,12 @@ class SubscribeToListProcessTest extends BaseTest
       ///////////////////////////////////////////
       // run subscribe process                 //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(SubscribeToListProcess.NAME);
       processInput.addValue("email", "active@example.com");
       processInput.addValue("emailListId", listId);
 
-      RunProcessOutput processOutput = new RunProcessAction().execute(processInput);
+      RunBackendStepOutput processOutput = runBusinessStep(processInput);
 
       assertEquals("NOOP", processOutput.getValues().get("action"));
 
@@ -197,12 +196,12 @@ class SubscribeToListProcessTest extends BaseTest
       ///////////////////////////////////////////
       // subscribe with the same email         //
       ///////////////////////////////////////////
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(SubscribeToListProcess.NAME);
       processInput.addValue("email", "linked@example.com");
       processInput.addValue("emailListId", listId);
 
-      new RunProcessAction().execute(processInput);
+      runBusinessStep(processInput);
 
       ///////////////////////////////////////////
       // verify contactId is set               //

@@ -38,11 +38,10 @@ import com.kingsrook.qbits.crm.deals.model.Pipeline;
 import com.kingsrook.qbits.crm.deals.model.PipelineStage;
 import com.kingsrook.qbits.crm.scoring.model.AssignmentRule;
 import com.kingsrook.qbits.crm.scoring.model.AssignmentRuleMember;
-import com.kingsrook.qqq.backend.core.actions.processes.RunProcessAction;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessInput;
-import com.kingsrook.qqq.backend.core.model.actions.processes.RunProcessOutput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
+import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
 import org.junit.jupiter.api.Test;
@@ -92,7 +91,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer contactId = insertContact("Alice", "Test");
 
-      RunProcessOutput output = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput output = runAutoAssign("CONTACT", contactId);
       assertEquals("ASSIGNED", output.getValues().get("action"));
       // user-B has null lastAssignedDate => treated as EPOCH => least active
       assertEquals("user-B", output.getValues().get("assignedUserId"));
@@ -119,7 +118,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer contactId = insertContactWithState("Bob", "Test", "CO");
 
-      RunProcessOutput output = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput output = runAutoAssign("CONTACT", contactId);
       assertEquals("ASSIGNED", output.getValues().get("action"));
       assertEquals("co-rep", output.getValues().get("assignedUserId"));
    }
@@ -145,7 +144,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer contactId = insertContactWithState("Carol", "Test", "CO");
 
-      RunProcessOutput output = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput output = runAutoAssign("CONTACT", contactId);
       assertEquals("NO_MATCH", output.getValues().get("action"));
    }
 
@@ -159,7 +158,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
    {
       Integer contactId = insertContact("Eve", "Invalid");
 
-      RunProcessOutput output = runAutoAssign("NONEXISTENT", contactId);
+      RunBackendStepOutput output = runAutoAssign("NONEXISTENT", contactId);
       assertEquals("NO_MATCH", output.getValues().get("action"));
    }
 
@@ -181,7 +180,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
                .withIsActive(true)
                .withSortOrder(1)));
 
-      RunProcessOutput output = runAutoAssign("CONTACT", 99999);
+      RunBackendStepOutput output = runAutoAssign("CONTACT", 99999);
       assertEquals("RECORD_NOT_FOUND", output.getValues().get("action"));
    }
 
@@ -205,7 +204,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer dealId = insertDeal("Test Deal");
 
-      RunProcessOutput output = runAutoAssign("DEAL", dealId);
+      RunBackendStepOutput output = runAutoAssign("DEAL", dealId);
       assertEquals("ASSIGNED", output.getValues().get("action"));
       assertEquals("deal-owner", output.getValues().get("assignedUserId"));
    }
@@ -229,7 +228,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer contactId = insertContact("Lonely", "User");
 
-      RunProcessOutput output = runAutoAssign("CONTACT", contactId);
+      RunBackendStepOutput output = runAutoAssign("CONTACT", contactId);
       assertEquals("NO_MATCH", output.getValues().get("action"));
    }
 
@@ -253,7 +252,7 @@ class AutoAssignProcessCoverageTest extends BaseTest
 
       Integer contactId = insertContact("Label", "Test");
 
-      RunProcessOutput output = runAutoAssign(CrmAssignableEntity.CONTACT.getLabel(), contactId);
+      RunBackendStepOutput output = runAutoAssign(CrmAssignableEntity.CONTACT.getLabel(), contactId);
       assertEquals("ASSIGNED", output.getValues().get("action"));
    }
 
@@ -329,13 +328,13 @@ class AutoAssignProcessCoverageTest extends BaseTest
    /*******************************************************************************
     ** Run Auto Assign.
     *******************************************************************************/
-   private RunProcessOutput runAutoAssign(String entityType, Integer recordId) throws QException
+   private RunBackendStepOutput runAutoAssign(String entityType, Integer recordId) throws QException
    {
-      RunProcessInput processInput = new RunProcessInput();
+      RunBackendStepInput processInput = new RunBackendStepInput();
       processInput.setProcessName(AutoAssignProcess.NAME);
       processInput.addValue("entityType", entityType);
       processInput.addValue("recordId", recordId);
-      return (new RunProcessAction().execute(processInput));
+      return (runBusinessStep(processInput));
    }
 
 }

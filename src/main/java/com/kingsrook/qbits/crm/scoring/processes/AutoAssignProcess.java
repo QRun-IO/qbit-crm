@@ -26,22 +26,12 @@
 package com.kingsrook.qbits.crm.scoring.processes;
 
 
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAssignableEntity;
 import com.kingsrook.qbits.crm.scoring.CrmAutoAssign;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepInput;
 import com.kingsrook.qqq.backend.core.model.actions.processes.RunBackendStepOutput;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
@@ -49,32 +39,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
  ** based on configured assignment rules. Evaluates rules in sortOrder; first
  ** match wins. Supports SPECIFIC_USER, ROUND_ROBIN, and LEAST_ACTIVE strategies.
  *******************************************************************************/
-public class AutoAssignProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class AutoAssignProcess implements BackendStep
 {
    public static final String NAME = "crm_auto_assign";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Auto Assign")
-         .withIcon(new QIcon().withName("assignment_ind"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(AutoAssignProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("entityType", QFieldType.STRING).withIsRequired(true),
-                  new QFieldMetaData("recordId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

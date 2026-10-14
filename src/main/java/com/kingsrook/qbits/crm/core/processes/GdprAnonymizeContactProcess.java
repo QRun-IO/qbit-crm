@@ -29,7 +29,6 @@ package com.kingsrook.qbits.crm.core.processes;
 
 
 import java.time.Instant;
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.ConsentRecord;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
@@ -52,50 +51,18 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for GDPR anonymization of a contact.
+ ** Backend operation used by the streamed CRM actions for GDPR anonymization of a contact.
  *******************************************************************************/
-public class GdprAnonymizeContactProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class GdprAnonymizeContactProcess implements BackendStep
 {
    private static final QLogger LOG = QLogger.getLogger(GdprAnonymizeContactProcess.class);
 
    public static final String NAME = "crm_gdpr_anonymize_contact";
 
    private static final String ANONYMIZED = "[ANONYMIZED]";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("GDPR Anonymize Contact")
-         .withTableName(Contact.TABLE_NAME)
-         .withIcon(new QIcon().withName("privacy_tip"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(GdprAnonymizeContactProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("contactId", QFieldType.INTEGER).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

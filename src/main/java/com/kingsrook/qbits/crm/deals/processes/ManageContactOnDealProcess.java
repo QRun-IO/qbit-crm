@@ -50,52 +50,16 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for adding or removing a contact on a deal.
+ ** Backend operation used by the streamed CRM actions for adding or removing a contact on a deal.
  ** ADD: inserts a DealContact row, with isPrimary enforcement.
  ** REMOVE: deletes the DealContact row matching dealId + contactId.
  *******************************************************************************/
-public class ManageContactOnDealProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class ManageContactOnDealProcess implements BackendStep
 {
    public static final String NAME = "crm_manage_contact_on_deal";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Manage Contact on Deal")
-         .withTableName(Deal.TABLE_NAME)
-         .withIcon(new QIcon().withName("person_add"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(ManageContactOnDealProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("dealId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("contactId", QFieldType.INTEGER).withIsRequired(true),
-                  new QFieldMetaData("action", QFieldType.STRING).withIsRequired(true),
-                  new QFieldMetaData("contactRoleId", QFieldType.INTEGER),
-                  new QFieldMetaData("isPrimary", QFieldType.BOOLEAN)
-               )))
-         ));
-   }
 
 
 

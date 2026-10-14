@@ -27,7 +27,6 @@
 package com.kingsrook.qbits.crm.deals.processes;
 
 
-import java.util.List;
 import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.Contact;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEntityType;
@@ -46,47 +45,15 @@ import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryOutput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
-import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerInterface;
-import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
-import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 
 
 /*******************************************************************************
- ** MetaDataProducer + BackendStep for transferring ownership of contacts,
+ ** Backend operation used by the streamed CRM actions for transferring ownership of contacts,
  ** companies, and deals from one user to another.
  *******************************************************************************/
-public class TransferOwnershipProcess implements BackendStep, MetaDataProducerInterface<QProcessMetaData>
+public class TransferOwnershipProcess implements BackendStep
 {
    public static final String NAME = "crm_transfer_ownership";
-
-
-
-   /*******************************************************************************
-    ** Produce the process metadata.
-    *******************************************************************************/
-   @Override
-   public QProcessMetaData produce(QInstance qInstance) throws QException
-   {
-      return new QProcessMetaData()
-         .withName(NAME)
-         .withLabel("Transfer Ownership")
-         .withIcon(new QIcon().withName("swap_horiz"))
-         .withStepList(List.of(
-            new QBackendStepMetaData()
-               .withName("execute")
-               .withCode(new QCodeReference(TransferOwnershipProcess.class))
-               .withInputData(new QFunctionInputMetaData().withFieldList(List.of(
-                  new QFieldMetaData("fromUserId", QFieldType.STRING).withIsRequired(true),
-                  new QFieldMetaData("toUserId", QFieldType.STRING).withIsRequired(true)
-               )))
-         ));
-   }
 
 
 

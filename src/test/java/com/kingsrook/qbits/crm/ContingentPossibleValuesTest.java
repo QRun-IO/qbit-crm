@@ -48,7 +48,6 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.PossibleValueSearchFilterUseCase;
 import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValue;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.modules.backend.implementations.memory.MemoryRecordStore;
 import com.kingsrook.qqq.backend.core.utils.collections.MapBuilder;
@@ -103,7 +102,7 @@ class ContingentPossibleValuesTest extends BaseTest
 
 
    /*******************************************************************************
-    ** Optional company links and backend-only process inputs stay unrestricted.
+    ** Optional activity links stay unrestricted; logging has standard ETL screens.
     *******************************************************************************/
    @Test
    void testSkippedFields()
@@ -112,8 +111,8 @@ class ContingentPossibleValuesTest extends BaseTest
       assertThat(activity.getField("companyId").getIsRequired()).isFalse();
       assertThat(activity.getField("contactId").getPossibleValueSourceFilter()).isNull();
       assertThat(activity.getField("dealId").getPossibleValueSourceFilter()).isNull();
-      assertThat(QContext.getQInstance().getProcess(LogActivityProcess.NAME).getStepList())
-         .allMatch(step -> step instanceof QBackendStepMetaData);
+      assertThat(QContext.getQInstance().getProcess(LogActivityProcess.NAME).getFrontendStep("details")).isNotNull();
+      assertThat(QContext.getQInstance().getProcess(LogActivityProcess.NAME).getFrontendStep("review")).isNotNull();
    }
 
 
