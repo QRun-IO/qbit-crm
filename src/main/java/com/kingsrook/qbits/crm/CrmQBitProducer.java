@@ -28,6 +28,7 @@ package com.kingsrook.qbits.crm;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.customizers.FormSubmissionAutoLinkCustomizer;
@@ -39,6 +40,8 @@ import com.kingsrook.qbits.crm.deals.customizers.DealProductRecalculationCustomi
 import com.kingsrook.qbits.crm.deals.customizers.DealStageChangeCustomizer;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
+import com.kingsrook.qbits.crm.email.CrmEmailProcessIdentity;
+import com.kingsrook.qbits.crm.scoring.AutoAssignCustomizer;
 import com.kingsrook.qbits.crm.security.CrmPermissions;
 import com.kingsrook.qbits.crm.widgets.CrmWidgetMetaData;
 import com.kingsrook.qqq.backend.core.actions.customizers.MultiCustomizer;
@@ -54,6 +57,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.audits.AuditLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.audits.QAuditRules;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReferenceWithProperties;
+import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordFeature;
+import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordFeaturesMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordOwnership;
 import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
@@ -61,6 +67,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaDataProducer;
+import com.kingsrook.qqq.backend.core.model.metadata.scheduleing.QScheduleMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.Tier;
@@ -139,6 +146,12 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       {
          process.setPermissionRules(CrmPermissions.processRules(process.getName()));
          process.setSourceQBitName(getQBitMetaData().getName());
+         Integer seconds = Map.of("crm_process_sequence_steps", 300, "crm_calculate_lead_scores", 3600,
+            "crm_sync_email_delivery", 900, "crm_expire_consents", 86400).get(process.getName());
+         if(seconds != null && qBitConfig.getSchedulerName() != null && !Boolean.FALSE.equals(qBitConfig.getSchedulesEnabled()))
+         {
+            process.withSchedule(new QScheduleMetaData().withSchedulerName(qBitConfig.getSchedulerName()).withRepeatSeconds(seconds));
+         }
       }
 
       /////////////////////////////////////////////////////////////////////////
@@ -171,11 +184,26 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
             || tableName.equals(Deal.TABLE_NAME) || tableName.equals(Activity.TABLE_NAME))
          {
             table.withAuditRules(new QAuditRules().withAuditLevel(AuditLevel.FIELD));
+            RecordFeaturesMetaData features = RecordFeaturesMetaData.ofOrWithNew(table)
+               .withOwnership(new RecordOwnership().withOwnerFieldName("ownerUserId"));
+            for(RecordFeature feature : List.of(RecordFeature.TAGS, RecordFeature.COMMENTS, RecordFeature.ATTACHMENTS,
+               RecordFeature.FOLLOW, RecordFeature.TIMELINE, RecordFeature.RECENTS, RecordFeature.FAVORITES))
+            {
+               features.withEnabled(feature, true);
+            }
+            if(!tableName.equals(Activity.TABLE_NAME))
+            {
+               features.withEnabled(RecordFeature.TASKS, true).withEnabled(RecordFeature.ASSIGNMENT, true);
+            }
          }
 
          ///////////////////////////////////////////////////////////////
          // wire activity timestamp propagation                       //
          ///////////////////////////////////////////////////////////////
+         if(tableName.equals(Contact.TABLE_NAME) || tableName.equals(Deal.TABLE_NAME))
+         {
+            addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, new QCodeReference(AutoAssignCustomizer.class));
+         }
          if(tableName.equals(Activity.TABLE_NAME))
          {
             addOrComposeCustomizer(table, TableCustomizers.POST_INSERT_RECORD, new QCodeReference(ActivityLastDateCustomizer.class));
@@ -324,6 +352,12 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
          .withSourceQBitName(getQBitMetaData().getName()));
       output.add(new QAlertTypeMetaData().withName("crm.email.unavailable").withLabel("Email unavailable")
          .withSourceQBitName(getQBitMetaData().getName()));
+      for(String notification : List.of("crm.lead.assigned", "crm.deal.won", "crm.deal.rotting", "crm.task.due"))
+      {
+         output.add(new QAlertTypeMetaData().withName(notification).withLabel(notification)
+            .withDefaultSeverity(AlertSeverity.INFO).withSourceQBitName(getQBitMetaData().getName()));
+      }
+      qInstance.withProcessLifecycleListener(new QCodeReference(CrmEmailProcessIdentity.class));
       registerHooks(qInstance);
       return (output);
    }

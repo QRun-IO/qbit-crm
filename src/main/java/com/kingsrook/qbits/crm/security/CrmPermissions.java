@@ -49,7 +49,7 @@ public final class CrmPermissions
    public static final List<String> ALL = List.of(APP_ACCESS, READ, WRITE, MANAGE, MANAGE_READ, MANAGE_WRITE, ADMIN, ADMIN_READ, ADMIN_WRITE);
 
    private static final Set<String> SETTINGS_TABLES = Set.of(
-      "crm_pipeline", "crm_product", "crm_email_template", "crm_email_sequence",
+      "crm_job_state", "crm_pipeline", "crm_product", "crm_email_template", "crm_email_sequence",
       "crm_lead_score_rule", "crm_assignment_rule", "crm_sales_goal", "crm_lifecycle_stage",
       "crm_lead_source", "crm_industry", "crm_activity_type", "crm_activity_outcome",
       "crm_contact_role", "crm_win_loss_reason");
@@ -58,7 +58,7 @@ public final class CrmPermissions
       "crm_merge_contacts", "crm_merge_companies", "crm_bulk_assign_owner",
       "crm_subscribe_to_list", "crm_unsubscribe_from_list", "crm_enroll_in_sequence",
       "crm_unenroll_from_sequence", "crm_process_sequence_steps", "crm_assign_company_owner",
-      "crm_transfer_ownership", "crm_activate_sequence", "crm_pause_sequence");
+      "crm_transfer_ownership", "crm_activate_sequence", "crm_pause_sequence", "crm_sync_email_delivery", "crm_expire_consents", "crm_calculate_lead_scores");
 
 
 

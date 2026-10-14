@@ -60,10 +60,10 @@ class ProcessSequenceStepsProcessTest extends BaseTest
 {
 
    /*******************************************************************************
-    ** Email step should create an activity record.
+    ** Email without recorded consent pauses without creating a fake activity.
     *******************************************************************************/
    @Test
-   void testEmailStepCreatesActivity() throws QException
+   void testEmailStepRequiresConsent() throws QException
    {
       insertActivityType("Email");
       insertActivityType("Task");
@@ -91,8 +91,7 @@ class ProcessSequenceStepsProcessTest extends BaseTest
       QueryOutput activityQuery = new QueryAction().execute(
          new QueryInput(Activity.TABLE_NAME));
 
-      assertThat(activityQuery.getRecords()).isNotEmpty();
-      assertThat(activityQuery.getRecords().get(0).getValueString("subject")).contains("Sequence email");
+      assertThat(activityQuery.getRecords()).isEmpty();
 
       /////////////////////////////////////////////
       // verify enrollment was advanced          //
@@ -101,7 +100,8 @@ class ProcessSequenceStepsProcessTest extends BaseTest
          new QueryInput(SequenceEnrollment.TABLE_NAME));
 
       SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentQuery.getRecords().get(0));
-      assertEquals(1, enrollment.getCurrentStepNumber());
+      assertEquals(0, enrollment.getCurrentStepNumber());
+      assertEquals(CrmEnrollmentStatus.PAUSED.getId(), enrollment.getStatus());
    }
 
 
@@ -142,10 +142,10 @@ class ProcessSequenceStepsProcessTest extends BaseTest
 
 
    /*******************************************************************************
-    ** After 3 failures, enrollment should be marked as FAILED.
+    ** Opt-out pauses an enrollment without counting it as a delivery failure.
     *******************************************************************************/
    @Test
-   void testFailureCounting() throws QException
+   void testOptOutPausesWithoutCountingFailure() throws QException
    {
       Integer sequenceId = insertSequence("Fail Seq", true, 2, false);
       Integer contactId = insertContact("Carol", "Fail", true); // doNotEmail = true
@@ -181,8 +181,8 @@ class ProcessSequenceStepsProcessTest extends BaseTest
          new QueryInput(SequenceEnrollment.TABLE_NAME));
 
       SequenceEnrollment enrollment = new SequenceEnrollment(enrollmentQuery.getRecords().get(0));
-      assertEquals(CrmEnrollmentStatus.FAILED.getId(), enrollment.getStatus());
-      assertEquals(3, enrollment.getFailureCount());
+      assertEquals(CrmEnrollmentStatus.PAUSED.getId(), enrollment.getStatus());
+      assertEquals(2, enrollment.getFailureCount());
       assertThat(enrollment.getLastFailureMessage()).isNotNull();
    }
 

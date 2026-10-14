@@ -43,6 +43,9 @@ public class CrmQBitConfig implements QBitConfig
 {
    public static final CrmQBitConfig DEFAULT_CONFIG = new CrmQBitConfig();
 
+   private String schedulerName;
+   private Boolean schedulesEnabled = true;
+
    private String messagingProviderName;
 
    private String publicBaseUrl;
@@ -268,6 +271,40 @@ public class CrmQBitConfig implements QBitConfig
    public CrmQBitConfig withMessagingProviderName(String messagingProviderName)
    {
       this.messagingProviderName = messagingProviderName;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Scheduler configuration: schedulerName.
+    *******************************************************************************/
+   public String getSchedulerName()
+   {
+      return (schedulerName);
+   }
+
+   /*******************************************************************************
+    ** Configure schedulerName.
+    *******************************************************************************/
+   public CrmQBitConfig withSchedulerName(String schedulerName)
+   {
+      this.schedulerName = schedulerName;
+      return (this);
+   }
+
+   /*******************************************************************************
+    ** Scheduler configuration: schedulesEnabled.
+    *******************************************************************************/
+   public Boolean getSchedulesEnabled()
+   {
+      return (schedulesEnabled);
+   }
+
+   /*******************************************************************************
+    ** Configure schedulesEnabled.
+    *******************************************************************************/
+   public CrmQBitConfig withSchedulesEnabled(Boolean schedulesEnabled)
+   {
+      this.schedulesEnabled = schedulesEnabled;
       return (this);
    }
 

@@ -90,7 +90,7 @@ class CrmAppMetaDataTest extends BaseTest
          new CrmQBitProducer().withQBitConfig(new CrmQBitConfig().withDefaultBackendNameForTables(BACKEND_NAME).withAppEnabled(enabled))
             .produce(instance).addSelfToInstance(instance);
          assertThat(instance.getApps()).hasSize(Boolean.FALSE.equals(enabled) ? 0 : 1);
-         assertThat(instance.getTables()).hasSize(33);
+         assertThat(instance.getTables()).hasSize(34);
       }
    }
 

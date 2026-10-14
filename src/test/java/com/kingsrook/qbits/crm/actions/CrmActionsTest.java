@@ -133,7 +133,7 @@ class CrmActionsTest extends BaseTest
    void metadataIsComplete()
    {
       assertThat(CrmActions.ACTIONS).hasSize(28);
-      assertThat(QContext.getQInstance().getProcesses().keySet().stream().filter(name -> !name.contains("."))).hasSize(30);
+      assertThat(QContext.getQInstance().getProcesses().keySet().stream().filter(name -> !name.contains("."))).hasSize(32);
       for(CrmActions.Action action : CrmActions.ACTIONS)
       {
          QProcessMetaData process = QContext.getQInstance().getProcess(action.name());
@@ -154,7 +154,7 @@ class CrmActionsTest extends BaseTest
             assertThat(process.getMaxInputRecords()).isEqualTo(2);
          }
       }
-      for(String name : List.of("crm_process_sequence_steps", "crm_calculate_lead_scores"))
+      for(String name : List.of("crm_process_sequence_steps", "crm_calculate_lead_scores", "crm_sync_email_delivery", "crm_expire_consents"))
       {
          assertThat(QContext.getQInstance().getProcess(name).getTableName()).isNull();
       }
