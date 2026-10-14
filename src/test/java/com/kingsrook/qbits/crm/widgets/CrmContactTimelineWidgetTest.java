@@ -65,6 +65,26 @@ class CrmContactTimelineWidgetTest extends BaseTest
 
 
    /*******************************************************************************
+    ** Session zones observe DST; missing or invalid zones fall back to UTC.
+    *******************************************************************************/
+   @Test
+   void readableDates()
+   {
+      Instant time = Instant.parse("2026-10-14T20:19:01.142263Z");
+      assertThat(CrmContactTimelineRenderer.formatDate(time)).isEqualTo("Oct 14, 2026 8:19 PM");
+      QContext.getQSession().setValue("UserTimezone", "America/Chicago");
+      assertThat(CrmContactTimelineRenderer.formatDate(time)).isEqualTo("Oct 14, 2026 3:19 PM");
+      assertThat(CrmContactTimelineRenderer.formatDate(Instant.parse("2026-01-14T20:19:00Z"))).isEqualTo("Jan 14, 2026 2:19 PM");
+      QContext.getQSession().setValue("UserTimezone", "invalid");
+      assertThat(CrmContactTimelineRenderer.formatDate(time)).isEqualTo("Oct 14, 2026 8:19 PM");
+      QContext.getQSession().setValue("UserTimezone", "");
+      QContext.getQSession().setValue("UserTimezoneOffsetMinutes", "120");
+      assertThat(CrmContactTimelineRenderer.formatDate(time)).isEqualTo("Oct 14, 2026 10:19 PM");
+      assertThat(CrmContactTimelineRenderer.formatDate(null)).isEmpty();
+   }
+
+
+   /*******************************************************************************
     ** Missing and nonexistent parent ids never query all contacts' histories.
     *******************************************************************************/
    @Test

@@ -137,7 +137,7 @@ class CrmAppMetaDataTest extends BaseTest
 
 
    /*******************************************************************************
-    ** No retired trends; all widgets have explicit protection and full width.
+    ** No retired trends; all widgets have explicit protection and statistics use compact widths.
     *******************************************************************************/
    @Test
    void widgets()
@@ -147,7 +147,7 @@ class CrmAppMetaDataTest extends BaseTest
       for(QWidgetMetaDataInterface widget : instance.getWidgets().values())
       {
          assertThat(widget.getPermissionRules()).isNotNull();
-         assertThat(widget.getGridColumns()).isEqualTo(12);
+         assertThat(widget.getGridColumns()).isEqualTo(CrmHomeWidgets.TODAY.contains(widget.getName()) ? 4 : 12);
          assertThat(widget.getType()).isNotEqualTo(WidgetType.HTML.getType());
       }
    }

@@ -100,6 +100,23 @@ public class CrmApisTest extends BaseTest
    }
 
    /*******************************************************************************
+    ** Email-only intake preserves absent names and never assigns the service user.
+    *******************************************************************************/
+   @Test
+   void emailOnlyIntakeHasNoOwner() throws Exception
+   {
+      QContext.getQSession().setIdReference("site-api-system");
+      CrmFormResult result = intake.submitForm(new CrmFormRequest("contact", FormType.CONTACT, null, " ", "only@example.test",
+         null, null, "Hello", false, "Reply", null, null, null, null, null, null, null, null, null));
+      QRecord contact = CrmStore.asUser().get("crm_contact", result.contactId());
+      assertThat(contact.getValue("firstName")).isNull();
+      assertThat(contact.getValue("lastName")).isNull();
+      assertThat(contact.getValue("ownerUserId")).isNull();
+      assertThat(contact.getRecordLabel()).isEqualTo("only@example.test");
+   }
+
+
+   /*******************************************************************************
     ** Form preserves first touch and never grants implicit marketing consent.
     *******************************************************************************/
    @Test
@@ -530,7 +547,7 @@ public class CrmApisTest extends BaseTest
       assertThat(CrmStore.trusted().by("crm_contact", "email", "subscriber@example.test").get(0).getValueString("ownerUserId")).isEqualTo("sales-0");
       QContext.getQSession().setIdReference("named-owner");
       Integer owned = intake.submitForm(form("owned@example.test", false, "owned")).contactId();
-      assertThat(CrmStore.trusted().get("crm_contact", owned).getValueString("ownerUserId")).isEqualTo("named-owner");
+      assertThat(CrmStore.trusted().get("crm_contact", owned).getValueString("ownerUserId")).isEqualTo("sales-1");
       CrmStore.trusted().update("crm_contact", new QRecord().withValue("id", first.contactId()).withValue("ownerUserId", "system"));
       intake.submitForm(form("first@example.test", false, "existing-unowned"));
       assertThat(CrmStore.trusted().get("crm_contact", first.contactId()).getValueString("ownerUserId")).isEqualTo("system");

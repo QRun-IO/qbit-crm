@@ -31,6 +31,7 @@ package com.kingsrook.qbits.crm.deals.customizers;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qbits.crm.deals.model.Deal;
@@ -128,6 +129,13 @@ public class DealInitializationCustomizer extends AbstractPostInsertCustomizer
          {
             stage = new PipelineStage(stageOutput.getRecord());
          }
+      }
+
+      if(stage != null && (Boolean.TRUE.equals(stage.getIsClosedWon()) || Boolean.TRUE.equals(stage.getIsClosedLost()))
+         && record.getValue("actualCloseDate") == null)
+      {
+         updateRecord.setValue("actualCloseDate", now.atZone(ZoneOffset.UTC).toLocalDate());
+         needsUpdate = true;
       }
 
       ///////////////////////////////////////////

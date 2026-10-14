@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
-import com.kingsrook.qbits.crm.CrmSessionUtils;
 import com.kingsrook.qbits.crm.core.model.enums.CrmAssignableEntity;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentStatus;
 import com.kingsrook.qbits.crm.core.model.enums.CrmConsentType;
@@ -295,7 +294,7 @@ public class CrmIntakeApi
          List<QRecord> stages = store.by("crm_lifecycle_stage", "name", "Lead");
          contact = store.insert("crm_contact", new QRecord().withValue("email", normalize(request.email()))
             .withValue("firstName", name(request.firstName())).withValue("lastName", name(request.lastName()))
-            .withValue("phone", request.phone()).withValue("ownerUserId", CrmSessionUtils.getCurrentUserId())
+            .withValue("phone", request.phone()).withValue("ownerUserId", null)
             .withValue("leadSourceId", leadSource.getValueInteger("id")).withValue("lifecycleStageId", stages.isEmpty() ? null : stages.get(0).getValueInteger("id")));
       }
       else
@@ -396,6 +395,6 @@ public class CrmIntakeApi
     *******************************************************************************/
    private String name(String value)
    {
-      return (value == null || value.isBlank() ? "Not provided" : value);
+      return (value == null || value.isBlank() ? null : value.strip());
    }
 }
