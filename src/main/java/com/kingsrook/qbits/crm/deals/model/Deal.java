@@ -14,6 +14,9 @@ import com.kingsrook.qbits.crm.core.model.Company;
 import com.kingsrook.qbits.crm.core.model.LeadSource;
 import com.kingsrook.qbits.crm.core.model.enums.CrmDealPriority;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
@@ -128,6 +131,12 @@ public class Deal extends QRecordEntity
                }
             }
          }
+
+         ///////////////////////////////////////////////////////////
+         // Only offer stages belonging to the selected pipeline. //
+         ///////////////////////////////////////////////////////////
+         table.getField("pipelineStageId").withPossibleValueSourceFilter(new QQueryFilter(
+            new QFilterCriteria("pipelineId", QCriteriaOperator.EQUALS, "${input.pipelineId}")));
 
          return (table);
       }

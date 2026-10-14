@@ -7,6 +7,9 @@ package com.kingsrook.qbits.crm.core.model;
 import java.time.Instant;
 import com.kingsrook.qbits.crm.core.model.enums.CrmListMemberStatus;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QQueryFilter;
 import com.kingsrook.qqq.backend.core.model.data.QField;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.data.QRecordEntity;
@@ -54,6 +57,12 @@ public class EmailListMember extends QRecordEntity
             .withSection(SectionFactory.defaultT1("id", "emailListId", "contactId", "email", "firstName", "status"))
             .withSection(SectionFactory.defaultT2("subscribedDate", "unsubscribedDate", "subscriptionSource", "formSubmissionId"))
             .withSection(SectionFactory.defaultT3("createDate", "modifyDate"));
+
+         ////////////////////////////////////////////////////////////
+         // Only offer submissions linked to the selected contact. //
+         ////////////////////////////////////////////////////////////
+         table.getField("formSubmissionId").withPossibleValueSourceFilter(new QQueryFilter(
+            new QFilterCriteria("contactId", QCriteriaOperator.EQUALS, "${input.contactId}")));
 
          return (table);
       }
