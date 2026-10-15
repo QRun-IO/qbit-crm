@@ -2,6 +2,8 @@
 
 ## Unreleased / 0.2.0
 
+- Read the CRM QBit metadata version from the Maven-filtered artifact version so release metadata matches the build.
+
 - Adopt QQQ 4.1.0-RC.7 native help bundles, replacing the RC.6 stand-in loader with host-neutral CRM help, live references and the core coverage gate.
 
 - Upgrade to Java 21, QQQ 4.1.0-RC.6 and qbit-build-parent 2.1.2.

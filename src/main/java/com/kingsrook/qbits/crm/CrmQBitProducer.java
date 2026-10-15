@@ -26,9 +26,12 @@
 package com.kingsrook.qbits.crm;
 
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import com.kingsrook.qbits.crm.activities.customizers.ActivityLastDateCustomizer;
 import com.kingsrook.qbits.crm.activities.model.Activity;
 import com.kingsrook.qbits.crm.core.customizers.CurrencyRateDateCustomizer;
@@ -86,9 +89,37 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
 {
    public static final String GROUP_ID    = "com.kingsrook.qbits";
    public static final String ARTIFACT_ID = "crm";
-   public static final String VERSION     = "0.2.0-SNAPSHOT";
+   public static final String VERSION     = loadVersion();
 
    private CrmQBitConfig qBitConfig;
+
+
+
+   /*******************************************************************************
+    ** Read the artifact version from the Maven-filtered properties resource.
+    *******************************************************************************/
+   private static String loadVersion()
+   {
+      try(InputStream inputStream = CrmQBitProducer.class.getClassLoader().getResourceAsStream("qbit-crm.properties"))
+      {
+         if(inputStream == null)
+         {
+            throw new IllegalStateException("Missing qbit-crm.properties; build with Maven to provide the artifact version");
+         }
+         Properties properties = new Properties();
+         properties.load(inputStream);
+         String version = properties.getProperty("version");
+         if(version == null || version.isBlank() || version.contains("${"))
+         {
+            throw new IllegalStateException("Missing or unfiltered version in qbit-crm.properties; build with Maven to provide the artifact version");
+         }
+         return (version);
+      }
+      catch(IOException e)
+      {
+         throw new IllegalStateException("Could not read artifact version from qbit-crm.properties", e);
+      }
+   }
 
 
 
