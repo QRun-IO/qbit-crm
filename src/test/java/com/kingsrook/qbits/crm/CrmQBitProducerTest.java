@@ -62,7 +62,7 @@ class CrmQBitProducerTest extends BaseTest
       assertThat(metaData).isNotNull();
       assertThat(metaData.getGroupId()).isEqualTo(CrmQBitProducer.GROUP_ID);
       assertThat(metaData.getArtifactId()).isEqualTo(CrmQBitProducer.ARTIFACT_ID);
-      assertThat(metaData.getVersion()).isEqualTo(CrmQBitProducer.VERSION);
+      assertThat(metaData.getVersion()).isEqualTo(System.getProperty("qbit.artifactVersion")).isEqualTo(CrmQBitProducer.VERSION);
    }
 
 
@@ -114,7 +114,7 @@ class CrmQBitProducerTest extends BaseTest
    {
       assertThat(CrmQBitProducer.GROUP_ID).isEqualTo("com.kingsrook.qbits");
       assertThat(CrmQBitProducer.ARTIFACT_ID).isEqualTo("crm");
-      assertThat(CrmQBitProducer.VERSION).isEqualTo("0.2.0-SNAPSHOT");
+      assertThat(CrmQBitProducer.VERSION).isEqualTo(System.getProperty("qbit.artifactVersion"));
    }
 
    /*******************************************************************************
