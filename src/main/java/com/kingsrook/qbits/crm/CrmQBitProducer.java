@@ -43,7 +43,6 @@ import com.kingsrook.qbits.crm.deals.customizers.DealStageChangeCustomizer;
 import com.kingsrook.qbits.crm.deals.model.Deal;
 import com.kingsrook.qbits.crm.deals.model.DealProduct;
 import com.kingsrook.qbits.crm.email.CrmEmailProcessIdentity;
-import com.kingsrook.qbits.crm.help.CrmHelpBundleStandIn;
 import com.kingsrook.qbits.crm.scoring.AutoAssignCustomizer;
 import com.kingsrook.qbits.crm.security.CrmDataPolicy;
 import com.kingsrook.qbits.crm.security.CrmPermissions;
@@ -66,6 +65,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordFeature
 import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordFeaturesMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.collaboration.RecordOwnership;
 import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.help.bundles.HelpBundles;
 import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
@@ -384,7 +384,8 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       }
       qInstance.withProcessLifecycleListener(new QCodeReference(CrmEmailProcessIdentity.class));
       registerHooks(qInstance);
-      CrmHelpBundleStandIn.apply(output);
+      // Registration is metadata-only; core startup sync guards hosts without helpContent.
+      HelpBundles.register(qInstance, "help/qbit-crm.yaml");
       return (output);
    }
 
