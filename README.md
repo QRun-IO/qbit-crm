@@ -174,6 +174,24 @@ Later phases complete the following behavior:
 
 The later intake APIs, public subscription routes, collaboration integration, real email transport, durable jobs and the remaining P2 security/integration work are not part of this phase.
 
+## In-app help
+
+CRM registers [help/qbit-crm.yaml](src/main/resources/help/qbit-crm.yaml) from
+`CrmQBitProducer`. The bundle uses the `QBIT` layer and the current artifact version.
+Registration only adds metadata and works without a `helpContent` table; QQQ's
+startup sync skips hosts without that table. Hosts with help storage load help
+and call `HelpBundles.syncOnStartup(qInstance)` after defining their metadata.
+
+To customize wording or describe your deployment, register a separate `HOST`
+bundle with the same entry keys (and roles). HOST text takes precedence over QBIT
+text; the sync preserves user edits for review. Keep live `{{...}}` references
+when referring to labels, defaults or enum values.
+
+`CrmPublicationHelpTest` runs `HelpBundleAssertions` against the produced and
+validated CRM instance, including generated record actions, and also requires
+widget and possible-value help. `CrmTablesGuardrailTest` checks every table's
+row-creation guidance. Run both through `./mvnw -q verify`.
+
 ## Source layout
 
 `CrmQBitProducer` discovers entity, process and widget producers. `core/` holds contacts, companies, forms, lists and consent; `deals/`, `activities/`, `email/` and `scoring/` hold their respective metadata and behavior. `actions/` defines the streamed record actions and their inputs/summaries. `security/` defines permissions, `sync/` holds external mappings and currency utilities, and `widgets/` contains widget producers/renderers. SQL is shipped under `src/main/resources/db/liquibase/qbit-crm/`.
