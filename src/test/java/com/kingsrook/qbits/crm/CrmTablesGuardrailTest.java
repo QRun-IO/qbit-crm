@@ -31,8 +31,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import com.kingsrook.qbits.crm.help.CrmHelpBundleStandIn;
-import com.kingsrook.qqq.backend.core.model.metadata.help.QHelpContent;
+import com.kingsrook.qqq.backend.core.model.metadata.help.bundles.HelpBundles;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -160,18 +159,17 @@ class CrmTablesGuardrailTest extends BaseTest
    @Test
    void everyTableHasEmptyStateHelp() throws Exception
    {
-      assertThat(CrmHelpBundleStandIn.entries()).allSatisfy((key, entry) -> assertThat(entry.path("summary").asText().length()).as(key).isLessThanOrEqualTo(120));
+      HelpBundles.of(qInstance()).getBundles().getFirst().getEntries()
+         .forEach(entry -> assertThat(entry.getSummary()).as(entry.getKey()).hasSizeLessThanOrEqualTo(120));
       for(String table : crmTables())
       {
-         List<QHelpContent> help = qInstance().getTable(table).getHelpContent() == null ? null : qInstance().getTable(table).getHelpContent().get("help");
-         assertThat(help).as(table + " table help").isNotEmpty();
-         assertThat(help.get(0).getContent()).as(table + " help says how rows get created").contains("**How rows get created:**");
+         assertThat(tableHelp(table)).as(table + " help says how rows get created").contains("**How rows get created:**");
       }
       for(String table : NOT_WRITTEN_YET)
       {
-         assertThat(qInstance().getTable(table).getHelpContent().get("help").get(0).getContent()).as(table + " says it is not used yet").contains("not used yet");
+         assertThat(tableHelp(table)).as(table + " says it is not used yet").contains("not used yet");
       }
-      assertThat(qInstance().getApp("crm").getHelpContent()).containsKey("help");
+      assertThat(HelpBundles.of(qInstance()).resolveWinningEntries()).containsKey(new HelpBundles.EntryKey("app:crm;slot:help", "ALL_SCREENS"));
    }
 
 
@@ -184,14 +182,26 @@ class CrmTablesGuardrailTest extends BaseTest
    {
       for(String table : CrmDefaultsChangelogTest.SEEDED_TABLES)
       {
-         assertThat(qInstance().getTable(table).getHelpContent().get("help").get(0).getContent()).as(table).contains("seeds");
+         assertThat(tableHelp(table)).as(table).contains("seeds");
       }
    }
 
 
 
    /*******************************************************************************
-    **
+    ** Read the winning table entry from the registered native bundle.
+    *******************************************************************************/
+   private String tableHelp(String table)
+   {
+      var entry = HelpBundles.of(qInstance()).resolveWinningEntries().get(new HelpBundles.EntryKey("table:" + table + ";slot:help", "ALL_SCREENS"));
+      assertThat(entry).as(table + " table help").isNotNull();
+      return (entry.entry().getContent());
+   }
+
+
+
+   /*******************************************************************************
+    ** Test instance after CRM production.
     *******************************************************************************/
    private com.kingsrook.qqq.backend.core.model.metadata.QInstance qInstance()
    {

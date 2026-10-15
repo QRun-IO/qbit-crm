@@ -2,6 +2,8 @@
 
 ## Unreleased / 0.2.0
 
+- Adopt QQQ 4.1.0-RC.7 native help bundles, replacing the RC.6 stand-in loader with host-neutral CRM help, live references and the core coverage gate.
+
 - Upgrade to Java 21, QQQ 4.1.0-RC.6 and qbit-build-parent 2.1.2.
 - Add Maven wrapper, CI configuration, architecture guardrails and coverage gates.
 - Rename tables, joins, widgets and CRM processes to `crm_` snake_case, with inferred snake_case SQL columns.
