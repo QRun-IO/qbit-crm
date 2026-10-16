@@ -5,7 +5,7 @@ entries:
   - key: app:crm;slot:help
     summary: "Manage relationships, sales opportunities and consent."
     content: |
-      Use **Contacts**, **Companies**, **Deals**, **Activities**, **Web Leads** and **Lists** for daily work. The Setup card on this page shows what still needs configuring: the default pipeline and its stages, lifecycle stages, the base currency and email delivery. Ask your administrator which reference data and base currency are configured for your installation. Configure pipelines, outcomes and outreach in Settings. Marketing email requires recorded consent and a ready email transport.
+      Use **Contacts**, **Companies**, **Deals**, **Activities**, **Web Leads** and **Lists** for daily work. The Setup card on this page shows what still needs configuring: the default pipeline and its stages, lifecycle stages, and the base currency. It only appears for CRM settings users, and only while a step is missing. Ask your administrator which reference data and base currency are configured for your installation. Configure pipelines, outcomes and outreach in Settings. Marketing email requires recorded consent and a ready email transport.
   - key: table:crm_job_state;slot:help
     summary: "Internal maintenance checkpoints."
     content: |

@@ -23,12 +23,21 @@ package com.kingsrook.qbits.crm.widgets;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import com.kingsrook.qbits.crm.BaseTest;
+import com.kingsrook.qbits.crm.security.CrmPermissions;
+import com.kingsrook.qqq.backend.core.actions.dashboard.RenderWidgetAction;
+import com.kingsrook.qqq.backend.core.actions.permissions.PermissionEnforcement;
+import com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper;
+import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException;
+import com.kingsrook.qqq.backend.core.model.actions.widgets.RenderWidgetInput;
 import com.kingsrook.qqq.backend.core.model.dashboard.widgets.TableData;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 /*******************************************************************************
@@ -38,19 +47,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CrmSetupStatusTest extends BaseTest
 {
    /*******************************************************************************
-    ** Nothing configured: the four things the CRM needs are flagged.
+    ** Nothing configured: the business setup the CRM needs are flagged.
     *******************************************************************************/
    @Test
    void emptyInstallNeedsSetup() throws Exception
    {
       Map<String, CrmSetupStatus.Item> items = items();
-      assertThat(items).containsOnlyKeys("Default pipeline", "Pipeline stages", "Lifecycle stages", "Base currency", "Email delivery");
+      assertThat(items).containsOnlyKeys("Default pipeline", "Pipeline stages", "Lifecycle stages", "Base currency");
       assertThat(items.get("Default pipeline").state()).isEqualTo(CrmSetupStatus.State.TODO);
       assertThat(items.get("Default pipeline").detail()).contains("Convert lead fails");
       assertThat(items.get("Pipeline stages").state()).isEqualTo(CrmSetupStatus.State.TODO);
       assertThat(items.get("Lifecycle stages").detail()).contains("Lead and Opportunity");
       assertThat(items.get("Base currency").state()).isEqualTo(CrmSetupStatus.State.TODO);
-      assertThat(items.get("Email delivery").state()).isNotEqualTo(CrmSetupStatus.State.TODO);
    }
 
 
@@ -106,10 +114,80 @@ class CrmSetupStatusTest extends BaseTest
    {
       assertThat(CrmHomeWidgets.HOME).contains("crm_setup");
       TableData data = (TableData) CrmHomeWidgetsTest.render("crm_setup");
-      assertThat(data.getRows()).hasSize(5);
+      assertThat(data.getRows()).hasSize(4);
       CrmHomeWidgetsTest.assertCell(data, 0, "first", "Default pipeline");
       assertThat(data.getRows().get(0).get("second").toString()).contains("Needs setup");
       
+   }
+
+
+
+   /*******************************************************************************
+    ** The checklist is business setup only: no email-provider row.
+    *******************************************************************************/
+   @Test
+   void noEmailProviderRow() throws Exception
+   {
+      assertThat(items().keySet()).noneMatch(label -> label.toLowerCase().contains("email"));
+      TableData data = (TableData) CrmHomeWidgetsTest.render("crm_setup");
+      assertThat(data.getRows().toString()).doesNotContain("email qbit").doesNotContain("Email delivery");
+   }
+
+
+
+   /*******************************************************************************
+    ** Settings holders get the card while setup is incomplete, and not once complete.
+    *******************************************************************************/
+   @Test
+   void settingsHolderSeesCardOnlyWhileIncomplete() throws Exception
+   {
+      assertThat(PermissionsHelper.hasWidgetPermission(new RenderWidgetInput(), "crm_setup")).isTrue();
+
+      completeSetup();
+      assertThat(CrmSetupStatus.isIncomplete()).isFalse();
+      assertThat(PermissionsHelper.hasWidgetPermission(new RenderWidgetInput(), "crm_setup")).isFalse();
+      assertThatThrownBy(() -> renderEnforced()).isInstanceOf(QPermissionDeniedException.class);
+   }
+
+
+
+   /*******************************************************************************
+    ** A CRM user without the settings permission never gets the card, incomplete or not.
+    *******************************************************************************/
+   @Test
+   void nonSettingsUserNeverSeesCard() throws Exception
+   {
+      QContext.getQSession().setPermissions(Set.of(CrmPermissions.APP_ACCESS, CrmPermissions.READ, CrmPermissions.WRITE));
+      assertThat(CrmSetupStatus.isIncomplete()).isTrue();
+      assertThat(PermissionsHelper.hasWidgetPermission(new RenderWidgetInput(), "crm_setup")).isFalse();
+      assertThatThrownBy(() -> renderEnforced()).isInstanceOf(QPermissionDeniedException.class);
+   }
+
+
+
+   /*******************************************************************************
+    ** Render the setup widget the way the UI API does, with permissions enforced.
+    *******************************************************************************/
+   private void renderEnforced() throws Exception
+   {
+      RenderWidgetInput input = new RenderWidgetInput().withWidgetMetaData(QContext.getQInstance().getWidget("crm_setup"));
+      input.setPermissionEnforcement(PermissionEnforcement.ENFORCE);
+      new RenderWidgetAction().execute(input);
+   }
+
+
+
+   /*******************************************************************************
+    ** Seed everything the checklist asks for.
+    *******************************************************************************/
+   private void completeSetup() throws Exception
+   {
+      CrmHomeWidgetsTest.seed("crm_pipeline", new QRecord().withValue("id", 1).withValue("name", "Sales").withValue("isDefault", true));
+      CrmHomeWidgetsTest.seed("crm_pipeline_stage", new QRecord().withValue("id", 2).withValue("pipelineId", 1).withValue("name", "Won").withValue("sortOrder", 2).withValue("isClosedWon", true));
+      CrmHomeWidgetsTest.seed("crm_pipeline_stage", new QRecord().withValue("id", 3).withValue("pipelineId", 1).withValue("name", "Lost").withValue("sortOrder", 3).withValue("isClosedLost", true));
+      CrmHomeWidgetsTest.seed("crm_lifecycle_stage", new QRecord().withValue("id", 1).withValue("name", "Lead"));
+      CrmHomeWidgetsTest.seed("crm_lifecycle_stage", new QRecord().withValue("id", 2).withValue("name", "Opportunity"));
+      CrmHomeWidgetsTest.seed("crm_currency", new QRecord().withValue("currencyCode", "USD").withValue("isBaseCurrency", true));
    }
 
 
