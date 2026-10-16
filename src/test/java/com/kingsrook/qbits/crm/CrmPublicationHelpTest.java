@@ -110,7 +110,7 @@ class CrmPublicationHelpTest extends BaseTest
       assertThat(HelpBundles.of(instance).getBundles()).singleElement().satisfies(bundle ->
       {
          assertThat(bundle.getId()).isEqualTo("qbit-crm");
-         assertThat(bundle.getVersion()).isEqualTo(CrmQBitProducer.VERSION);
+         assertThat(bundle.getVersion()).isEqualTo(System.getProperty("qbit.artifactVersion")).isEqualTo(CrmQBitProducer.VERSION);
          assertThat(bundle.getLayer().name()).isEqualTo("QBIT");
       });
       HelpBundles.syncOnStartup(instance);

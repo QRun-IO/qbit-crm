@@ -76,6 +76,11 @@ public class CrmHomeWidgets extends MetaDataProducer<MetaDataProducerMultiOutput
       {
          widget.getPermissionRules().withCustomPermissionChecker(new QCodeReference(CrmGoalsVisibility.class));
       }
+      if("crm_setup".equals(name))
+      {
+         widget.withPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.MANAGE_BASE))
+            .getPermissionRules().withCustomPermissionChecker(new QCodeReference(CrmSetupVisibility.class));
+      }
       return (widget);
    }
 }

@@ -23,8 +23,6 @@ package com.kingsrook.qbits.crm.widgets;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.kingsrook.qbits.crm.api.CrmApi;
-import com.kingsrook.qbits.crm.api.CrmReadiness;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.model.data.QRecord;
 
@@ -85,6 +83,16 @@ public final class CrmSetupStatus
     *******************************************************************************/
    private CrmSetupStatus()
    {
+   }
+
+
+
+   /*******************************************************************************
+    ** True when any business setup step still needs attention.
+    *******************************************************************************/
+   public static boolean isIncomplete() throws QException
+   {
+      return (load().stream().anyMatch(item -> item.state() == State.TODO));
    }
 
 
@@ -160,14 +168,6 @@ public final class CrmSetupStatus
          ? new Item("Base currency", "crm_currency", State.TODO, "None: amounts have no currency prefix and conversions do nothing.", "Add your currency with Base currency ticked and rate 1.")
          : new Item("Base currency", "crm_currency", State.OK, base.getFirst().getValueString("currencyCode") + " is the base currency.", null));
 
-      ///////////////////////////////////////////////////////
-      // email: sequences and list mail need a delivery path //
-      ///////////////////////////////////////////////////////
-      CrmReadiness readiness = CrmApi.readiness();
-      items.add(readiness == CrmReadiness.NOT_CONFIGURED
-         ? new Item("Email delivery", "crm_email_template", State.OPTIONAL, "No email path: sequences and list email cannot send.",
-            "Install and configure the email qbit, or set a messaging provider on the CRM configuration.")
-         : new Item("Email delivery", "crm_email_template", State.OK, readiness == CrmReadiness.QBIT_EMAIL ? "Sends through the email qbit." : "Sends through core messaging.", null));
       return (items);
    }
 
