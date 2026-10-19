@@ -41,6 +41,7 @@ public class CrmQBitConfig implements QBitConfig
 {
    public static final CrmQBitConfig DEFAULT_CONFIG = new CrmQBitConfig();
 
+   private boolean sharedEmailTemplates;
    private String tenantSecurityKeyType;
    private String tenantAllAccessKeyName;
    private String apiName;
@@ -359,6 +360,24 @@ public class CrmQBitConfig implements QBitConfig
    public CrmQBitConfig withEsbDestinationName(String esbDestinationName)
    {
       this.esbDestinationName = esbDestinationName;
+      return (this);
+   }
+
+
+   /*******************************************************************************
+    ** Opt-in only after the host has migrated legacy template references.
+    *******************************************************************************/
+   public boolean getSharedEmailTemplates()
+   {
+      return (sharedEmailTemplates);
+   }
+
+   /*******************************************************************************
+    ** Other hosts keep the legacy optional-email and tenant behavior by default.
+    *******************************************************************************/
+   public CrmQBitConfig withSharedEmailTemplates(boolean sharedEmailTemplates)
+   {
+      this.sharedEmailTemplates = sharedEmailTemplates;
       return (this);
    }
 

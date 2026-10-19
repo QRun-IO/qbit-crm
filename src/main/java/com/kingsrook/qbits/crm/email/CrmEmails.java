@@ -21,8 +21,12 @@
 package com.kingsrook.qbits.crm.email;
 
 
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.kingsrook.qbits.crm.api.ActivityKind;
 import com.kingsrook.qbits.crm.api.CrmMarketingApi;
 import com.kingsrook.qbits.crm.api.CrmReadiness;
@@ -81,28 +85,43 @@ public final class CrmEmails
          recordActivity(existing.getFirst());
          return;
       }
-      if(templateId != null)
+      CrmEmailTransport.Delivery delivery;
+      if(templateId != null && transport.usesSharedTemplates())
       {
-         QRecord template = GetAction.execute("crm_email_template", templateId);
-         if(template == null)
-         {
-            throw (new QUserFacingException("Email template is unavailable"));
-         }
-         subject = subject == null || subject.isBlank() ? template.getValueString("subject") : subject;
-         body = body == null || body.isBlank() ? template.getValueString("bodyText") : body;
-         if(body == null)
-         {
-            body = template.getValueString("bodyHtml");
-         }
+         Set<String> names = new HashSet<>(transport.templateVariableNames(templateId));
+         String overrides = String.valueOf(subject) + body;
+         Set.of("contact.firstName", "contact.lastName", "company.name", "owner.name", "unsubscribeUrl").stream()
+            .filter(name -> overrides.contains("{{" + name + "}}")).forEach(names::add);
+         var sent = transport.sendTemplateMessage(purpose, id, contact.getValueInteger("id"), contact.getValueString("email"),
+            templateId, subject, body, enrollmentId != null, templateVariables(contact, names));
+         subject = sent.subject();
+         delivery = sent.delivery();
       }
-      if(subject == null || subject.isBlank() || body == null || body.isBlank())
+      else
       {
-         throw (new QUserFacingException("Email subject and body are required"));
+         if(templateId != null)
+         {
+            QRecord template = GetAction.execute("crm_email_template", templateId);
+            if(template == null)
+            {
+               throw (new QUserFacingException("Email template is unavailable"));
+            }
+            subject = subject == null || subject.isBlank() ? template.getValueString("subject") : subject;
+            body = body == null || body.isBlank() ? template.getValueString("bodyText") : body;
+            if(body == null)
+            {
+               body = template.getValueString("bodyHtml");
+            }
+         }
+         if(subject == null || subject.isBlank() || body == null || body.isBlank())
+         {
+            throw (new QUserFacingException("Email subject and body are required"));
+         }
+         subject = render(subject, contact);
+         body = render(body, contact);
+         delivery = transport.sendMessage(purpose, id, contact.getValueInteger("id"),
+            contact.getValueString("email"), subject, body, enrollmentId != null);
       }
-      subject = render(subject, contact);
-      body = render(body, contact);
-      CrmEmailTransport.Delivery delivery = transport.sendMessage(purpose, id, contact.getValueInteger("id"),
-         contact.getValueString("email"), subject, body, enrollmentId != null);
       QRecord message = CrmRecords.insert("crm_email_message", new QRecord().withValue("contactId", contact.getValue("id"))
          .withValue("emailTemplateId", templateId).withValue("sequenceEnrollmentId", enrollmentId)
          .withValue("toAddresses", contact.getValue("email")).withValue("subject", subject)
@@ -134,6 +153,29 @@ public final class CrmEmails
       }
       CrmRecords.update("crm_email_message", new QRecord().withValue("id", message.getValue("id"))
          .withValue("activityId", activities.getFirst().getValue("id")));
+   }
+
+   /*******************************************************************************
+    ** Values come from the caller's visible CRM records, never a system query.
+    *******************************************************************************/
+   private static Map<String, Serializable> templateVariables(QRecord contact, Set<String> names) throws QException
+   {
+      QRecord company = !names.contains("company.name") && !names.contains("company") || contact.getValue("companyId") == null
+         ? null : GetAction.execute("crm_company", contact.getValue("companyId"));
+      Map<String, Serializable> available = new LinkedHashMap<>();
+      available.put("contact.firstName", value(contact, "firstName"));
+      available.put("contact.lastName", value(contact, "lastName"));
+      available.put("company.name", value(company, "name"));
+      available.put("owner.name", value(contact, "ownerUserId"));
+      available.put("contact", new LinkedHashMap<>(Map.of("firstName", value(contact, "firstName"), "lastName", value(contact, "lastName"))));
+      available.put("company", new LinkedHashMap<>(Map.of("name", value(company, "name"))));
+      available.put("owner", new LinkedHashMap<>(Map.of("name", value(contact, "ownerUserId"))));
+      if(names.contains("unsubscribeUrl"))
+      {
+         available.put("unsubscribeUrl", new CrmMarketingApi().buildUnsubscribeUrl(contact.getValueInteger("id"), null));
+      }
+      available.keySet().retainAll(names);
+      return (available);
    }
 
    /*******************************************************************************

@@ -20,13 +20,28 @@
 
 package com.kingsrook.qbits.crm.email;
 
-
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import com.kingsrook.qbits.crm.BaseTest;
 import com.kingsrook.qbits.crm.api.CrmApi;
 import com.kingsrook.qbits.crm.api.CrmReadiness;
+import com.kingsrook.qbits.crm.security.CrmPermissions;
+import com.kingsrook.qbits.email.EmailQBitConfig;
+import com.kingsrook.qbits.email.EmailQBitProducer;
+import com.kingsrook.qbits.email.api.EmailApi;
+import com.kingsrook.qbits.email.api.EmailApiCategory;
+import com.kingsrook.qbits.email.api.EmailApiTemplate;
+import com.kingsrook.qbits.email.permissions.EmailPermissions;
+import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
+import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.context.QContext;
+import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
 import com.kingsrook.qqq.backend.core.model.actions.messaging.SendMessageInput;
 import com.kingsrook.qqq.backend.core.model.actions.messaging.SendMessageOutput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.query.QueryInput;
+import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.messaging.QMessagingProviderMetaData;
 import com.kingsrook.qqq.backend.core.modules.messaging.MessagingProviderInterface;
 import com.kingsrook.qqq.backend.core.modules.messaging.QMessagingProviderDispatcher;
@@ -57,6 +72,33 @@ public class CrmEmailTransportTest extends BaseTest
       transport.send("sequence", "43", 1, "test@example.test", "Next step", "A sequence", true);
       assertThat(RecordingProvider.last.getSubject()).isEqualTo("Next step");
       RecordingProvider.last = null;
+   }
+
+   /*******************************************************************************
+    ** Shared mode selects the email-owned template and records the final subject.
+    *******************************************************************************/
+   @Test
+   void sharedTemplateUsesOwnerAndExactSubject() throws Exception
+   {
+      var instance = QContext.getQInstance();
+      new EmailQBitProducer().withQBitConfig(new EmailQBitConfig()
+         .withBackendName(BACKEND_NAME).withTemplatePermissionBaseName("crm.manage")).produce(instance);
+      new QInstanceValidator().validate(instance);
+      Set<String> permissions = new HashSet<>(CrmPermissions.ALL);
+      permissions.addAll(EmailPermissions.ALL);
+      QContext.getQSession().setPermissions(permissions);
+      new InsertAction().execute(new InsertInput("email_provider")
+         .withRecord(new QRecord().withValue("name", "test").withValue("label", "Test").withValue("kind", "SMTP")
+            .withValue("host", "127.0.0.1").withValue("port", 25).withValue("security", "NONE").withValue("fromAddress", "sender@example.test").withValue("enabled", true).withValue("isDefault", true)));
+      EmailApi.ensureTemplate(new EmailApiTemplate().withName("shared")
+         .withLabel("Shared").withKind("HTML").withCategory(EmailApiCategory.TRANSACTIONAL)
+         .withSubject("Message {{message.id}}").withBody("<p>Native HTML</p>"));
+      var templates = new QueryAction().execute(new QueryInput("email_template")).getRecords();
+      var transport = new CrmEmailTransport(CrmApi.config().withSharedEmailTemplates(true));
+      var first = transport.sendTemplateMessage("manual", "42", 1, "recipient@example.test", templates.getFirst().getValueInteger("id"), null, null, false, Map.of());
+      assertThat(first.subject()).isEqualTo("Message " + first.delivery().messageId());
+      var repeated = transport.sendTemplateMessage("manual", "42", 1, "recipient@example.test", templates.getFirst().getValueInteger("id"), null, null, false, Map.of());
+      assertThat(repeated).isEqualTo(first);
    }
 
    /*******************************************************************************

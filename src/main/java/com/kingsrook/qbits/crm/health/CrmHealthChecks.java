@@ -35,6 +35,11 @@ import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
 import com.kingsrook.qqq.backend.core.context.CapturedContext;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
+import com.kingsrook.qqq.backend.core.health.HealthCategory;
+import com.kingsrook.qqq.backend.core.health.HealthCheckKind;
+import com.kingsrook.qqq.backend.core.health.HealthCheckMetaData;
+import com.kingsrook.qqq.backend.core.health.HealthCheckOutcome;
+import com.kingsrook.qqq.backend.core.health.HealthChecksMetaData;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QCriteriaOperator;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterCriteria;
 import com.kingsrook.qqq.backend.core.model.actions.tables.query.QFilterOrderBy;
@@ -50,8 +55,7 @@ import com.kingsrook.qqq.middleware.health.model.metadata.HealthStatus;
 
 
 /*******************************************************************************
- ** STAND-IN(core=QRun-IO/qqq#1199, removeBy=4.1.0-RC.9)
- ** CRM checks for hosts to register with their health middleware. Run in the
+ ** Core health checks with retained legacy HealthIndicator adapters. Run in the
  ** caller's tenant context when one is supplied, else as the core system user;
  ** no check returns personal values.
  *******************************************************************************/
@@ -75,6 +79,36 @@ public class CrmHealthChecks
    public CrmHealthChecks(CrmEmailTransport transport)
    {
       this.transport = transport;
+   }
+
+
+   /*******************************************************************************
+    ** Register fixed core definitions without database reads or captured user sessions.
+    ** Legacy indicator names stay unchanged for existing middleware callers.
+    *******************************************************************************/
+   public static void register(QInstance instance, CrmQBitConfig config)
+   {
+      HealthChecksMetaData registry = HealthChecksMetaData.ofOrWithNew(instance);
+      CrmHealthChecks checks = new CrmHealthChecks(config);
+      Map<String, String> names = Map.of("crm.email", "crm.email", "crm.sequence-lag", "crm.sequenceLag", "crm.lead-score", "crm.leadScore");
+      names.forEach((name, legacyName) ->
+      {
+         if(registry.getChecks().stream().noneMatch(check -> name.equals(check.getName())))
+         {
+            registry.withCheck(new HealthCheckMetaData().withName(name).withLabel(name).withComponent("crm")
+               .withCategory(HealthCategory.INTEGRATION).withKind(HealthCheckKind.DEPENDENCY)
+               .withIntervalSeconds(300).withTimeoutMs(5000).withCheckInstance(input ->
+               {
+                  if(input.getDeadline() != null && !Instant.now().isBefore(input.getDeadline()))
+                  {
+                     return (HealthCheckOutcome.unknown("CRM check deadline exceeded"));
+                  }
+                  HealthCheckResult result = checks.new Indicator(legacyName, QContext.getQSession()).check(input.getQInstance());
+                  return (new HealthCheckOutcome().withStatus(com.kingsrook.qqq.backend.core.health.HealthStatus.valueOf(result.getStatus().name()))
+                     .withMessage("CRM health check " + result.getStatus().name()));
+               }));
+         }
+      });
    }
 
 

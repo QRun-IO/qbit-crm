@@ -2,6 +2,9 @@
 
 ## Unreleased / 0.2.0
 
+- Add explicit shared email-template opt-in using qbit-email 0.1.0-RC.10. Email owns rendering and checked outbox handoff; CRM retains caller-visible variables, delivery categories and exact sent-subject history. Legacy template metadata is omitted only for opted-in hosts; tenant hosts retain the existing path.
+- Adopt QQQ 4.1.0-RC.20 and register native CRM health checks while preserving legacy health adapters and caller/tenant context.
+
 - Read the CRM QBit metadata version from the Maven-filtered artifact version so release metadata matches the build.
 
 - Adopt QQQ 4.1.0-RC.7 native help bundles, replacing the RC.6 stand-in loader with host-neutral CRM help, live references and the core coverage gate.

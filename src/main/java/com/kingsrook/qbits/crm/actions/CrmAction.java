@@ -375,7 +375,11 @@ public final class CrmAction
          }
          if(value != null && field.getPossibleValueSourceName() != null && !field.getName().equals("primaryId"))
          {
-            if(GetAction.execute(field.getPossibleValueSourceName(), value) == null)
+            if("emailTemplateId".equals(field.getName()) && transport != null && transport.usesSharedTemplates())
+            {
+               transport.templateVariableNames(input.getValueInteger("emailTemplateId"));
+            }
+            else if(GetAction.execute(field.getPossibleValueSourceName(), value) == null)
             {
                return (field.getLabel() + " is unavailable");
             }

@@ -220,4 +220,50 @@ class CrmHealthBulkLoadTest extends BaseTest
       assertThat(status).isEqualTo(HealthStatus.UP);
    }
 
+   /*******************************************************************************
+    ** Core registration is idempotent, preserves tenant visibility and legacy results.
+    *******************************************************************************/
+   @Test
+   void coreRegistrationPreservesCallerAndWorkerContexts() throws Exception
+   {
+      var instance = QContext.getQInstance();
+      var session = QContext.getQSession();
+      CrmHealthChecks.register(instance, new CrmQBitConfig());
+      var registry = com.kingsrook.qqq.backend.core.health.HealthChecksMetaData.ofOrWithNew(instance);
+      assertThat(registry.getChecks()).extracting(check -> check.getName())
+         .containsExactlyInAnyOrder("crm.email", "crm.sequence-lag", "crm.lead-score");
+      var check = registry.getChecks().stream().filter(value -> value.getName().equals("crm.sequence-lag")).findFirst().orElseThrow();
+      P4TestSupport.seed("crm_sequence_enrollment", new QRecord().withValue("id", 9).withValue("contactId", 2)
+         .withValue("status", CrmEnrollmentStatus.ACTIVE.getId()).withValue("nextStepDate", Instant.now().minus(2, ChronoUnit.HOURS)));
+      instance.addSecurityKeyType(new com.kingsrook.qqq.backend.core.model.metadata.security.QSecurityKeyType().withName("healthTenant"));
+      instance.getTable("crm_sequence_enrollment").withRecordSecurityLock(new com.kingsrook.qqq.backend.core.model.metadata.security.RecordSecurityLock()
+         .withFieldName("contactId").withSecurityKeyType("healthTenant"));
+      session.withSecurityKeyValue("healthTenant", 1);
+      var input = new com.kingsrook.qqq.backend.core.health.HealthCheckInput().withQInstance(instance);
+      assertThat(check.getCheckInstance().run(input).getStatus()).isEqualTo(com.kingsrook.qqq.backend.core.health.HealthStatus.UP);
+      assertThat(QContext.getQSession()).isSameAs(session);
+      session.withSecurityKeyValue("healthTenant", 2);
+      assertThat(check.getCheckInstance().run(input).getStatus()).isEqualTo(com.kingsrook.qqq.backend.core.health.HealthStatus.DEGRADED);
+      assertThat(new CrmHealthChecks(new CrmQBitConfig()).indicators(session).get(1).check(instance).getStatus()).isEqualTo(HealthStatus.DEGRADED);
+      var worker = java.util.concurrent.CompletableFuture.supplyAsync(() ->
+      {
+         try
+         {
+            var result = check.getCheckInstance().run(input);
+            var legacy = new CrmHealthChecks(new CrmQBitConfig()).indicators().get(1).check(instance);
+            assertThat(result.getStatus().name()).isEqualTo(legacy.getStatus().name());
+            assertThat(QContext.getQInstance()).isNull();
+            assertThat(QContext.getQSession()).isNull();
+            return (result.getStatus());
+         }
+         catch(Exception e)
+         {
+            throw (new AssertionError(e));
+         }
+      }).get();
+      // A system session authenticates the worker but does not invent tenant security keys.
+      assertThat(worker).isEqualTo(com.kingsrook.qqq.backend.core.health.HealthStatus.UP);
+      assertThat(check.getCheckInstance().run(input.withDeadline(Instant.EPOCH)).getStatus()).isEqualTo(com.kingsrook.qqq.backend.core.health.HealthStatus.UNKNOWN);
+   }
+
 }

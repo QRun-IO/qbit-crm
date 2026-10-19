@@ -163,6 +163,32 @@ class CrmActionsTest extends BaseTest
    }
 
    /*******************************************************************************
+    ** Runtime Review uses the shared owner even though action field prototypes are legacy.
+    *******************************************************************************/
+   @Test
+   void sharedTemplateReviewDoesNotReadRetiredTable() throws Exception
+   {
+      seed(CrmActions.action("crm_send_email"));
+      var instance = QContext.getQInstance();
+      new com.kingsrook.qbits.email.EmailQBitProducer().withQBitConfig(new com.kingsrook.qbits.email.EmailQBitConfig()
+         .withBackendName(BACKEND_NAME).withTemplatePermissionBaseName("crm.manage")).produce(instance);
+      new com.kingsrook.qqq.backend.core.instances.QInstanceValidator().validate(instance);
+      var grants = new java.util.HashSet<>(CrmPermissions.ALL);
+      grants.addAll(com.kingsrook.qbits.email.permissions.EmailPermissions.ALL);
+      QContext.getQSession().setPermissions(grants);
+      com.kingsrook.qbits.crm.api.CrmApi.config().withSharedEmailTemplates(true);
+      com.kingsrook.qbits.email.api.EmailApi.ensureTemplate(new com.kingsrook.qbits.email.api.EmailApiTemplate().withName("shared_review").withLabel("Shared")
+         .withKind("CRM_LEGACY").withOwnerQbit("crm").withCategory(com.kingsrook.qbits.email.api.EmailApiCategory.TRANSACTIONAL).withSubject("Hi").withBody("Body"));
+      Integer template = rows("email_template").getFirst().getValueInteger("id");
+      instance.getTables().remove("crm_email_template");
+      instance.getProcess("crm_send_email").getInputField("emailTemplateId").orElseThrow().setPossibleValueSourceName("email_template");
+      var values = inputs();
+      values.put("emailTemplateId", template);
+      var result = review("crm_send_email", values, List.of(1));
+      assertThat(lines(result, false)).isNotEmpty().allMatch(line -> line.getStatus() != Status.ERROR);
+   }
+
+   /*******************************************************************************
     ** Administrative and management actions have distinct permission grants.
     *******************************************************************************/
    @Test
