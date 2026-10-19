@@ -42,6 +42,22 @@ class CrmQBitConfigTest
 {
 
    /*******************************************************************************
+    ** Catalog permission bases must be explicit; legacy behavior is the default.
+    *******************************************************************************/
+   @Test
+   void testCatalogPermissionBase()
+   {
+      CrmQBitConfig config = new CrmQBitConfig().withDefaultBackendNameForTables("memory");
+      assertThat(config.getProductPermissionBase()).isEqualTo("crm.manage");
+      config.setProductPermissionBase(" ");
+      List<String> errors = new ArrayList<>();
+      config.validate(new QInstance(), errors);
+      assertThat(errors).contains("CrmQBitConfig.productPermissionBase is required");
+   }
+
+
+
+   /*******************************************************************************
     ** Test all fluent setters and corresponding getters.
     *******************************************************************************/
    @Test

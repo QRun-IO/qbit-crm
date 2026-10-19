@@ -87,7 +87,8 @@ public class Product extends QRecordEntity
             .withRecordLabelFormat("%s")
             .withRecordLabelFields("name")
             .withUniqueKey(new UniqueKey("sku"))
-            .withSection(SectionFactory.defaultT1("id", "name", "sku", "isActive"))
+            .withUniqueKey(new UniqueKey("slug"))
+            .withSection(SectionFactory.defaultT1("id", "name", "slug", "sku", "isActive"))
             .withSection(new QFieldSection("pricing", new QIcon("payments"), Tier.T2,
                List.of("unitPrice", "currencyCode")))
             .withSection(SectionFactory.defaultT2("description"))
@@ -145,10 +146,13 @@ public class Product extends QRecordEntity
    @QField(maxLength = 100, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
    private String sku;
 
+   @QField(maxLength = 64, valueTooLongBehavior = ValueTooLongBehavior.ERROR)
+   private String slug;
+
    @QField()
    private String description;
 
-   @QField(isRequired = true)
+   @QField()
    private BigDecimal unitPrice;
 
    @QField(maxLength = 3, valueTooLongBehavior = ValueTooLongBehavior.ERROR, defaultValue = "USD")
@@ -180,6 +184,37 @@ public class Product extends QRecordEntity
    public Product(QRecord record)
    {
       populateFromQRecord(record);
+   }
+
+
+
+   /*******************************************************************************
+    ** Optional stable catalog slug for cross-module references.
+    *******************************************************************************/
+   public String getSlug()
+   {
+      return (slug);
+   }
+
+
+
+   /*******************************************************************************
+    ** Set the catalog slug.
+    *******************************************************************************/
+   public void setSlug(String slug)
+   {
+      this.slug = slug;
+   }
+
+
+
+   /*******************************************************************************
+    ** Set the catalog slug fluently.
+    *******************************************************************************/
+   public Product withSlug(String slug)
+   {
+      setSlug(slug);
+      return (this);
    }
 
 

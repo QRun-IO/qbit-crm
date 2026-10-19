@@ -55,6 +55,28 @@ class ProductTest extends BaseTest
 {
 
    /*******************************************************************************
+    ** An informational catalog product has no invented price; slugs are unique.
+    *******************************************************************************/
+   @Test
+   void testUnpricedCatalogProductAndSlug() throws QException
+   {
+      InsertOutput first = new InsertAction().execute(new InsertInput(Product.TABLE_NAME)
+         .withRecordEntity(new Product().withName("Documentation toolkit").withSlug("toolkit")));
+      assertThat(first.getRecords().get(0).getErrors()).isEmpty();
+      Product stored = new Product(new QueryAction().execute(new QueryInput(Product.TABLE_NAME)).getRecords().get(0));
+      assertThat(stored.getSlug()).isEqualTo("toolkit");
+      assertThat(stored.getUnitPrice()).isNull();
+      InsertOutput duplicate = new InsertAction().execute(new InsertInput(Product.TABLE_NAME)
+         .withRecordEntity(new Product().withName("Other toolkit").withSlug("toolkit")));
+      assertThat(duplicate.getRecords().get(0).getErrors()).isNotEmpty();
+      InsertOutput optional = new InsertAction().execute(new InsertInput(Product.TABLE_NAME)
+         .withRecords(List.of(new Product().withName("No slug one").toQRecord(), new Product().withName("No slug two").toQRecord())));
+      assertThat(optional.getRecords()).allSatisfy(record -> assertThat(record.getErrors()).isEmpty());
+   }
+
+
+
+   /*******************************************************************************
     ** Verify the table and PVS are registered.
     *******************************************************************************/
    @Test
