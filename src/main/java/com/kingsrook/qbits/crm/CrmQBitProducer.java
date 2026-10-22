@@ -208,6 +208,10 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
             addOrComposeCustomizer(table, TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(CrmRelationshipValidator.class));
          }
          table.setPermissionRules(CrmPermissions.tableRules(tableName));
+         if("crm_product".equals(tableName))
+         {
+            table.getPermissionRules().setPermissionBaseName(qBitConfig.getProductPermissionBase());
+         }
          table.setSourceQBitName(getQBitMetaData().getName());
          if(table.getSections() != null)
          {

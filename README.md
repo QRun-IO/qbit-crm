@@ -56,6 +56,7 @@ qInstance.setEnforcePermissionsInCoreActions(true);
 
 - `defaultBackendNameForTables`: required backend name.
 - `inferBackendNames`: defaults to true; sets snake_case SQL column names while Java/QQQ field names remain camelCase. SQL table names equal the QQQ table names. Set false only for an explicit host column mapping.
+- `withProductPermissionBase("crm.product")`: opt into catalog-only `crm.product.read/write` permissions. The default remains `crm.manage` for existing hosts. Before opting in, preserve existing catalog access by adding the corresponding product grants to roles that already hold `crm.manage.read/write`; Marketing catalog readers receive only `crm.product.read`. This does not grant CRM app/settings access or product writes to Marketing. See UPGRADE.md for the required schema and role migration.
 - `tableMetaDataCustomizer`: optional host table customizer.
 - `withTenantSecurityKeyType("tenant")`: enables nullable `tenantKey` fields and record locks. It defaults to null (off). `withTenantAllAccessKeyName("allTenants")` names the host's all-access key. Existing host key types are preserved.
 - Tenant-enabled hosts separately include `src/main/resources/db/liquibase/qbit-crm/crm-tenancy.changelog.sql` **after** the base changelog and explicitly select the `crm-tenancy` context. Single-tenant hosts omit that file. Child records use parent join locks; polymorphic external mappings and internal job checkpoints carry direct tenant keys. Hosts must supply tenant keys on new direct-key records.

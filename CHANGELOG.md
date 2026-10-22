@@ -2,6 +2,9 @@
 
 ## Unreleased / 0.2.0
 
+- Add an optional unique catalog slug and allow absent catalog prices without changing required deal-line prices. Ship the additive `crm-product-catalog.changelog.sql`; hosts must include it before adopting the metadata.
+- Add opt-in `productPermissionBase` configuration for native catalog-only read/write permissions. Existing hosts retain `crm.manage` behavior; opting into `crm.product` requires the role migration documented in UPGRADE.md.
+
 - Read the CRM QBit metadata version from the Maven-filtered artifact version so release metadata matches the build.
 
 - Adopt QQQ 4.1.0-RC.7 native help bundles, replacing the RC.6 stand-in loader with host-neutral CRM help, live references and the core coverage gate.

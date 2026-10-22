@@ -38,6 +38,52 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CrmPermissionsTest extends BaseTest
 {
    /*******************************************************************************
+    ** Legacy hosts retain management access; the shared catalog is opt-in.
+    *******************************************************************************/
+   @Test
+   void testDefaultCatalogPermissions()
+   {
+      QueryInput input = new QueryInput("crm_product");
+      QContext.getQSession().setPermissions(Set.of(CrmPermissions.MANAGE_READ, CrmPermissions.MANAGE_WRITE));
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", TablePermissionSubType.READ)).isTrue();
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", TablePermissionSubType.EDIT)).isTrue();
+      QContext.getQSession().setPermissions(Set.of("crm.product.read"));
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", TablePermissionSubType.READ)).isFalse();
+   }
+
+
+
+   /*******************************************************************************
+    ** Native catalog read grants cannot write or open unrelated CRM settings.
+    *******************************************************************************/
+   @Test
+   void testSharedCatalogPermissions() throws Exception
+   {
+      com.kingsrook.qqq.backend.core.model.metadata.QInstance instance = new com.kingsrook.qqq.backend.core.model.metadata.QInstance();
+      instance.withInstanceDefaultAuthentication(new com.kingsrook.qqq.backend.core.model.metadata.authentication.QAuthenticationMetaData()
+         .withName("anonymous").withType(com.kingsrook.qqq.backend.core.model.metadata.QAuthenticationType.FULLY_ANONYMOUS));
+      instance.addBackend(QContext.getQInstance().getBackend(BACKEND_NAME));
+      new CrmQBitProducer().withQBitConfig(new CrmQBitConfig().withDefaultBackendNameForTables(BACKEND_NAME)
+         .withProductPermissionBase("crm.product")).produce(instance).addSelfToInstance(instance);
+      QContext.init(instance, QContext.getQSession());
+      QueryInput input = new QueryInput("crm_product");
+      QContext.getQSession().setPermissions(Set.of("crm.product.read"));
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", TablePermissionSubType.READ)).isTrue();
+      for(TablePermissionSubType write : Set.of(TablePermissionSubType.INSERT, TablePermissionSubType.EDIT, TablePermissionSubType.DELETE))
+      {
+         assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", write)).isFalse();
+      }
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_pipeline", TablePermissionSubType.READ)).isFalse();
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_contact", TablePermissionSubType.READ)).isFalse();
+      assertThat(PermissionsHelper.hasProcessPermission(input, "crm_merge_contacts")).isFalse();
+      QContext.getQSession().setPermissions(Set.of(CrmPermissions.MANAGE_READ, CrmPermissions.MANAGE_WRITE, "crm.product.read", "crm.product.write"));
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_product", TablePermissionSubType.EDIT)).isTrue();
+      assertThat(PermissionsHelper.hasTablePermission(input, "crm_pipeline", TablePermissionSubType.EDIT)).isTrue();
+   }
+
+
+
+   /*******************************************************************************
     ** A read grant does not allow writes or settings access.
     *******************************************************************************/
    @Test

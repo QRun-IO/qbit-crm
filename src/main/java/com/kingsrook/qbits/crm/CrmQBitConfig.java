@@ -41,6 +41,7 @@ public class CrmQBitConfig implements QBitConfig
 {
    public static final CrmQBitConfig DEFAULT_CONFIG = new CrmQBitConfig();
 
+   private String productPermissionBase = "crm.manage";
    private String tenantSecurityKeyType;
    private String tenantAllAccessKeyName;
    private String apiName;
@@ -69,8 +70,41 @@ public class CrmQBitConfig implements QBitConfig
    @Override
    public void validate(com.kingsrook.qqq.backend.core.model.metadata.QInstance qInstance, List<String> errors)
    {
+      assertCondition(StringUtils.hasContent(productPermissionBase), "CrmQBitConfig.productPermissionBase is required", errors);
       assertCondition(StringUtils.hasContent(defaultBackendNameForTables),
          "CrmQBitConfig.defaultBackendNameForTables is required", errors);
+   }
+
+
+
+   /*******************************************************************************
+    ** Catalog permission base. Defaults to crm.manage for existing hosts.
+    ** Shared-catalog hosts may use crm.product after migrating role grants.
+    *******************************************************************************/
+   public String getProductPermissionBase()
+   {
+      return (productPermissionBase);
+   }
+
+
+
+   /*******************************************************************************
+    ** Set the catalog's native read/write permission base.
+    *******************************************************************************/
+   public void setProductPermissionBase(String productPermissionBase)
+   {
+      this.productPermissionBase = productPermissionBase;
+   }
+
+
+
+   /*******************************************************************************
+    ** Set the catalog's native read/write permission base fluently.
+    *******************************************************************************/
+   public CrmQBitConfig withProductPermissionBase(String productPermissionBase)
+   {
+      setProductPermissionBase(productPermissionBase);
+      return (this);
    }
 
 

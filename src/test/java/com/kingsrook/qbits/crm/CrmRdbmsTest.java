@@ -281,6 +281,7 @@ class CrmRdbmsTest
       var freshColumns = schemaColumns();
       executeSql("DROP ALL OBJECTS;");
       executeSql(changelog);
+      executeSql(Files.readString(Path.of("src/main/resources/db/liquibase/qbit-crm/crm-product-catalog.changelog.sql")));
       assertThat(schemaColumns()).isEqualTo(freshColumns);
       insert("crm_contact", new QRecord().withValue("email", "email-only@example.test"));
    }

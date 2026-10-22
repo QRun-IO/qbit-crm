@@ -53,6 +53,25 @@ class DealProductTest extends BaseTest
 {
 
    /*******************************************************************************
+    ** Optional catalog pricing does not make the agreed line price optional.
+    *******************************************************************************/
+   @Test
+   void testUnpricedCatalogStillRequiresLinePrice() throws QException
+   {
+      Integer productId = insertProduct("Unpriced service", "UNPRICED", null);
+      InsertOutput missing = new InsertAction().execute(new InsertInput(DealProduct.TABLE_NAME)
+         .withRecordEntity(new DealProduct().withDealId(1).withProductId(productId).withQuantity(BigDecimal.ONE)));
+      assertThat(missing.getRecords().get(0).getErrors()).isNotEmpty();
+      InsertOutput agreed = new InsertAction().execute(new InsertInput(DealProduct.TABLE_NAME)
+         .withRecordEntity(new DealProduct().withDealId(1).withProductId(productId).withQuantity(new BigDecimal("2"))
+            .withUnitPrice(new BigDecimal("12.50"))));
+      assertThat(agreed.getRecords().get(0).getErrors()).isEmpty();
+      assertThat(new QueryAction().execute(new QueryInput(DealProduct.TABLE_NAME)).getRecords().get(0).getValueBigDecimal("totalAmount")).isEqualByComparingTo("25.00");
+   }
+
+
+
+   /*******************************************************************************
     ** Verify the table is registered with the correct icon.
     *******************************************************************************/
    @Test

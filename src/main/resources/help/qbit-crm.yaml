@@ -521,7 +521,7 @@ entries:
     content: |
       Use **{{label:crm_product}}** to review products and services available as deal line items.
 
-      **How rows get created:** Add your products or services with **New**, including their prices and currencies. You can then select them on deal product lines.
+      **How rows get created:** Add your products or services with **New**, with a price and currency when known. Informational products may leave the catalog price blank; a deal line still requires its own agreed unit price.
   - key: table:crm_product;section:identity
     summary: "The identifying details for this record."
   - key: table:crm_product;section:pricing
@@ -545,7 +545,9 @@ entries:
   - key: table:crm_product;field:modifyDate
     summary: "When this record was last changed."
   - key: table:crm_product;field:unitPrice
-    summary: "The price for one unit of the product."
+    summary: "Optional catalog price per unit. Leave blank when not priced; deal lines require an agreed price."
+  - key: table:crm_product;field:slug
+    summary: "Optional unique stable identifier for this shared catalog product, up to 64 characters."
   - key: table:crm_product;field:sku
     summary: "The product code used to identify the item."
   - key: table:crm_deal_stage_history;slot:help
