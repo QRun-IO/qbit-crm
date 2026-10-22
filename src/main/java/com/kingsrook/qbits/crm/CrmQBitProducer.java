@@ -72,6 +72,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.help.bundles.HelpBundles;
 import com.kingsrook.qqq.backend.core.model.metadata.joins.QJoinMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaDataProducer;
@@ -391,10 +392,28 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
    @Override
    public MetaDataProducerMultiOutput produce(QInstance qInstance) throws QException
    {
+      if(qBitConfig.getSharedEmailTemplates() && (qBitConfig.getTenantSecurityKeyType() != null || qInstance.getTable("email_template") == null))
+      {
+         throw (new QException("Shared CRM templates require installed qbit-email and a non-tenant CRM host"));
+      }
       MetaDataProducerMultiOutput produced = QBitMetaDataProducer.super.produce(qInstance);
       MetaDataProducerMultiOutput output = new MetaDataProducerMultiOutput();
       for(MetaDataProducerOutput item : produced.getEach(MetaDataProducerOutput.class))
       {
+         if(qBitConfig.getSharedEmailTemplates() && ((item instanceof QTableMetaData table && "crm_email_template".equals(table.getName()))
+            || (item instanceof QPossibleValueSource source && "crm_email_template".equals(source.getName()))))
+         {
+            continue;
+         }
+         if(qBitConfig.getSharedEmailTemplates() && item instanceof QTableMetaData table && table.getFields().containsKey("emailTemplateId"))
+         {
+            table.getField("emailTemplateId").setPossibleValueSourceName("email_template");
+         }
+         if(qBitConfig.getSharedEmailTemplates() && item instanceof QProcessMetaData process)
+         {
+            process.getInputFields().stream().filter(field -> "emailTemplateId".equals(field.getName()))
+               .forEach(field -> field.setPossibleValueSourceName("email_template"));
+         }
          output.add(item instanceof QWidgetMetaData widget
             ? new CrmWidgetMetaData(widget).withSourceQBitName(getQBitMetaData().getName()) : item);
       }
@@ -416,6 +435,7 @@ public class CrmQBitProducer implements QBitMetaDataProducer<CrmQBitConfig>
       qInstance.withProcessLifecycleListener(new QCodeReference(CrmEmailProcessIdentity.class));
       registerHooks(qInstance);
       // Registration is metadata-only; core startup sync guards hosts without helpContent.
+      com.kingsrook.qbits.crm.health.CrmHealthChecks.register(qInstance, qBitConfig);
       HelpBundles.register(qInstance, "help/qbit-crm.yaml");
       return (output);
    }

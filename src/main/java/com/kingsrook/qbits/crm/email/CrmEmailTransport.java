@@ -21,8 +21,11 @@
 package com.kingsrook.qbits.crm.email;
 
 
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import com.kingsrook.qbits.crm.CrmQBitConfig;
 import com.kingsrook.qbits.crm.api.CrmReadiness;
 import com.kingsrook.qbits.crm.core.model.enums.CrmEmailStatus;
@@ -121,6 +124,58 @@ public class CrmEmailTransport
          .withTo(new Party().withAddress(address).withRole(EmailPartyRole.TO)).withSubject(subject)
          .withContent(new Content().withBody(body).withContentRole(EmailContentRole.TEXT)));
       return (new Delivery(null, CrmEmailStatus.SENT, Instant.now(), null, null, null, null));
+   }
+
+   /*******************************************************************************
+    ** Shared storage/rendering is explicitly enabled only after host migration.
+    *******************************************************************************/
+   public boolean usesSharedTemplates()
+   {
+      return (config.getSharedEmailTemplates());
+   }
+
+   /*******************************************************************************
+    ** Only declared inputs are computed and passed to the email-owned renderer.
+    *******************************************************************************/
+   public Set<String> templateVariableNames(Integer templateId) throws QException
+   {
+      return (EmailApi.templateVariableNames(templateId));
+   }
+
+   /*******************************************************************************
+    ** Keep optional email API types behind this adapter boundary.
+    *******************************************************************************/
+   public record TemplateDelivery(String subject, Delivery delivery)
+   {
+   }
+
+   /*******************************************************************************
+    ** Checked selection, then native outbox rendering retains all send policies.
+    *******************************************************************************/
+   public TemplateDelivery sendTemplateMessage(String purpose, String id, Integer contactId, String address, Integer templateId,
+                                               String subject, String body, boolean marketing, Map<String, Serializable> variables) throws QException
+   {
+      if(!emailInstalled())
+      {
+         throw (new QUserFacingException("Shared CRM templates require qbit-email"));
+      }
+      String key = "crm:" + purpose + ":" + id;
+      EmailApiRequest request = new EmailApiRequest().withTo(address)
+         .withCategory(marketing ? EmailApiCategory.MARKETING : EmailApiCategory.TRANSACTIONAL)
+         .withSubject(subject == null || subject.isBlank() ? null : subject)
+         .withMarkdownBody(body == null || body.isBlank() ? null : body)
+         .withLinkedRecord("crm_contact", contactId).withSender("crm", purpose).withIdempotencyKey(key);
+      variables.forEach(request::withVariable);
+      var checked = EmailApi.sendTemplateOnce(templateId, request, key);
+      var result = checked.effect();
+      if(result.outcome() == EmailApiEffectOutcome.REFUSED)
+      {
+         throw (new QUserFacingException("The email service could not accept this template message."));
+      }
+      var message = result.message();
+      Delivery delivery = message == null ? new Delivery(null, CrmEmailStatus.QUEUED, null, null, null, null, null)
+         : new Delivery(String.valueOf(message.id()), status(message.status()), message.sentDate(), message.deliveredDate(), null, null, null);
+      return (new TemplateDelivery(checked.subject(), delivery));
    }
 
    /*******************************************************************************

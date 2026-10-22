@@ -67,14 +67,15 @@ public final class CrmAppMetaData
     *******************************************************************************/
    public static QAppMetaData build(MetaDataProducerMultiOutput output, String source)
    {
+      List<String> settings = SETTINGS_TABLES.stream().filter(name -> output.get(QTableMetaData.class, name) != null).toList();
       QAppMetaData app = new QAppMetaData().withName("crm").withLabel("CRM").withIcon(new QIcon("contacts"))
          .withPermissionRules(CrmPermissions.hasAccessRules(CrmPermissions.BASE))
          .withWidgets(new ArrayList<>(CrmHomeWidgets.HOME))
          .withSection(mainSection())
          .withSection(new QAppSection().withName("crm_settings").withLabel("Settings").withIcon(new QIcon("settings"))
-            .withTables(new ArrayList<>(SETTINGS_TABLES)));
+            .withTables(new ArrayList<>(settings)));
       List<String> tables = new ArrayList<>(MAIN_TABLES);
-      tables.addAll(SETTINGS_TABLES);
+      tables.addAll(settings);
       for(String name : tables)
       {
          app.withChild(output.get(QTableMetaData.class, name));

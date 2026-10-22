@@ -1,5 +1,18 @@
 # Upgrading
 
+## Shared email templates (Unreleased / 0.2.0)
+
+This version uses public qbit-email `0.1.0-RC.10` and QQQ `4.1.0-RC.20`. Shared templates remain disabled by default. Existing optional-email and tenant-enabled hosts retain their legacy template behavior.
+
+For a non-tenant host adopting shared templates:
+
+1. Install the email qbit and configure its template permission base as `crm.manage`. Existing per-template edit permissions and record locks remain enforced; this grant does not expose other email settings.
+2. Before enabling `CrmQBitConfig.withSharedEmailTemplates(true)`, migrate legacy template content into email-owned `CRM_LEGACY` templates and active versions, remap sequence/history and generic record references, and retain source provenance and rollback data. This library does not run a host database migration. Populated deployments require a documented CRM maintenance window with writes and workers quiesced, fresh preflight counts and verified backups.
+3. Enable the opt-in only after migration. It omits `crm_email_template` metadata and its possible-value source entirely and uses `email_template` for actions and sequences. Tenant mode and missing email installations reject the opt-in.
+4. Native email templates retain their category and content policies. Migrated compatibility templates preserve historical substitutions and overrides. Checked replay can reject a changed template version or envelope; reconcile the existing effect rather than silently retrying with a new idempotency key.
+
+The producer also registers `crm.email`, `crm.sequence-lag` and `crm.lead-score` with core health metadata. Existing legacy adapters remain available. Checks use execution-time context, preserve tenant visibility and do not assign tenant keys to contextless workers.
+
 ## Starter defaults (Unreleased / 0.2.0)
 
 The CRM now ships `db/liquibase/qbit-crm/crm-defaults.changelog.sql`, a separate insert-only changelog. Without it,
